@@ -887,3 +887,35 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,python,django,c++,visualstudio,visualstudiocode,linux,windows,macos
+
+# Manually added
+
+## .idea files
+/.idea/.gitignore
+/AlgEdu Team/.idea/vcs.xml
+/AlgEdu Team/.idea/.gitignore
+/.idea/Algedu.iml
+/AlgEdu Team/.idea/AlgEdu Team.iml
+/AlgEdu_Website/.idea/AlgEdu Website.iml
+/.idea/misc.xml
+/AlgEdu Team/.idea/misc.xml
+/AlgEdu_Website/.idea/misc.xml
+/.idea/modules.xml
+/AlgEdu Team/.idea/modules.xml
+/AlgEdu_Website/.idea/modules.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/AlgEdu Team/.idea/inspectionProfiles/profiles_settings.xml
+/AlgEdu_Website/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/AlgEdu Team/.idea/inspectionProfiles/Project_Default.xml
+/AlgEdu_Website/.idea/inspectionProfiles/Project_Default.xml
+/.idea/vcs.xml
+/AlgEdu_Website/.idea/vcs.xml
+/AlgEdu_Website/.idea/workspace.xml
+/AlgEdu_Team/.idea/.gitignore
+/AlgEdu_Team/.idea/AlgEdu Team.iml
+/AlgEdu_Team/.idea/misc.xml
+/AlgEdu_Team/.idea/modules.xml
+/AlgEdu_Team/.idea/inspectionProfiles/profiles_settings.xml
+/AlgEdu_Team/.idea/inspectionProfiles/Project_Default.xml
+/AlgEdu_Team/.idea/vcs.xml
