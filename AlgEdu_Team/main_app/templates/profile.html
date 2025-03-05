@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+    <main>
+        <h1>Профиль</h1>
+        {% if user.is_authenticated %}
+            <p><strong>Имя пользователя:</strong> {{user.username}}</p>
+            <p><strong>Email:</strong> <span id="email"></span></p>
+            <p><strong>Дата рождения:</strong> <span id="birthdate"></span></p>
+            <p><strong>Имя:</strong> <span id="firstname"></span></p>
+            <p><strong>Фамилия:</strong> <span id="lastname"></span></p>
+            <p><strong>Информация о себе:</strong> <span id="bio"></span></p>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn">Выйти</button>
+            </form>
+        {% else %}
+            <p>
+                Чтобы просмотреть профиль, <a href="{% url 'login' %}">войдите в систему</a> или <a href="{% url 'register' %}">зарегистрируйтесь</a>.
+            </p>
+        {% endif %}
+    </main>
+{% endblock %}

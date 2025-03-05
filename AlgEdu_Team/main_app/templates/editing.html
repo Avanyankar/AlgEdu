@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование профиля</title>
+    {% load static %}
+    {% include 'main/menu.html' %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Редактирование профиля</h1>
+        <form onsubmit="return handleSubmit()" class="form-container">
+            {% csrf_token %}
+
+            <label for="email">Email:</label>
+            <input type="text" id="email" placeholder="Введите значение">
+
+            <label for="firstname">Имя:</label>
+            <input type="text" id="firstname" placeholder="Введите значение">
+
+            <label for="lastname">Фамилия:</label>
+            <input type="text" id="lastname" placeholder="Введите значение">
+
+            <label for="bio">Информация о себе:</label><br>
+            <input type="text" id="bio" placeholder="Введите значение">
+
+            <label for="birthdate">Дата рождения:</label>
+            <input type="date" id="birthdate">
+
+            <button type="submit" class="btn">Сохранить</button>
+        </form>
+
+        <script>
+            function saveData() {
+                localStorage.setItem('email', document.getElementById('email').value);
+                localStorage.setItem('firstname', document.getElementById('firstname').value);
+                localStorage.setItem('lastname', document.getElementById('lastname').value);
+                localStorage.setItem('bio', document.getElementById('bio').value);
+                localStorage.setItem('birthdate', document.getElementById('birthdate').value);
+            }
+
+            function handleSubmit() {
+                saveData();
+                window.location.href = '/profile';
+                return false;
+
+            }
+        </script>
+    </div>
+</body>
+</html>
