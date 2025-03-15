@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # Create your models here.
 
@@ -13,11 +14,11 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.username
 
-class Map(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='maps')
+class Field(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -25,69 +26,68 @@ class Map(models.Model):
 
 
 class Comment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
-    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
     text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Comment by {self.user.username} on {self.map.title}"
+        return f"Comment by {self.user.username} on {self.field.title}"
 
 
-class LikeMap(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='liked_maps')
-    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'map')
-
-    def __str__(self):
-        return f"Like by {self.user.username} on {self.map.title}"
-
-
-class FavoriteMap(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_maps')
-    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name='favorites')
-    created_at = models.DateTimeField(auto_now_add=True)
+class LikeField(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ('user', 'map')  
+        unique_together = ('user', 'field')
 
     def __str__(self):
-        return f"Favorite by {self.user.username} on {self.map.title}"
+        return f"Like by {self.user.username} on {self.field.title}"
+
+
+class FavoriteField(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('user', 'field')
+    def __str__(self):
+        return f"Favorite by {self.user.username} on {self.field.title}"
 
 
 class LikeComment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='liked_comments')
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ('user', 'comment')  
+        unique_together = ('user', 'comment')
 
     def __str__(self):
         return f"Like by {self.user.username} on comment {self.comment.id}"
 
 
 class ReportComment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reported_comments')
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='reports')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
     reason = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     is_resolved = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Report by {self.user.username} on comment {self.comment.id}"
 
 
-class ReportMap(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reported_maps')
-    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name='reports')
+class ReportField(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
     reason = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     is_resolved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Report by {self.user.username} on map {self.map.title}"
+        return f"Report by {self.user.username} on field {self.field.title}"
