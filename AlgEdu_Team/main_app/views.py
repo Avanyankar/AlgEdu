@@ -1,23 +1,20 @@
-from django.shortcuts import render
-from django.views.generic import UpdateView, DetailView, View, CreateView
+from django.views.generic import UpdateView, DetailView, CreateView
 from django.urls import reverse_lazy
-from .models import UserProfile, User
-from .forms import UserRegistrationForm
-from django.http import HttpRequest, HttpResponse
+from .models import User
+from django.http import HttpResponse
 from typing import Dict, Any
 
-# Create your views here.
 
 class ProfileUpdateView(UpdateView):
     """View for updating user profile information."""
 
-    model: UserProfile = UserProfile
+    model: User = User
     fields: list[str] = ['location', 'birth_date', 'bio']
     template_name: str = 'main/editing.html'
 
-    def get_object(self, queryset: Any = None) -> UserProfile:
+    def get_object(self, queryset: Any = None) -> User:
         """Retrieve the user profile associated with the current user."""
-        return self.request.user.userprofile
+        return self.request.user
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Add the user profile to the context data."""
@@ -31,46 +28,29 @@ class ProfileUpdateView(UpdateView):
         self.request.session['success_message'] = 'Успешное изменение профиля'
         return response
 
-    def get_success_url(self) -> str:
-        """Return the URL to redirect to after a successful form submission."""
-        return reverse_lazy('main:profile')
 
-
-class ProfileDetailView(DetailView):
+class ProfileView(DetailView):
     """View for displaying user profile details."""
 
-    model: UserProfile = UserProfile
+    model: User = User
     template_name: str = 'main/profile.html'
+    context_object_name: User = 'user'
 
-    def get_object(self, queryset: Any = None) -> UserProfile:
+    def get_object(self, queryset: Any = None) -> User:
         """Retrieve the user profile associated with the current user."""
-        return self.request.user.userprofile
+        return self.request.user
 
 
-class ProfileView(View):
-    """View for displaying the user's profile page."""
-
-    def get(self, request: HttpRequest) -> HttpResponse:
-        """Render the profile page for the current user."""
-        context = {
-            'user': request.user
-        }
-        return render(request, 'main/profile.html', context)
-
-
-class IndexView(View):
+class IndexView(DetailView):
     """View for displaying the index page."""
-
-    def get(self, request: HttpRequest) -> HttpResponse:
-        """Render the index page."""
-        return render(request, 'main/index.html', {})
+    template_name: str = 'main/index.html'
 
 
 class UserRegisterView(CreateView):
     """View for user registration."""
 
     model: User = User
-    form_class: Any = UserRegistrationForm
+    form_class: Any = None  # TODO: registration form
     template_name: str = 'accounts/register.html'
     success_url: str = reverse_lazy('login')
 
@@ -79,11 +59,3 @@ class UserRegisterView(CreateView):
         response: HttpResponse = super().form_valid(form)
         self.request.session['success_message'] = 'Регистрация успешна'
         return response
-
-
-class PosxalkoView(View):
-    """View for displaying the main page."""
-
-    def get(self, request: HttpRequest) -> HttpResponse:
-        """Render the main page."""
-        return render(request, 'main.html')
