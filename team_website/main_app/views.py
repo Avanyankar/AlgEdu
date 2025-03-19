@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import UpdateView, DetailView, CreateView
 from django.urls import reverse_lazy
 from django.http import HttpResponse
@@ -29,16 +30,40 @@ class ProfileUpdateView(UpdateView):
         return response
 
 
-class ProfileView(DetailView):
-    """View for displaying user profile details."""
+class ProfileView(LoginRequiredMixin, DetailView):
+    """
+    View для отображения деталей профиля пользователя.
 
-    model: User = User
-    template_name: str = 'main/profile.html'
-    context_object_name: User = 'user'
+    Наследуется от `DetailView` и использует модель `User`.
+    Доступен только для авторизованных пользователей благодаря `LoginRequiredMixin`.
+    """
 
-    def get_object(self, queryset: Any = None) -> User:
-        """Retrieve the user profile associated with the current user."""
+    model: User = User  
+    template_name: str = 'main/profile.html' 
+    context_object_name: str = 'user'
+
+    def get_object(self, queryset=None) -> User:
+        """
+        Возвращает объект пользователя, связанный с текущим запросом.
+
+        Args:
+            queryset: QuerySet, из которого можно выбрать объект (не используется в данном случае).
+
+        Returns:
+            User: Объект текущего пользователя.
+        """
         return self.request.user
+
+    def get_context_data(self, **kwargs) -> dict:
+        """
+        Добавляет дополнительные данные в контекст шаблона.
+
+        Returns:
+            dict: Контекст с объектом пользователя и дополнительными данными.
+        """
+        context: dict = super().get_context_data(**kwargs)
+        context['is_profile_page'] = True
+        return context
 
 
 class IndexView(DetailView):
