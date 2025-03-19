@@ -3,31 +3,73 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import UpdateView, DetailView, CreateView
 from django.urls import reverse_lazy
 from django.http import HttpResponse
+from django.core.exceptions import ValidationError
+from django.contrib import messages
 from .models import User
 
 
-class ProfileUpdateView(UpdateView):
-    """View for updating user profile information."""
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    View для редактирования профиля пользователя.
 
-    model: User = User
-    fields: list[str] = ['location', 'birth_date', 'bio']
-    template_name: str = 'main/editing.html'
+    Обрабатывает поля name, mail, age, проверяет их на валидность
+    и сохраняет изменения в модели пользователя.
+    """
 
-    def get_object(self, queryset: Any = None) -> User:
-        """Retrieve the user profile associated with the current user."""
+    model: User = User 
+    fields: list[str] = ['first_name', 'email', 'age']  
+    template_name: str = 'main/editing.html'  
+    success_url: str = reverse_lazy('profile')  
+
+    def get_object(self, queryset=None) -> User:
+        """
+        Возвращает объект пользователя, связанный с текущим запросом.
+
+        Returns:
+            User: Объект текущего пользователя.
+        """
         return self.request.user
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
-        """Add the user profile to the context data."""
-        context: Dict[str, Any] = super().get_context_data(**kwargs)
-        context['profile'] = self.get_object()
-        return context
+    def form_valid(self, form) -> bool:
+        """
+        Обрабатывает валидную форму.
 
-    def form_valid(self, form: Any) -> HttpResponse:
-        """Handle valid form submission and set a success message."""
-        response: HttpResponse = super().form_valid(form)
-        self.request.session['success_message'] = 'Успешное изменение профиля'
+        Args:
+            form: Форма с данными для обновления.
+
+        Returns:
+            bool: Результат обработки формы.
+        """
+        try:
+            self.validate_data(form.cleaned_data)
+        except ValidationError as e:
+            form.add_error(None, e.message)
+            return self.form_invalid(form)
+
+        response = super().form_valid(form)
+        messages.success(self.request, 'Профиль успешно обновлён!')
         return response
+
+    def validate_data(self, cleaned_data: dict) -> None:
+        """
+        Проверяет данные на валидность.
+
+        Args:
+            cleaned_data (dict): Очищенные данные из формы.
+
+        Raises:
+            ValidationError: Если данные невалидны.
+        """
+        name = cleaned_data.get('first_name')
+        email = cleaned_data.get('email')
+        age = cleaned_data.get('age')
+
+        if not name:
+            raise ValidationError('Имя не может быть пустым.')
+        if not email or '@' not in email:
+            raise ValidationError('Введите корректный email.')
+        if age and (age < 0 or age > 120):
+            raise ValidationError('Возраст должен быть от 0 до 120 лет.')
 
 
 class ProfileView(LoginRequiredMixin, DetailView):
