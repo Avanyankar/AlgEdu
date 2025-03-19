@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import UpdateView, DetailView, CreateView
+from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
@@ -50,7 +51,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, 'Профиль успешно обновлён!')
         return response
 
-    def validate_data(self, cleaned_data: dict) -> None:
+    def validate_data(self, cleaned_data: dict) -> None: 
         """
         Проверяет данные на валидность.
 
@@ -126,3 +127,43 @@ class UserRegisterView(CreateView):
         response: HttpResponse = super().form_valid(form)
         self.request.session['success_message'] = 'Регистрация успешна'
         return response
+
+
+class UserLoginView(LoginView):
+    """
+    View для авторизации пользователя.
+
+    Обрабатывает username и password, аутентифицирует пользователя
+    и перенаправляет на указанную страницу.
+    """
+
+    template_name: str = 'main/login.html'  
+    redirect_authenticated_user: bool = True  
+    success_url: str = reverse_lazy('profile') 
+
+    def form_valid(self, form) -> bool:
+        """
+        Обрабатывает валидную форму.
+
+        Args:
+            form: Форма с данными для аутентификации.
+
+        Returns:
+            bool: Результат обработки формы.
+        """
+        response = super().form_valid(form)
+        messages.success(self.request, 'Вы успешно вошли в систему!')
+        return response
+
+    def form_invalid(self, form) -> bool:
+        """
+        Обрабатывает невалидную форму.
+
+        Args:
+            form: Форма с данными для аутентификации.
+
+        Returns:
+            bool: Результат обработки формы.
+        """
+        messages.error(self.request, 'Неверное имя пользователя или пароль.')
+        return super().form_invalid(form)
