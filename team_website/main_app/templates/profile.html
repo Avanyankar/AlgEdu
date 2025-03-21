@@ -6,12 +6,19 @@
     <main>
         <h1>Профиль</h1>
         {% if user.is_authenticated %}
-            <p><strong>Имя пользователя:</strong> {{user.username}}</p>
-            <p><strong>Email:</strong> <span id="email"></span></p>
-            <p><strong>Дата рождения:</strong> <span id="birthdate"></span></p>
-            <p><strong>Имя:</strong> <span id="firstname"></span></p>
-            <p><strong>Фамилия:</strong> <span id="lastname"></span></p>
-            <p><strong>Информация о себе:</strong> <span id="bio"></span></p>
+            <p>Имя пользователя: {{ user.username }}</p>
+            <p>Email: {{ user.email }}</p>
+
+            {% if user.profile %}
+                <p>Дата рождения: {{ user.profile.birth_date|date:"d.m.Y" }}</p>
+                <p>Имя: {{ user.profile.first_name }}</p>
+                <p>Фамилия: {{ user.profile.last_name }}</p>
+                <p>Информация о себе: {{ user.profile.bio }}</p>
+                <p>Локация: {{ user.profile.location }}</p>
+            {% else %}
+                <p>Профиль не заполнен. <a href="{% url 'edit_profile' %}">Заполнить профиль</a></p>
+            {% endif %}
+
             <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
                 <button type="submit" class="btn">Выйти</button>
@@ -23,3 +30,4 @@
         {% endif %}
     </main>
 {% endblock %}
+

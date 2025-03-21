@@ -10,43 +10,29 @@
 <body>
     <div class="container">
         <h1 class="title">Редактирование профиля</h1>
-        <form onsubmit="return handleSubmit()" class="form-container">
+        <form method="post" class="form-container">
             {% csrf_token %}
 
             <label for="email">Email:</label>
-            <input type="text" id="email" placeholder="Введите значение">
+            {{ form.email }}
 
             <label for="firstname">Имя:</label>
-            <input type="text" id="firstname" placeholder="Введите значение">
+            {{ form.first_name }}
 
             <label for="lastname">Фамилия:</label>
-            <input type="text" id="lastname" placeholder="Введите значение">
+            {{ form.last_name }}
 
             <label for="bio">Информация о себе:</label><br>
-            <input type="text" id="bio" placeholder="Введите значение">
+            {{ form.bio }}
 
-            <label for="birthdate">Дата рождения:</label>
-            <input type="date" id="birthdate">
+            <label for="birth_date">Дата рождения:</label>
+            {{ form.birth_date }}
+
+            <label for="location">Локация:</label>
+            {{ form.location }}
 
             <button type="submit" class="btn">Сохранить</button>
         </form>
-
-        <script>
-            function saveData() {
-                localStorage.setItem('email', document.getElementById('email').value);
-                localStorage.setItem('firstname', document.getElementById('firstname').value);
-                localStorage.setItem('lastname', document.getElementById('lastname').value);
-                localStorage.setItem('bio', document.getElementById('bio').value);
-                localStorage.setItem('birthdate', document.getElementById('birthdate').value);
-            }
-
-            function handleSubmit() {
-                saveData();
-                window.location.href = '/profile';
-                return false;
-
-            }
-        </script>
     </div>
 </body>
 </html>

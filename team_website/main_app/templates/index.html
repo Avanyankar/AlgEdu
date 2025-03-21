@@ -4,6 +4,17 @@
 
 {% block content %}
     <main>
-
+        <h1>Список полей</h1>
+        <ul>
+            {% for field in fields %}
+                <li> 
+                    <h2>{{ field.title }}</h2>
+                    <p>{{ field.description }}</p>
+                    <p>Создано: {{ field.created_at }}</p>
+                </li>
+            {% empty %}
+                <p>Поля не найдены.</p>
+            {% endfor %}
+        </ul>
     </main>
-{% endblock %}
+{% endblock %}  
