@@ -11,35 +11,35 @@ from .models import User
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
-    View для редактирования профиля пользователя.
+    View for editing the user's profile.
 
-    Обрабатывает поля name, mail, age, проверяет их на валидность
-    и сохраняет изменения в модели пользователя.
+    Processes the fields name, mail, agent, checks them for validity
+    and saves the changes to the user's model.
     """
 
     model: User = User 
     fields: list[str] = ['first_name', 'email', 'age']  
-    template_name: str = 'main/editing.html'  
+    template_name: str = 'editing.html'  
     success_url: str = reverse_lazy('profile')  
 
     def get_object(self, queryset=None) -> User:
         """
-        Возвращает объект пользователя, связанный с текущим запросом.
+        Returns the user object associated with the current request.
 
         Returns:
-            User: Объект текущего пользователя.
+            User: object of the current user.
         """
         return self.request.user
 
     def form_valid(self, form) -> bool:
         """
-        Обрабатывает валидную форму.
+        Processes a valid form.
 
         Args:
-            form: Форма с данными для обновления.
+            form: The form with the data to update.
 
         Returns:
-            bool: Результат обработки формы.
+            bool: The result of processing the form.
         """
         try:
             self.validate_data(form.cleaned_data)
@@ -53,13 +53,13 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
     def validate_data(self, cleaned_data: dict) -> None: 
         """
-        Проверяет данные на валидность.
+        Checks the data for validity.
 
         Args:
-            cleaned_data (dict): Очищенные данные из формы.
+            cleaned_data (dict): Cleared data from the form.
 
         Raises:
-            ValidationError: Если данные невалидны.
+            ValidationError: If the data is not valid.
         """
         name = cleaned_data.get('first_name')
         email = cleaned_data.get('email')
@@ -75,34 +75,34 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 class ProfileView(LoginRequiredMixin, DetailView):
     """
-    View для отображения деталей профиля пользователя.
+    View for displaying user profile details.
 
-    Наследуется от `DetailView` и использует модель `User`.
-    Доступен только для авторизованных пользователей благодаря `LoginRequiredMixin`.
+    Inherits from `DetailView' and uses the `User` model.
+    Available only to authorized users thanks to `LoginRequiredMixin'.
     """
 
     model: User = User  
-    template_name: str = 'main/profile.html' 
+    template_name: str = 'profile.html' 
     context_object_name: str = 'user'
 
     def get_object(self, queryset=None) -> User:
         """
-        Возвращает объект пользователя, связанный с текущим запросом.
+        Returns the user object associated with the current request.
 
         Args:
-            queryset: QuerySet, из которого можно выбрать объект (не используется в данном случае).
+            queryset: QuerySet from which you can select an object (not used in this case).
 
         Returns:
-            User: Объект текущего пользователя.
+            User: The object of the current user.
         """
         return self.request.user
 
     def get_context_data(self, **kwargs) -> dict:
         """
-        Добавляет дополнительные данные в контекст шаблона.
+        Adds additional data to the template context.
 
         Returns:
-            dict: Контекст с объектом пользователя и дополнительными данными.
+            dict: The context with the user's object and additional data.
         """
         context: dict = super().get_context_data(**kwargs)
         context['is_profile_page'] = True
@@ -111,7 +111,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
 
 class IndexView(DetailView):
     """View for displaying the index page."""
-    template_name: str = 'main/index.html'
+    template_name: str = 'index.html'
 
 
 class UserRegisterView(CreateView):
@@ -131,25 +131,25 @@ class UserRegisterView(CreateView):
 
 class UserLoginView(LoginView):
     """
-    View для авторизации пользователя.
+    The view for user authorization.
 
-    Обрабатывает username и password, аутентифицирует пользователя
-    и перенаправляет на указанную страницу.
+    Processes username and password, authenticates the user
+    and redirects to the specified page.
     """
 
-    template_name: str = 'main/login.html'  
+    template_name: str = 'login.html'  
     redirect_authenticated_user: bool = True  
     success_url: str = reverse_lazy('profile') 
 
     def form_valid(self, form) -> bool:
         """
-        Обрабатывает валидную форму.
+        Processes a valid form.
 
         Args:
-            form: Форма с данными для аутентификации.
+            form: A form with authentication data.
 
         Returns:
-            bool: Результат обработки формы.
+            bool: The result of processing the form.
         """
         response = super().form_valid(form)
         messages.success(self.request, 'Вы успешно вошли в систему!')
@@ -157,13 +157,13 @@ class UserLoginView(LoginView):
 
     def form_invalid(self, form) -> bool:
         """
-        Обрабатывает невалидную форму.
+        Handles the invalid form.
 
         Args:
-            form: Форма с данными для аутентификации.
+            form: A form with authentication data.
 
         Returns:
-            bool: Результат обработки формы.
+            bool: The result of processing the form.
         """
         messages.error(self.request, 'Неверное имя пользователя или пароль.')
         return super().form_invalid(form)
