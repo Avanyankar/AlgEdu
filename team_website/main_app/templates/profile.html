@@ -16,10 +16,10 @@
                 <p>Информация о себе: {{ user.profile.bio }}</p>
                 <p>Локация: {{ user.profile.location }}</p>
             {% else %}
-                <p>Профиль не заполнен. <a href="{% url 'edit_profile' %}">Заполнить профиль</a></p>
+                <p>Профиль не заполнен. <a href="{% url 'profile_update' %}">Заполнить профиль</a></p>
             {% endif %}
 
-            <form action="{% url 'logout' %}" method="post">
+            <form action="{% url 'index' %}" method="post">
                 {% csrf_token %}
                 <button type="submit" class="btn">Выйти</button>
             </form>

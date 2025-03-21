@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from .models import User
+from main_app.models import User,Field
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -17,10 +17,11 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     and saves the changes to the user's model.
     """
 
-    model: User = User 
-    fields: list[str] = ['first_name', 'email', 'age']  
+    model: User = User
+
+    fields: list[str] = ['first_name','last_name', 'bio', 'birth_date', 'location']
     template_name: str = 'editing.html'  
-    success_url: str = reverse_lazy('profile')  
+    success_url: str = 'profile'
 
     def get_object(self, queryset=None) -> User:
         """
@@ -30,7 +31,15 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
             User: object of the current user.
         """
         return self.request.user
+    def get_context_data(self, **kwargs) -> dict:
+        """
+        Adds additional data to the template context.
 
+        Returns:
+            dict: The context with the user's object and additional data.
+        """
+        context: dict = super().get_context_data(**kwargs)
+        return context
     def form_valid(self, form) -> bool:
         """
         Processes a valid form.
@@ -111,17 +120,32 @@ class ProfileView(LoginRequiredMixin, DetailView):
 
 class IndexView(DetailView):
     """View for displaying the index page."""
+    model: map = Field
     template_name: str = 'index.html'
+    context_object_name = 'user'
+    def get_object(self):
+        return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fields'] = self.model.objects.all()
+        return context
 
 
 class UserRegisterView(CreateView):
     """View for user registration."""
 
     model: User = User
+    fields = ['username','password','email']
     form_class: Any = None  # TODO: registration form
-    template_name: str = 'accounts/register.html'
-    success_url: str = reverse_lazy('login')
+    template_name: str = 'register.html'
+    success_url: str = 'login'
+    def get_object(self):
+        return self.request.user
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
     def form_valid(self, form: Any) -> HttpResponse:
         """Handle valid form submission and set a success message."""
         response: HttpResponse = super().form_valid(form)
@@ -129,7 +153,7 @@ class UserRegisterView(CreateView):
         return response
 
 
-class UserLoginView(LoginView):
+class UserLoginView(DetailView):
     """
     The view for user authorization.
 
@@ -139,8 +163,13 @@ class UserLoginView(LoginView):
 
     template_name: str = 'login.html'  
     redirect_authenticated_user: bool = True  
-    success_url: str = reverse_lazy('profile') 
+    success_url: str = '/profile123'
+    def get_object(self):
+        return self.request.user
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
     def form_valid(self, form) -> bool:
         """
         Processes a valid form.

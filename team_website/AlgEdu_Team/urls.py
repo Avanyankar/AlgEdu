@@ -16,16 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-import team_website.main_app.views as views
+import main_app.views as views
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('profile/', views.ProfileView.as_view() , name='profile'),
-    path('index/', views.IndexView.as_view() , name='index'),
+    path('', views.IndexView.as_view() , name='index'),
     path('profile_update/', views.ProfileUpdateView.as_view() , name='profile_update'),
-    path('registration/', views.RegistrationView.as_view() , name='registration'),
-    path('login/', views.LoginView.as_view() , name='login'),
-    path('cards/', views.CardsView.as_view() , name='cards'),
-    path('not_found/', views.NotFoundView.as_view() , name='not_found'),
+    path('registration/', views.UserRegisterView.as_view() , name='registration'),
+    path('login/', views.UserLoginView.as_view() , name='login'),
+
 ]

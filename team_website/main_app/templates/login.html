@@ -11,10 +11,10 @@
                     <button type="submit">Войти</button>
                 </form>
             {% else %}
-                <p>Вы уже авторизованы! Перейдите на <a href="{% url 'main:index' %}">главную страницу</a>.</p>
+                <p>Вы уже авторизованы! Перейдите на <a href="{% url 'index' %}">главную страницу</a>.</p>
             {% endif %}
             {% if not user.is_authenticated %}
-                <p>Нет аккаунта? <a href="{% url 'main:register' %}">Зарегистрироваться</a></p>
+                <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
             {% endif %}
       </div>
   </main>
