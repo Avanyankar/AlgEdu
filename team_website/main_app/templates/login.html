@@ -1,21 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <main>
-        <div>
-            <h2>Вход</h2>
-            {% if not user.is_authenticated %}
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit">Войти</button>
-                </form>
-            {% else %}
-                <p>Вы уже авторизованы! Перейдите на <a href="{% url 'index' %}">главную страницу</a>.</p>
-            {% endif %}
-            {% if not user.is_authenticated %}
-                <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
-            {% endif %}
+  <main>
+      <div>
+          <h2>Вход</h2>
+          {% if not user.is_authenticated %}
+              <form method="post" action="{% url 'login' %}">
+                  {% csrf_token %}
+                  {{ form.as_p }}
+                  <button type="submit">Войти</button>
+              </form>
+          {% else %}
+              <p>Вы уже авторизованы! Перейдите на <a href="{% url 'index' %}">главную страницу</a>.</p>
+          {% endif %}
+          {% if not user.is_authenticated %}
+              <p>Нет аккаунта? <a href="{% url 'registration' %}">Зарегистрироваться</a></p>
+          {% endif %}
       </div>
   </main>
 {% endblock %}

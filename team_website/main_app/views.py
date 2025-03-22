@@ -1,11 +1,13 @@
 from typing import Dict, Any
+from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import UpdateView, DetailView, CreateView, TemplateView
-
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User,Field
+from main_app.models import User, Field
+from django.urls import reverse_lazy
+from django.contrib.auth.forms import AuthenticationForm
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -17,29 +19,33 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
 
     model: User = User
-
-    fields: list[str] = ['first_name','last_name', 'bio', 'birth_date', 'location']
-    template_name: str = 'editing.html'  
+    fields: list[str] = ['first_name', 'last_name', 'bio', 'birth_date', 'location']
+    template_name: str = 'editing.html'
     success_url: str = 'profile'
 
     def get_object(self, queryset=None) -> User:
         """
         Returns the user object associated with the current request.
 
+        Args:
+            queryset: QuerySet from which you can select an object (not used in this case).
+
         Returns:
-            User: object of the current user.
+            User: The object of the current user.
         """
         return self.request.user
-    def get_context_data(self, **kwargs) -> dict:
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
         """
         Adds additional data to the template context.
 
         Returns:
-            dict: The context with the user's object and additional data.
+            Dict[str, Any]: The context with the user's object and additional data.
         """
-        context: dict = super().get_context_data(**kwargs)
+        context: Dict[str, Any] = super().get_context_data(**kwargs)
         return context
-    def form_valid(self, form) -> bool:
+
+    def form_valid(self, form) -> HttpResponse:
         """
         Processes a valid form.
 
@@ -47,7 +53,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
             form: The form with the data to update.
 
         Returns:
-            bool: The result of processing the form.
+            HttpResponse: The result of processing the form.
         """
         try:
             self.validate_data(form.cleaned_data)
@@ -55,16 +61,16 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
             form.add_error(None, e.message)
             return self.form_invalid(form)
 
-        response = super().form_valid(form)
+        response: HttpResponse = super().form_valid(form)
         messages.success(self.request, 'Профиль успешно обновлён!')
         return response
 
-    def validate_data(self, cleaned_data: dict) -> None: 
+    def validate_data(self, cleaned_data: Dict[str, Any]) -> None:
         """
         Checks the data for validity.
 
         Args:
-            cleaned_data (dict): Cleared data from the form.
+            cleaned_data (Dict[str, Any]): Cleared data from the form.
 
         Raises:
             ValidationError: If the data is not valid.
@@ -85,12 +91,12 @@ class ProfileView(LoginRequiredMixin, DetailView):
     """
     View for displaying user profile details.
 
-    Inherits from `DetailView' and uses the `User` model.
-    Available only to authorized users thanks to `LoginRequiredMixin'.
+    Inherits from `DetailView` and uses the `User` model.
+    Available only to authorized users thanks to `LoginRequiredMixin`.
     """
 
-    model: User = User  
-    template_name: str = 'profile.html' 
+    model: User = User
+    template_name: str = 'profile.html'
     context_object_name: str = 'user'
 
     def get_object(self, queryset=None) -> User:
@@ -105,99 +111,146 @@ class ProfileView(LoginRequiredMixin, DetailView):
         """
         return self.request.user
 
-    def get_context_data(self, **kwargs) -> dict:
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
         """
         Adds additional data to the template context.
 
         Returns:
-            dict: The context with the user's object and additional data.
+            Dict[str, Any]: The context with the user's object and additional data.
         """
-        context: dict = super().get_context_data(**kwargs)
+        context: Dict[str, Any] = super().get_context_data(**kwargs)
         context['is_profile_page'] = True
         return context
 
 
 class IndexView(DetailView):
-    """View for displaying the index page."""
-    model: map = Field
+    """
+    View for displaying the index page.
+    """
+
+    model: Field = Field
     template_name: str = 'index.html'
-    context_object_name = 'user'
-    def get_object(self):
+    context_object_name: str = 'user'
+
+    def get_object(self) -> User:
+        """
+        Returns the user object associated with the current request.
+
+        Returns:
+            User: The object of the current user.
+        """
         return self.request.user
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        """
+        Adds additional data to the template context.
+
+        Returns:
+            Dict[str, Any]: The context with the user's object and additional data.
+        """
+        context: Dict[str, Any] = super().get_context_data(**kwargs)
         context['fields'] = self.model.objects.all()
         return context
 
 
 class UserRegisterView(CreateView):
-    """View for user registration."""
+    """
+    View for user registration.
+
+    This view handles the registration process, including form validation,
+    password hashing, and redirection after successful registration.
+
+    Attributes:
+        model (User): The user model used for registration.
+        fields (list[str]): The fields to include in the registration form.
+        template_name (str): The path to the template used for rendering the registration page.
+        success_url (str): The URL to redirect to after a successful registration.
+    """
 
     model: User = User
-    fields = ['username','password','email']
-    form_class: Any = None  # TODO: registration form
+    fields: list[str] = ['username', 'password', 'email']
     template_name: str = 'register.html'
-    success_url: str = 'login'
-    def get_object(self):
-        return self.request.user
+    success_url: str = reverse_lazy('login')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
     def form_valid(self, form: Any) -> HttpResponse:
-        """Handle valid form submission and set a success message."""
-        response: HttpResponse = super().form_valid(form)
-        self.request.session['success_message'] = 'Регистрация успешна'
-        return response
-
-
-class UserLoginView(DetailView):
-    """
-    The view for user authorization.
-
-    Processes username and password, authenticates the user
-    and redirects to the specified page.
-    """
-
-    template_name: str = 'login.html'  
-    redirect_authenticated_user: bool = True  
-    success_url: str = '/profile123'
-    def get_object(self):
-        return self.request.user
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
-    def form_valid(self, form) -> bool:
         """
-        Processes a valid form.
+        Handle valid form submission, hash the password, and save the user.
 
         Args:
-            form: A form with authentication data.
+            form: The form with the registration data.
 
         Returns:
-            bool: The result of processing the form.
+            HttpResponse: The result of processing the form.
         """
-        response = super().form_valid(form)
+        user: User = form.save(commit=False)
+        user.set_password(form.cleaned_data['password'])
+        user.save()
+        messages.success(self.request, 'Регистрация успешна!')
+        return super().form_valid(form)
+
+
+
+class UserLoginView(LoginView):
+    """
+    View for user authorization.
+
+    This view handles the login process, including form validation,
+    authentication, and redirection after successful login.
+
+    Attributes:
+        template_name (str): The path to the template used for rendering the login page.
+        form_class (type[AuthenticationForm]): The form class used for authentication.
+        redirect_authenticated_user (bool): If True, authenticated users will be redirected
+                                            to the success URL.
+        success_url (str): The URL to redirect to after a successful login.
+    """
+
+    template_name: str = 'login.html'
+    form_class: type[AuthenticationForm] = AuthenticationForm
+    redirect_authenticated_user: bool = True
+    success_url: str = reverse_lazy('profile')
+
+    def form_valid(self, form: AuthenticationForm) -> HttpResponse:
+        """
+        Processes a valid form and logs in the user.
+
+        Args:
+            form (AuthenticationForm): The form containing validated authentication data.
+
+        Returns:
+            HttpResponse: The response after successful form processing.
+        """
+        response: HttpResponse = super().form_valid(form)
         messages.success(self.request, 'Вы успешно вошли в систему!')
         return response
 
-    def form_invalid(self, form) -> bool:
+    def form_invalid(self, form: AuthenticationForm) -> HttpResponse:
         """
-        Handles the invalid form.
+        Handles the case when the form is invalid.
 
         Args:
-            form: A form with authentication data.
+            form (AuthenticationForm): The form containing invalid authentication data.
 
         Returns:
-            bool: The result of processing the form.
+            HttpResponse: The response after handling the invalid form.
         """
         messages.error(self.request, 'Неверное имя пользователя или пароль.')
         return super().form_invalid(form)
-class NotFoundView(TemplateView):
-    template_name = '404.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+
+class NotFoundView(TemplateView):
+    """
+    View for displaying the 404 error page.
+    """
+
+    template_name: str = '404.html'
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        """
+        Adds additional data to the template context.
+
+        Returns:
+            Dict[str, Any]: The context with additional data.
+        """
+        context: Dict[str, Any] = super().get_context_data(**kwargs)
         return context
