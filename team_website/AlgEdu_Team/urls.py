@@ -27,4 +27,6 @@ urlpatterns = [
     path('registration/', views.UserRegisterView.as_view() , name='registration'),
     path('login/', views.UserLoginView.as_view() , name='login'),
 
+
 ]
+handler404 = views.NotFoundView.as_view()

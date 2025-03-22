@@ -1,8 +1,7 @@
 from typing import Dict, Any
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import UpdateView, DetailView, CreateView
-from django.contrib.auth.views import LoginView
-from django.urls import reverse_lazy
+from django.views.generic import UpdateView, DetailView, CreateView, TemplateView
+
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
@@ -196,3 +195,9 @@ class UserLoginView(DetailView):
         """
         messages.error(self.request, 'Неверное имя пользователя или пароль.')
         return super().form_invalid(form)
+class NotFoundView(TemplateView):
+    template_name = '404.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
