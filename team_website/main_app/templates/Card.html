@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}AlgEdu Team{% endblock %}
+
+{% block content %}
+    <main>
+        <h1></h1>
+        <ul>
+          <li>
+            <h2>Название: {{ field.title }}</h2>
+            <p>Описание: {{ field.description }}</p>
+            <p>Создано: {{ field.created_at }}</p>
+          </li>
+        </ul>
+    </main>
+{% endblock %}

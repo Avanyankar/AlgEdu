@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import UpdateView, DetailView, CreateView, TemplateView
+from django.views.generic import UpdateView, DetailView, CreateView, TemplateView, ListView
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
@@ -253,4 +253,13 @@ class NotFoundView(TemplateView):
             Dict[str, Any]: The context with additional data.
         """
         context: Dict[str, Any] = super().get_context_data(**kwargs)
+        return context
+class CardView(ListView):
+    model = Field
+    template_name = 'Card.html'
+    context_object_name = 'user'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fields'] = Field.objects.filter()
         return context
