@@ -3,14 +3,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-
-User = get_user_model()
+from main_app.models import User
 
 
 class RegistrationForm(UserCreationForm):
     """
-    Форма для регистрации новых пользователей.
-    Наследуется от UserCreationForm и добавляет email-поле с валидацией.
+    A form for registering new users.
+    Inherits from the UserCreationForm and adds an email field with validation.
     """
     email = forms.EmailField(
         label=_('Email'),
@@ -20,7 +19,7 @@ class RegistrationForm(UserCreationForm):
     password1 = forms.CharField(
         label=_('Пароль'),
         strip=False,
-        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}), 
         help_text=_('Пароль должен содержать минимум 8 символов.'),
     )
     password2 = forms.CharField(
