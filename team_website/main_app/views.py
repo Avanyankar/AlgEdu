@@ -8,6 +8,7 @@ from django.contrib import messages
 from main_app.models import User, Field
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
+from .forms import ProfileUpdateForm
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -19,9 +20,9 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
 
     model: User = User
-    fields: list[str] = ['first_name', 'last_name', 'bio', 'birth_date', 'location']
+    form_class = ProfileUpdateForm
     template_name: str = 'editing.html'
-    success_url: str = 'profile'
+    success_url: str = reverse_lazy('profile')
 
     def get_object(self, queryset=None) -> User:
         """
