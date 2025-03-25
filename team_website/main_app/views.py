@@ -176,7 +176,7 @@ class UserRegisterView(CreateView):
     success_url: str = reverse_lazy('login')
 
     def form_valid(self, form):
-        """Обработка валидной формы регистрации"""
+        """Processing a valid registration form"""
         user = form.save()
 
         user_registered.send(
