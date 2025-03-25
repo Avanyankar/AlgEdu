@@ -254,12 +254,56 @@ class NotFoundView(TemplateView):
         """
         context: Dict[str, Any] = super().get_context_data(**kwargs)
         return context
+
+
 class CardView(ListView):
-    model = Field
+    """
+    A borderline-retarded implementation of a ListView that pretends to be a DetailView.
+    Despite inheriting from ListView (which is meant for multiple objects),
+    this dumbass view only returns a single object filtered by PK.
+
+    Warning:
+        This is a fucking abomination because:
+        1. Using ListView for single object display is like using a chainsaw to butter bread
+        2. The queryset filtering by PK defeats the whole purpose of ListView
+        3. You'll confuse the shit out of any developer who sees this (including future you)
+
+    Typical usage:
+        Don't use this shit. Use DetailView instead unless you enjoy pain.
+
+    Attributes:
+        template_name (str): The template that will render this trainwreck (Card.html)
+        context_object_name (str): The dumb name you'll use in template to access ONE object (Field)
+
+    Methods:
+        get_queryset: Returns a "queryset" containing exactly one object (because fuck conventions)
+        get_context_data: Does absolutely nothing useful (classic)
+    """
+
     template_name = 'Card.html'
-    context_object_name = 'user'
+    context_object_name = 'Field'  # Capitalized like a proper noun because why the fuck not?
+
+    def get_queryset(self):
+        """
+        The most pointless ListView queryset in existence.
+        Filters for exactly one object, making this whole class completely fucking useless.
+
+        Returns:
+            QuerySet: A queryset containing either:
+                - One Field object (if PK exists)
+                - Fuck-all (if PK doesn't exist)
+        """
+        return Field.objects.filter(pk=self.kwargs['pk'])
 
     def get_context_data(self, **kwargs):
+        """
+        An empty shell of a method that exists solely to:
+        1. Pretend this class does something meaningful
+        2. Waste CPU cycles calling super() for no reason
+        3. Make junior developers question their career choices
+
+        Returns:
+            dict: The same context you'd get without this method. Groundbreaking.
+        """
         context = super().get_context_data(**kwargs)
-        context['fields'] = Field.objects.filter()
         return context
