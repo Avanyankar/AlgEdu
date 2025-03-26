@@ -5,10 +5,11 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field
+from main_app.models import User, Field, Post
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
-
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -254,3 +255,27 @@ class NotFoundView(TemplateView):
         """
         context: Dict[str, Any] = super().get_context_data(**kwargs)
         return context
+
+
+
+@login_required
+def like_post(request, post_id):
+    post = Post.objects.get(id=post_id)
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        liked = False
+    else:
+        post.likes.add(request.user)
+        liked = True
+    return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
+
+@login_required
+def favorite_post(request, post_id):
+    post = Post.objects.get(id=post_id)
+    if request.user in post.favorites.all():
+        post.favorites.remove(request.user)
+        favorited = False
+    else:
+        post.favorites.add(request.user)
+        favorited = True
+    return JsonResponse({'favorited': favorited})

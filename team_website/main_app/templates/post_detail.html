@@ -1,0 +1,55 @@
+<div id="post-{{ post.id }}">
+    <h2>{{ post.title }}</h2>
+    <p>{{ post.content }}</p>
+
+    <!-- Лайки -->
+    <button id="like-btn" data-post-id="{{ post.id }}">
+        {% if request.user in post.likes.all %}❤️{% else %}🤍{% endif %}
+        <span id="like-count">{{ post.likes.count }}</span>
+    </button>
+
+    <!-- Избранное -->
+    <button id="favorite-btn" data-post-id="{{ post.id }}">
+        {% if request.user in post.favorites.all %}⭐{% else %}✩{% endif %}
+    </button>
+</div>
+<script>
+    $.ajaxSetup({
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    });
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Лайки
+    $('#like-btn').click(function() {
+        const postId = $(this).data('post-id');
+        $.ajax({
+            url: `/like/${postId}/`,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                $('#like-btn').html(response.liked ? '❤️' : '🤍');
+                $('#like-count').text(response.total_likes);
+            }
+        });
+    });
+
+    // Избранное
+    $('#favorite-btn').click(function() {
+        const postId = $(this).data('post-id');
+        $.ajax({
+            url: `/favorite/${postId}/`,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                $('#favorite-btn').html(response.favorited ? '⭐' : '✩');
+            }
+        });
+    });
+</script>
