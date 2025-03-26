@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-
+from django.views.decorators.csrf import csrf_exempt
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
     View for editing the user's profile.
@@ -130,7 +130,7 @@ class IndexView(DetailView):
     """
 
     model: Field = Field
-    template_name: str = 'index.html'
+    template_name: str = 'post_detail.html'
     context_object_name: str = 'user'
 
     def get_object(self) -> User:
@@ -257,7 +257,7 @@ class NotFoundView(TemplateView):
         return context
 
 
-
+@csrf_exempt
 @login_required
 def like_post(request, post_id):
     post = Post.objects.get(id=post_id)
