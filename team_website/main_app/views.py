@@ -8,6 +8,9 @@ from django.contrib import messages
 from main_app.models import User, Field
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login
+from django_registration.signals import user_registered
+from .forms import RegistrationForm
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -168,25 +171,36 @@ class UserRegisterView(CreateView):
     """
 
     model: User = User
-    fields: list[str] = ['username', 'password', 'email']
+    form_class = RegistrationForm
     template_name: str = 'register.html'
     success_url: str = reverse_lazy('login')
 
-    def form_valid(self, form: Any) -> HttpResponse:
-        """
-        Handle valid form submission, hash the password, and save the user.
+    def form_valid(self, form):
+        """Processing a valid registration form"""
+        user = form.save()
 
-        Args:
-            form: The form with the registration data.
-
-        Returns:
-            HttpResponse: The result of processing the form.
-        """
-        user: User = form.save(commit=False)
-        user.set_password(form.cleaned_data['password'])
-        user.save()
-        messages.success(self.request, 'Регистрация успешна!')
+        user_registered.send(
+            sender=self.__class__,
+            user=user,
+            request=self.request
+        )
+        
+        login(self.request, user)
+        
+        messages.success(self.request, 'Регистрация успешно завершена!')
+        
         return super().form_valid(form)
+    
+    def register(self, form):
+        user = form.save()
+        
+        user_registered.send(
+            sender=self.__class__,
+            user=user,
+            request=self.request
+        )
+        
+        return user
 
 
 
