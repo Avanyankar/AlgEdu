@@ -281,7 +281,7 @@ class CardView(ListView):
     """
 
     template_name = 'card.html'
-    context_object_name = 'Field'  # Capitalized like a proper noun because why the fuck not?
+    context_object_name = 'Field'
 
     def get_queryset(self):
         """
