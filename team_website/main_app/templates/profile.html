@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Профиль{% endblock %}
 
@@ -6,28 +7,40 @@
     <main>
         <h1>Профиль</h1>
         {% if user.is_authenticated %}
-            <p>Имя пользователя: {{ user.username }}</p>
-            <p>Email: {{ user.email }}</p>
+            <div>
+                <div>
+                    <p>Имя пользователя: {{ user.username }}</p>
+                    <p>Email: {{ user.email }}</p>
 
-            {% if user.profile %}
-                <p>Дата рождения: {{ user.profile.birth_date|date:"d.m.Y" }}</p>
-                <p>Имя: {{ user.profile.first_name }}</p>
-                <p>Фамилия: {{ user.profile.last_name }}</p>
-                <p>Информация о себе: {{ user.profile.bio }}</p>
-                <p>Локация: {{ user.profile.location }}</p>
-            {% else %}
-                <p>Профиль не заполнен. <a href="{% url 'profile_update' %}">Заполнить профиль</a></p>
-            {% endif %}
+                    {% if user.first_name or user.last_name or user.birth_date or user.bio or user.location %}
+                        {% if user.first_name %}<p>Имя: {{ user.first_name }}</p>{% endif %}
+                        {% if user.last_name %}<p>Фамилия: {{ user.last_name }}</p>{% endif %}
+                        {% if user.birth_date %}<p>Дата рождения: {{ user.birth_date|date:"d.m.Y" }}</p>{% endif %}
+                        {% if user.bio %}<p>Информация о себе: {{ user.bio }}</p>{% endif %}
+                        {% if user.location %}<p>Локация: {{ user.location }}</p>{% endif %}
+                    {% else %}
+                        <p>Профиль не заполнен. <a href="{% url 'profile_update' %}">Заполнить профиль</a></p>
+                    {% endif %}
+                </div>
 
-            <form action="{% url 'index' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn">Выйти</button>
-            </form>
+                <div>
+                    <div>
+                        <button class="fields-nav-btn" data-type="my">Мои карты</button>
+                        <button class="fields-nav-btn" data-type="liked">Лайкнутые</button>
+                        <button class="fields-nav-btn" data-type="favorites">Избранные</button>
+                    </div>
+                    
+                    <div id="fields-container">
+                        <!-- For cards in future -->
+                    </div>
+                </div>
+            </div>
         {% else %}
             <p>
                 Чтобы просмотреть профиль, <a href="{% url 'login' %}">войдите в систему</a> или <a href="{% url 'register' %}">зарегистрируйтесь</a>.
             </p>
         {% endif %}
+        
+        <script src="{% static 'js/profile_fields.js' %}"></script>
     </main>
 {% endblock %}
-

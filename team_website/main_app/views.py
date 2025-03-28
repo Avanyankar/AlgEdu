@@ -11,6 +11,9 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
+from .models import Field, LikeField, FavoriteField
+
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
     View for editing the user's profile.
@@ -279,3 +282,26 @@ def favorite_post(request, post_id):
         post.favorites.add(request.user)
         favorited = True
     return JsonResponse({'favorited': favorited})
+
+@require_GET
+@login_required
+def get_user_fields(request):
+    field_type = request.GET.get('type', 'my')
+    user = request.user
+    
+    if field_type == 'my':
+        fields = Field.objects.filter(user=user)
+    elif field_type == 'liked':
+        fields = Field.objects.filter(likefield__user=user)
+    elif field_type == 'favorites':
+        fields = Field.objects.filter(favoritefield__user=user)
+    
+    serialized_fields = [{
+        'id': field.id,
+        'title': field.title,
+        'description': field.description[:100] + '...' if field.description else '',
+        # TODO: 'image_url': field.image.url if field.image else '/static/default_field.jpg',
+        'created_at': field.created_at.strftime("%d.%m.%Y")
+    } for field in fields]
+    
+    return JsonResponse({'fields': serialized_fields})
