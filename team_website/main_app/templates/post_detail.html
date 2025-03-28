@@ -1,76 +1,152 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ post.title }}</title>
+{% extends 'base.html' %}
 
-    <meta name="csrf-token" content="{{ csrf_token }}">
+{% block content %}
+<div class="field-container">
+    {% if field %}
+    <!-- Карта -->
+    <div id="field-map"
+         data-lat="{{ field.coordinates.lat|default:'55.7558' }}"
+         data-lng="{{ field.coordinates.lng|default:'37.6173' }}"
+         style="height: 400px; width: 100%;"></div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
-    <div id="post-{{ post.id }}">
-        <h2>{{ post.title }}</h2>
-        <p>{{ post.content }}</p>
-
-        <!-- Лайки -->
-        <button id="like-btn" data-post-id="{{ post.id }}">
-            {% if request.user in post.likes.all %}❤️{% else %}🤍{% endif %}
-            <span id="like-count">{{ post.likes.count }}</span>
+    <!-- Плашка с информацией -->
+    <div class="field-actions">
+        <button id="like-btn"
+                data-field-id="{{ field.id }}"
+                class="{% if is_liked %}liked{% endif %}">
+            ❤️ <span id="like-count">{{ likes_count|default:'0' }}</span>
         </button>
 
-        <!-- Избранное -->
-        <button id="favorite-btn" data-post-id="{{ post.id }}">
-            {% if request.user in post.favorites.all %}⭐{% else %}✩{% endif %}
+        <button id="favorite-btn"
+                data-field-id="{{ field.id }}"
+                class="{% if is_favorited %}favorited{% endif %}">
+            {% if is_favorited %}⭐{% else %}✩{% endif %}
         </button>
+
+        <h2>{{ field.title|default:'Тестовое поле' }}</h2>
+        <p>{{ field.description|default:'Описание отсутствует' }}</p>
     </div>
+    {% else %}
+    <div class="error-message">
+        <h3>Ошибка 404</h3>
+        <p>Запрошенное поле не найдено</p>
+        <p>Попробуйте:</p>
+        <ol>
+            <li>Проверить <a href="/admin/main_app/field/">список полей в админке</a></li>
+            <li><a href="/create-field/">Создать новое поле</a></li>
+            <li><a href="/">Вернуться на главную</a></li>
+        </ol>
+    </div>
+    {% endif %}
+</div>
 
-    <script>
-    $(document).ready(function() {
-        // Получаем CSRF-токен из meta-тега
-        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+<!-- Подключаем jQuery ПЕРВЫМ -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-        // Лайки
-        $('#like-btn').click(function(e) {
-            e.preventDefault();
-            const postId = $(this).data('post-id');
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
-            $.ajax({
-                url: `/like/1/`,
-                type: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                success: function(response) {
-                    $('#like-btn').html(response.liked ? '❤️' : '🤍');
-                    $('#like-count').text(response.total_likes);
-                },
-                error: function(xhr) {
-                    console.error('Ошибка:', xhr.status, xhr.responseText);
-                    alert('Ошибка лайка! Проверь консоль (F12)');
-                }
-            });
-        });
+<script>
+$(document).ready(function() {
+    // Инициализация карты (даже если нет field)
+    const defaultCoords = {
+        lat: parseFloat($('#field-map').data('lat')),
+        lng: parseFloat($('#field-map').data('lng'))
+    };
 
-        // Избранное
-        $('#favorite-btn').click(function(e) {
-            e.preventDefault();
-            const postId = $(this).data('post-id');
+    const map = L.map('field-map').setView(
+        [defaultCoords.lat, defaultCoords.lng],
+        15
+    );
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.marker([defaultCoords.lat, defaultCoords.lng]).addTo(map)
+        .bindPopup($('#field-map').data('title') || "Местоположение");
 
-            $.ajax({
-                url: `/favorite/1/`,
-                type: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                success: function(response) {
-                    $('#favorite-btn').html(response.favorited ? '⭐' : '✩');
-                },
-                error: function(xhr) {
-                    console.error('Ошибка:', xhr.status, xhr.responseText);
-                }
-            });
+    // CSRF токен
+    const csrftoken = $('[name=csrfmiddlewaretoken]').val() || '{{ csrf_token }}';
+
+    // Обработчики только если есть field
+    {% if field %}
+    $('#like-btn').click(function() {
+        const fieldId = $(this).data('field-id');
+        if (!fieldId) return;
+
+        $.ajax({
+            url: `/fields/${field.id}/like/`,
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            success: (res) => {
+                $(this).toggleClass('liked', res.liked);
+                $('#like-count').text(res.likes_count || 0);
+            },
+            error: (xhr) => {
+                console.error('Like Error:', xhr.responseText);
+                alert('Ошибка при лайке: ' + xhr.statusText);
+            }
         });
     });
-    </script>
-</body>
-</html>
+
+    $('#favorite-btn').click(function() {
+        const fieldId = $(this).data('field-id');
+        if (!fieldId) return;
+
+        $.ajax({
+            url: `/fields/${field.id}/favorite/`,
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            success: (res) => {
+                $(this).toggleClass('favorited', res.is_favorited)
+                       .html(res.is_favorited ? '⭐' : '✩');
+            },
+            error: (xhr) => {
+                console.error('Favorite Error:', xhr.responseText);
+            }
+        });
+    });
+    {% endif %}
+});
+</script>
+
+<style>
+.field-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 15px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+#like-btn.liked { color: red; }
+#favorite-btn.favorited { color: gold; }
+
+.error-message {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+.error-message h3 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+}
+.error-message ol {
+    text-align: left;
+    margin: 1rem auto;
+    max-width: 300px;
+}
+.error-message a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+.error-message a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

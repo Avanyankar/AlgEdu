@@ -26,8 +26,9 @@ urlpatterns = [
     path('profile_update/', views.ProfileUpdateView.as_view() , name='profile_update'),
     path('registration/', views.UserRegisterView.as_view() , name='registration'),
     path('login/', views.UserLoginView.as_view() , name='login'),
-    path('like/<int:post_id>/', views.like_post, name='like_post'),
-    path('favorite/<int:post_id>/', views.favorite_post, name='favorite_post'),
+    path('fields/<int:pk>/like/', views.like_field, name='like-field'),
+    path('fields/<int:pk>/favorite/', views.favorite_field, name='favorite-field'),
+    path('field/<int:pk>/', views.FieldView.as_view(), name='field-detail'),
 ]
 
 handler404 = views.NotFoundView.as_view()

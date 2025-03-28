@@ -11,6 +11,9 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from django.db.models import Count
+
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
     View for editing the user's profile.
@@ -130,7 +133,7 @@ class IndexView(DetailView):
     """
 
     model: Field = Field
-    template_name: str = 'post_detail.html'
+    template_name: str = 'index.html'
     context_object_name: str = 'user'
 
     def get_object(self) -> User:
@@ -257,25 +260,54 @@ class NotFoundView(TemplateView):
         return context
 
 
+class FieldView(DetailView):
+    """
+    View for displaying a single field with interactive likes/favorites
+    """
+    model = Field
+    template_name = 'post_detail.html'
+    context_object_name = 'field'
+
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        field = self.get_object()
+
+        # Аннотируем количество лайков
+        field = Field.objects.annotate(
+            likes_count=Count('likes')
+        ).get(pk=field.pk)
+
+        context.update({
+            'is_liked': self.request.user in field.likes.all(),
+            'is_favorited': self.request.user in field.favorites.all(),
+            'likes_count': field.likes_count,
+            'map_data': {
+                'coordinates': field.coordinates,
+                'title': field.title
+            }
+        })
+
+
 @csrf_exempt
 @login_required
-def like_post(request, post_id):
-    post = Post.objects.get(id=post_id)
-    if request.user in post.likes.all():
-        post.likes.remove(request.user)
-        liked = False
+def like_field(request, pk):
+    field = get_object_or_404(Field, pk=pk)
+    if request.user in field.likes.all():
+        field.likes.remove(request.user)
     else:
-        post.likes.add(request.user)
-        liked = True
-    return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
+        field.likes.add(request.user)
+    return JsonResponse({
+        'likes_count': field.likes.count(),
+        'is_liked': request.user in field.likes.all()
+    })
 
 @login_required
-def favorite_post(request, post_id):
-    post = Post.objects.get(id=post_id)
-    if request.user in post.favorites.all():
-        post.favorites.remove(request.user)
-        favorited = False
+def favorite_field(request, pk):
+    field = get_object_or_404(Field, pk=pk)
+    if request.user in field.favorites.all():
+        field.favorites.remove(request.user)
     else:
-        post.favorites.add(request.user)
-        favorited = True
-    return JsonResponse({'favorited': favorited})
+        field.favorites.add(request.user)
+    return JsonResponse({
+        'is_favorited': request.user in field.favorites.all()
+    })

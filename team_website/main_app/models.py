@@ -13,7 +13,24 @@ class Field(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    likes = models.ManyToManyField(
+        User,
+        related_name='liked_fields',
+        blank=True
+    )
 
+    # Избранное (ManyToMany)
+    favorites = models.ManyToManyField(
+        User,
+        related_name='favorite_fields',
+        blank=True
+    )
+    coordinates = models.JSONField(  # Простое хранение координат
+        null=True,
+        blank=True,
+        default=dict,
+        help_text="Координаты в формате {'lat': 55.7558, 'lng': 37.6173}"
+    )
     def __str__(self):
         return self.title
 
