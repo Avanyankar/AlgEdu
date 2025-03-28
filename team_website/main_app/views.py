@@ -272,7 +272,7 @@ class CardView(ListView):
         Don't use this shit. Use DetailView instead unless you enjoy pain.
 
     Attributes:
-        template_name (str): The template that will render this trainwreck (Card.html)
+        template_name (str): The template that will render this trainwreck (card.html)
         context_object_name (str): The dumb name you'll use in template to access ONE object (Field)
 
     Methods:
@@ -280,7 +280,7 @@ class CardView(ListView):
         get_context_data: Does absolutely nothing useful (classic)
     """
 
-    template_name = 'Card.html'
+    template_name = 'card.html'
     context_object_name = 'Field'  # Capitalized like a proper noun because why the fuck not?
 
     def get_queryset(self):
