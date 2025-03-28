@@ -35,6 +35,15 @@ class Field(models.Model):
         return self.title
 
 
+class Card(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    likes = models.ManyToManyField(User, related_name='liked_cards', blank=True)
+    favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
+
+    def __str__(self):
+        return self.title
+
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     field = models.ForeignKey(Field, on_delete=models.CASCADE)

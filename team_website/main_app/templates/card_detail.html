@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ card.title }}</title>
+    <style>
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .like-btn, .favorite-btn {
+            cursor: pointer;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            background: #f0f0f0;
+        }
+        .like-btn.liked {
+            background: #ffcccc;
+        }
+        .favorite-btn.favorited {
+            background: #ffffcc;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>{{ card.title }}</h1>
+        <p>{{ card.description }}</p>
+        
+        <div class="actions">
+            <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}" 
+                    data-card-id="{{ card.id }}">
+                ❤️ Like (<span id="likes-count">{{ card.likes.count }}</span>)
+            </button>
+            
+            <button id="favorite-btn" class="favorite-btn {% if is_favorited %}favorited{% endif %}" 
+                    data-card-id="{{ card.id }}">
+                ⭐ Favorite
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const likeBtn = document.getElementById('like-btn');
+            const favoriteBtn = document.getElementById('favorite-btn');
+            
+            if (likeBtn) {
+                likeBtn.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card-id');
+                    toggleLike(cardId);
+                });
+            }
+            
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card-id');
+                    toggleFavorite(cardId);
+                });
+            }
+            
+            function toggleLike(cardId) {
+                fetch(`/cards/${cardId}/toggle-like/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_liked !== undefined) {
+                        likeBtn.classList.toggle('liked', data.is_liked);
+                        document.getElementById('likes-count').textContent = data.likes_count;
+                    } else {
+                        window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                    }
+                });
+            }
+            
+            function toggleFavorite(cardId) {
+                fetch(`/cards/${cardId}/toggle-favorite/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_favorited !== undefined) {
+                        favoriteBtn.classList.toggle('favorited', data.is_favorited);
+                    } else {
+                        window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                    }
+                });
+            }
+            
+            // Функция для получения CSRF токена
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
+    </script>
+</body>
+</html>
