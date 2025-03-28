@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django_registration.signals import user_registered
-from .forms import RegistrationForm
+from .forms import RegistrationForm, ProfileUpdateForm
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -22,9 +22,9 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
 
     model: User = User
-    fields: list[str] = ['first_name', 'last_name', 'bio', 'birth_date', 'location']
+    form_class = ProfileUpdateForm
     template_name: str = 'editing.html'
-    success_url: str = 'profile'
+    success_url: str = reverse_lazy('profile')
 
     def get_object(self, queryset=None) -> User:
         """
