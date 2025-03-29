@@ -5,13 +5,17 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field
+from main_app.models import User, Field, Post, LikeField, FavoriteField
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django_registration.signals import user_registered
 from .forms import RegistrationForm, ProfileUpdateForm
-
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
+from .models import Field, LikeField, FavoriteField
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -132,7 +136,7 @@ class IndexView(DetailView):
     """
 
     model: Field = Field
-    template_name: str = 'index.html'
+    template_name: str = 'post_detail.html'
     context_object_name: str = 'user'
 
     def get_object(self) -> User:
@@ -321,3 +325,51 @@ class CardView(ListView):
         """
         context = super().get_context_data(**kwargs)
         return context
+
+
+@csrf_exempt
+@login_required
+def like_post(request, post_id):
+    post = Post.objects.get(id=post_id)
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        liked = False
+    else:
+        post.likes.add(request.user)
+        liked = True
+    return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
+
+
+@login_required
+def favorite_post(request, post_id):
+    post = Post.objects.get(id=post_id)
+    if request.user in post.favorites.all():
+        post.favorites.remove(request.user)
+        favorited = False
+    else:
+        post.favorites.add(request.user)
+        favorited = True
+    return JsonResponse({'favorited': favorited})
+
+@require_GET
+@login_required
+def get_user_fields(request):
+    field_type = request.GET.get('type', 'my')
+    user = request.user
+    
+    if field_type == 'my':
+        fields = Field.objects.filter(user=user)
+    elif field_type == 'liked':
+        fields = Field.objects.filter(likefield__user=user)
+    elif field_type == 'favorites':
+        fields = Field.objects.filter(favoritefield__user=user)
+    
+    serialized_fields = [{
+        'id': field.id,
+        'title': field.title,
+        'description': field.description[:100] + '...' if field.description else '',
+        # TODO: 'image_url': field.image.url if field.image else '/static/default_field.jpg',
+        'created_at': field.created_at.strftime("%d.%m.%Y")
+    } for field in fields]
+    
+    return JsonResponse({'fields': serialized_fields})
