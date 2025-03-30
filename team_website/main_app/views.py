@@ -5,7 +5,11 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
+<<<<<<< HEAD
 from main_app.models import User, Field, Post, LikeField, FavoriteField
+=======
+from main_app.models import User, Field
+>>>>>>> WLikes&Favorite
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
@@ -14,8 +18,13 @@ from .forms import RegistrationForm, ProfileUpdateForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+<<<<<<< HEAD
 from django.views.decorators.http import require_GET
 from .models import Field, LikeField, FavoriteField
+=======
+from django.shortcuts import get_object_or_404
+from django.db.models import Count
+>>>>>>> WLikes&Favorite
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -136,7 +145,7 @@ class IndexView(DetailView):
     """
 
     model: Field = Field
-    template_name: str = 'post_detail.html'
+    template_name: str = 'index.html'
     context_object_name: str = 'user'
 
     def get_object(self) -> User:
@@ -274,6 +283,7 @@ class NotFoundView(TemplateView):
         return context
 
 
+<<<<<<< HEAD
 class CardView(ListView):
     """
     A borderline-retarded implementation of a ListView that pretends to be a DetailView.
@@ -340,13 +350,29 @@ def like_post(request, post_id):
     return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
 
 
+=======
+class FieldDetailView(DetailView):
+    model = Field
+    template_name = 'card_detail.html'
+    context_object_name = 'field'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        field = self.get_object()
+        context['is_liked'] = field.likes.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
+        context['is_favorited'] = field.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
+        return context
+from django.views.decorators.http import require_POST
+@require_POST
+>>>>>>> WLikes&Favorite
 @login_required
-def favorite_post(request, post_id):
-    post = Post.objects.get(id=post_id)
-    if request.user in post.favorites.all():
-        post.favorites.remove(request.user)
-        favorited = False
+def toggle_like(request, pk):
+    field = Field.objects.get(pk=pk)
+    if field.likes.filter(id=request.user.id).exists():
+        field.likes.remove(request.user)
+        is_liked = False
     else:
+<<<<<<< HEAD
         post.favorites.add(request.user)
         favorited = True
     return JsonResponse({'favorited': favorited})
@@ -373,3 +399,20 @@ def get_user_fields(request):
     } for field in fields]
     
     return JsonResponse({'fields': serialized_fields})
+=======
+        field.likes.add(request.user)
+        is_liked = True
+    return JsonResponse({'is_liked': is_liked, 'likes_count': field.likes.count()})
+
+@require_POST
+@login_required
+def toggle_favorite(request, pk):
+    field = Field.objects.get(pk=pk)
+    if field.favorites.filter(id=request.user.id).exists():
+        field.favorites.remove(request.user)
+        is_favorited = False
+    else:
+        field.favorites.add(request.user)
+        is_favorited = True
+    return JsonResponse({'is_favorited': is_favorited})
+>>>>>>> WLikes&Favorite
