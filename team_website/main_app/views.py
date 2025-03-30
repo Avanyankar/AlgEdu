@@ -5,7 +5,7 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Card
+from main_app.models import User, Field
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
@@ -260,38 +260,38 @@ class NotFoundView(TemplateView):
         return context
 
 
-class CardDetailView(DetailView):
-    model = Card
+class FieldDetailView(DetailView):
+    model = Field
     template_name = 'card_detail.html'
-    context_object_name = 'card'
+    context_object_name = 'field'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        card = self.get_object()
-        context['is_liked'] = card.likes.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
-        context['is_favorited'] = card.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
+        field = self.get_object()
+        context['is_liked'] = field.likes.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
+        context['is_favorited'] = field.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
         return context
 from django.views.decorators.http import require_POST
 @require_POST
 @login_required
 def toggle_like(request, pk):
-    card = Card.objects.get(pk=pk)
-    if card.likes.filter(id=request.user.id).exists():
-        card.likes.remove(request.user)
+    field = Field.objects.get(pk=pk)
+    if field.likes.filter(id=request.user.id).exists():
+        field.likes.remove(request.user)
         is_liked = False
     else:
-        card.likes.add(request.user)
+        field.likes.add(request.user)
         is_liked = True
-    return JsonResponse({'is_liked': is_liked, 'likes_count': card.likes.count()})
+    return JsonResponse({'is_liked': is_liked, 'likes_count': field.likes.count()})
 
 @require_POST
 @login_required
 def toggle_favorite(request, pk):
-    card = Card.objects.get(pk=pk)
-    if card.favorites.filter(id=request.user.id).exists():
-        card.favorites.remove(request.user)
+    field = Field.objects.get(pk=pk)
+    if field.favorites.filter(id=request.user.id).exists():
+        field.favorites.remove(request.user)
         is_favorited = False
     else:
-        card.favorites.add(request.user)
+        field.favorites.add(request.user)
         is_favorited = True
     return JsonResponse({'is_favorited': is_favorited})

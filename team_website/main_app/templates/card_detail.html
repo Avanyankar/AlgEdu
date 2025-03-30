@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ card.title }}</title>
+    <title>{{ field.title }}</title>
     <style>
         .card {
             border: 1px solid #ddd;
@@ -35,17 +35,17 @@
 </head>
 <body>
     <div class="card">
-        <h1>{{ card.title }}</h1>
-        <p>{{ card.description }}</p>
-        
+        <h1>{{ field.title }}</h1>
+        <p>{{ field.description }}</p>
+
         <div class="actions">
-            <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}" 
-                    data-card-id="{{ card.id }}">
-                ❤️ Like (<span id="likes-count">{{ card.likes.count }}</span>)
+            <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}"
+                    data-field-id="{{ field.id }}">
+                ❤️ Like (<span id="likes-count">{{ field.likes.count }}</span>)
             </button>
-            
-            <button id="favorite-btn" class="favorite-btn {% if is_favorited %}favorited{% endif %}" 
-                    data-card-id="{{ card.id }}">
+
+            <button id="favorite-btn" class="favorite-btn {% if is_favorited %}favorited{% endif %}"
+                    data-field-id="{{ field.id }}">
                 ⭐ Favorite
             </button>
         </div>
@@ -55,23 +55,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             const likeBtn = document.getElementById('like-btn');
             const favoriteBtn = document.getElementById('favorite-btn');
-            
+
             if (likeBtn) {
                 likeBtn.addEventListener('click', function() {
-                    const cardId = this.getAttribute('data-card-id');
-                    toggleLike(cardId);
+                    const fieldId = this.getAttribute('data-field-id');
+                    toggleLike(fieldId);
                 });
             }
-            
+
             if (favoriteBtn) {
                 favoriteBtn.addEventListener('click', function() {
-                    const cardId = this.getAttribute('data-card-id');
-                    toggleFavorite(cardId);
+                    const fieldId = this.getAttribute('data-field-id');
+                    toggleFavorite(fieldId);
                 });
             }
-            
-            function toggleLike(cardId) {
-                fetch(`/cards/${cardId}/toggle-like/`, {
+
+            function toggleLike(fieldId) {
+                fetch(`/cards/${fieldId}/toggle-like/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': getCookie('csrftoken'),
@@ -89,9 +89,9 @@
                     }
                 });
             }
-            
-            function toggleFavorite(cardId) {
-                fetch(`/cards/${cardId}/toggle-favorite/`, {
+
+            function toggleFavorite(fieldId) {
+                fetch(`/cards/${fieldId}/toggle-favorite/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': getCookie('csrftoken'),
