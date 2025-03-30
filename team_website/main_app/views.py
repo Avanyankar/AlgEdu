@@ -16,8 +16,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
+from .models import Field
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -301,6 +302,7 @@ def toggle_like(request, pk):
         is_liked = True
     return JsonResponse({'is_liked': is_liked, 'likes_count': field.likes.count()})
 
+
 @require_POST
 @login_required
 def toggle_favorite(request, pk):
@@ -312,3 +314,21 @@ def toggle_favorite(request, pk):
         field.favorites.add(request.user)
         is_favorited = True
     return JsonResponse({'is_favorited': is_favorited})
+
+def search_fields(request):
+    query = request.GET.get('q', '').strip()
+    
+    if not query:
+        return JsonResponse({'results': []})
+    
+    fields = Field.objects.filter(
+        Q(title__icontains=query) | 
+        Q(description__icontains=query)
+    ).values('id', 'title', 'description', 'created_at')
+    
+    results = []
+    for field in fields:
+        field['created_at'] = field['created_at'].strftime('%d.%m.%Y')
+        results.append(field)
+    
+    return JsonResponse({'results': results})

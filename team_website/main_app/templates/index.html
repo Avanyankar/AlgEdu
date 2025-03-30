@@ -1,20 +1,31 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}AlgEdu Team{% endblock %}
 
 {% block content %}
     <main>
         <h1>Список полей</h1>
-        <ul>
-            {% for field in fields %}
-                <li> 
-                    <h2>{{ field.title }}</h2>
-                    <p>{{ field.description }}</p>
-                    <p>Создано: {{ field.created_at }}</p>
-                </li>
-            {% empty %}
-                <p>Поля не найдены.</p>
-            {% endfor %}
-        </ul>
+        
+        <div>
+            <input type="text" id="search-input" placeholder="Поиск карт...">
+            <button id="search-button">Найти</button>
+        </div>
+        
+        <div id="search-results">
+            <ul id="fields-list">
+                {% for field in fields %}
+                    <li>
+                        <h2>{{ field.title }}</h2>
+                        <p>{{ field.description }}</p>
+                        <p>Создано: {{ field.created_at }}</p>
+                    </li>
+                {% empty %}
+                    <p>Поля не найдены.</p>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <script src="{% static 'js/search.js' %}"></script>
     </main>
-{% endblock %}  
+{% endblock %}
