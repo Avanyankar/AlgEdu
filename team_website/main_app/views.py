@@ -5,11 +5,7 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-<<<<<<< HEAD
 from main_app.models import User, Field, Post, LikeField, FavoriteField
-=======
-from main_app.models import User, Field
->>>>>>> WLikes&Favorite
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
@@ -18,13 +14,10 @@ from .forms import RegistrationForm, ProfileUpdateForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-<<<<<<< HEAD
 from django.views.decorators.http import require_GET
-from .models import Field, LikeField, FavoriteField
-=======
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
->>>>>>> WLikes&Favorite
+from django.views.decorators.http import require_POST
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -283,74 +276,6 @@ class NotFoundView(TemplateView):
         return context
 
 
-<<<<<<< HEAD
-class CardView(ListView):
-    """
-    A borderline-retarded implementation of a ListView that pretends to be a DetailView.
-    Despite inheriting from ListView (which is meant for multiple objects),
-    this dumbass view only returns a single object filtered by PK.
-
-    Warning:
-        This is a fucking abomination because:
-        1. Using ListView for single object display is like using a chainsaw to butter bread
-        2. The queryset filtering by PK defeats the whole purpose of ListView
-        3. You'll confuse the shit out of any developer who sees this (including future you)
-
-    Typical usage:
-        Don't use this shit. Use DetailView instead unless you enjoy pain.
-
-    Attributes:
-        template_name (str): The template that will render this trainwreck (card.html)
-        context_object_name (str): The dumb name you'll use in template to access ONE object (Field)
-
-    Methods:
-        get_queryset: Returns a "queryset" containing exactly one object (because fuck conventions)
-        get_context_data: Does absolutely nothing useful (classic)
-    """
-
-    template_name = 'card.html'
-    context_object_name = 'Field'
-
-    def get_queryset(self):
-        """
-        The most pointless ListView queryset in existence.
-        Filters for exactly one object, making this whole class completely fucking useless.
-
-        Returns:
-            QuerySet: A queryset containing either:
-                - One Field object (if PK exists)
-                - Fuck-all (if PK doesn't exist)
-        """
-        return Field.objects.filter(pk=self.kwargs['pk'])
-
-    def get_context_data(self, **kwargs):
-        """
-        An empty shell of a method that exists solely to:
-        1. Pretend this class does something meaningful
-        2. Waste CPU cycles calling super() for no reason
-        3. Make junior developers question their career choices
-
-        Returns:
-            dict: The same context you'd get without this method. Groundbreaking.
-        """
-        context = super().get_context_data(**kwargs)
-        return context
-
-
-@csrf_exempt
-@login_required
-def like_post(request, post_id):
-    post = Post.objects.get(id=post_id)
-    if request.user in post.likes.all():
-        post.likes.remove(request.user)
-        liked = False
-    else:
-        post.likes.add(request.user)
-        liked = True
-    return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
-
-
-=======
 class FieldDetailView(DetailView):
     model = Field
     template_name = 'card_detail.html'
@@ -362,9 +287,9 @@ class FieldDetailView(DetailView):
         context['is_liked'] = field.likes.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
         context['is_favorited'] = field.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
         return context
-from django.views.decorators.http import require_POST
+
+
 @require_POST
->>>>>>> WLikes&Favorite
 @login_required
 def toggle_like(request, pk):
     field = Field.objects.get(pk=pk)
@@ -372,34 +297,6 @@ def toggle_like(request, pk):
         field.likes.remove(request.user)
         is_liked = False
     else:
-<<<<<<< HEAD
-        post.favorites.add(request.user)
-        favorited = True
-    return JsonResponse({'favorited': favorited})
-
-@require_GET
-@login_required
-def get_user_fields(request):
-    field_type = request.GET.get('type', 'my')
-    user = request.user
-    
-    if field_type == 'my':
-        fields = Field.objects.filter(user=user)
-    elif field_type == 'liked':
-        fields = Field.objects.filter(likefield__user=user)
-    elif field_type == 'favorites':
-        fields = Field.objects.filter(favoritefield__user=user)
-    
-    serialized_fields = [{
-        'id': field.id,
-        'title': field.title,
-        'description': field.description[:100] + '...' if field.description else '',
-        # TODO: 'image_url': field.image.url if field.image else '/static/default_field.jpg',
-        'created_at': field.created_at.strftime("%d.%m.%Y")
-    } for field in fields]
-    
-    return JsonResponse({'fields': serialized_fields})
-=======
         field.likes.add(request.user)
         is_liked = True
     return JsonResponse({'is_liked': is_liked, 'likes_count': field.likes.count()})
@@ -415,4 +312,3 @@ def toggle_favorite(request, pk):
         field.favorites.add(request.user)
         is_favorited = True
     return JsonResponse({'is_favorited': is_favorited})
->>>>>>> WLikes&Favorite
