@@ -1,82 +1,65 @@
 document.addEventListener('DOMContentLoaded', function() {
-    function activateButton(button) {
-        document.querySelectorAll('.fields-nav-btn').forEach(btn => {
-            btn.style.background = '#f0f0f0';
-            btn.style.color = '#000';
-        });
-        
-        button.style.background = '#4CAF50';
-        button.style.color = 'white';
-    }
-
     function loadFields(fieldType) {
-        const container = document.getElementById('fields-container');
-        container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Загрузка...</p>';
+        var container = document.getElementById('fields-container');
+        container.innerHTML = '<p>Загрузка...</p>';
         
-        fetch(`/api/profile/fields/?type=${fieldType}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Ошибка загрузки');
-                return response.json();
-            })
-            .then(data => {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/profile/fields/?type=' + fieldType, true);
+        
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                var data = JSON.parse(xhr.responseText);
                 renderFields(data.fields);
-            })
-            .catch(error => {
-                container.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: red;">${error.message}</p>`;
-                console.error('Ошибка:', error);
-            });
+            } else {
+                container.innerHTML = '<p>Ошибка загрузки</p>';
+                console.error('Ошибка:', xhr.statusText);
+            }
+        };
+        
+        xhr.onerror = function() {
+            container.innerHTML = '<p>Ошибка сети</p>';
+            console.error('Ошибка сети');
+        };
+        
+        xhr.send();
     }
 
     function renderFields(fields) {
-        const container = document.getElementById('fields-container');
+        var container = document.getElementById('fields-container');
         container.innerHTML = '';
         
         if (fields.length === 0) {
-            container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Нет карт для отображения</p>';
+            container.innerHTML = '<p>Нет карт для отображения</p>';
             return;
         }
         
-        fields.forEach(field => {
-            const fieldElement = document.createElement('div');
-            fieldElement.style.border = '1px solid #ddd';
-            fieldElement.style.borderRadius = '5px';
-            fieldElement.style.padding = '10px';
-            fieldElement.style.cursor = 'pointer';
-            fieldElement.style.transition = 'box-shadow 0.3s';
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            var fieldElement = document.createElement('div');
             
-            fieldElement.onmouseover = () => {
-                fieldElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-            };
+            fieldElement.innerHTML = 
+                '<h3>' + field.title + '</h3>' +
+                '<p>' + (field.description || 'Нет описания') + '</p>' +
+                '<small>Создано: ' + field.created_at + '</small>';
             
-            fieldElement.onmouseout = () => {
-                fieldElement.style.boxShadow = 'none';
-            };
-            
-            fieldElement.onclick = () => {
-                window.location.href = `/fields/${field.id}/`;
-            };
-            
-            fieldElement.innerHTML = `
-                <h3 style="margin-top: 0; margin-bottom: 10px;">${field.title}</h3>
-                <p style="margin: 0; color: #555; font-size: 0.9em;">${field.description || 'Нет описания'}</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.8em; color: #888;">
-                    Создано: ${field.created_at}
-                </p>
-            `;
+            fieldElement.onclick = function(id) {
+                return function() {
+                    window.location.href = '/fields/' + id + '/';
+                };
+            }(field.id);
             
             container.appendChild(fieldElement);
+        }
+    }
+
+    var buttons = document.querySelectorAll('.fields-nav-btn');
+    for (var i = 0; i < buttons.length; i++) {
+        buttons[i].addEventListener('click', function() {
+            loadFields(this.getAttribute('data-type'));
         });
     }
 
-    const buttons = document.querySelectorAll('.fields-nav-btn');
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            activateButton(this);
-            loadFields(this.dataset.type);
-        });
-    });
-
     if (buttons.length > 0) {
-        buttons[0].click();
+        loadFields('my');
     }
 });
