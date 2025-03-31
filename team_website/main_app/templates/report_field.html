@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Жалоба на поле{% endblock %}
+
+{% block content %}
+    <main>
+        <h1>Жалоба на поле: {{ field.title }}</h1>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div>
+                <label>{{ form.reason.label }}</label>
+                {{ form.reason }}
+                {{ form.reason.errors }}
+            </div>
+            
+            <div>
+                <label>{{ form.description.label }}</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+            
+            <button type="submit">Отправить жалобу</button>
+            <a href="{{ field.get_absolute_url }}">Отмена</a>
+        </form>
+    </main>
+{% endblock %}

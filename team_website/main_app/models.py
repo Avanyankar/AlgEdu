@@ -80,15 +80,24 @@ class ReportComment(models.Model):
         return f"Report by {self.user.username} on comment {self.comment.id}"
 
 
-class ReportField(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class FieldReport(models.Model):
+    REASON_CHOICES = [
+        ('spam', 'Спам'),
+        ('abuse', 'Оскорбительное содержание'),
+        ('illegal', 'Незаконный контент'),
+        ('other', 'Другое'),
+    ]
+
     field = models.ForeignKey(Field, on_delete=models.CASCADE)
-    reason = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_resolved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Report by {self.user.username} on field {self.field.title}"
+        return f"Жалоба на {self.field.title} ({self.get_reason_display()})"
+
 
 
 class Post(models.Model):

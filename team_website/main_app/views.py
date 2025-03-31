@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django_registration.signals import user_registered
-from .forms import RegistrationForm, ProfileUpdateForm
+from .forms import RegistrationForm, ProfileUpdateForm, FieldReportForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +18,7 @@ from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
-from .models import Field
+from .models import Field, FieldReport
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -288,6 +288,91 @@ class FieldDetailView(DetailView):
         context['is_liked'] = field.likes.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
         context['is_favorited'] = field.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
         return context
+
+
+class ReportFieldView(LoginRequiredMixin, CreateView):
+    """
+    View for reporting inappropriate field content.
+    
+    Processes the report reason and description,
+    validates them and creates a new FieldReport instance.
+    """
+    
+    model: FieldReport = FieldReport
+    form_class = FieldReportForm
+    template_name: str = 'report_field.html'
+    
+    def get_success_url(self) -> str:
+        """
+        Returns the URL to redirect to after successful report.
+        
+        Returns:
+            str: URL of the reported field.
+        """
+        return reverse_lazy('field_detail', kwargs={'pk': self.kwargs['field_id']})
+    
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:
+        """
+        Adds the field object to the template context.
+        
+        Returns:
+            Dict[str, Any]: Context with field and form.
+        """
+        context: Dict[str, Any] = super().get_context_data(**kwargs)
+        context['field'] = get_object_or_404(Field, id=self.kwargs['field_id'])
+        return context
+    
+    def form_valid(self, form) -> HttpResponse:
+        """
+        Processes a valid form and creates a report.
+        
+        Args:
+            form: The filled report form.
+            
+        Returns:
+            HttpResponse: Redirect to success URL.
+        """
+        try:
+            self.validate_report(form.cleaned_data)
+        except ValidationError as e:
+            form.add_error(None, e.message)
+            return self.form_invalid(form)
+        
+        report = form.save(commit=False)
+        report.field = get_object_or_404(Field, id=self.kwargs['field_id'])
+        report.user = self.request.user
+        report.save()
+        
+        messages.success(self.request, 'Жалоба успешно отправлена!')
+        return super().form_valid(form)
+    
+    def validate_report(self, cleaned_data: Dict[str, Any]) -> None:
+        """
+        Validates the report data.
+        
+        Args:
+            cleaned_data: Dictionary with cleaned form data.
+            
+        Raises:
+            ValidationError: If data is invalid.
+        """
+        reason = cleaned_data.get('reason')
+        description = cleaned_data.get('description')
+        
+        if not reason:
+            raise ValidationError('Укажите причину жалобы.')
+        
+        if reason == 'other' and not description:
+            raise ValidationError('Для причины "Другое" необходимо описание.')
+        
+        existing_report = FieldReport.objects.filter(
+            field_id=self.kwargs['field_id'],
+            user=self.request.user,
+            is_resolved=False
+        ).exists()
+        
+        if existing_report:
+            raise ValidationError('Вы уже отправляли жалобу на это поле.')
 
 
 @require_POST
