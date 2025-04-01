@@ -309,7 +309,7 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         Returns:
             str: URL of the reported field.
         """
-        return reverse_lazy('field_detail', kwargs={'pk': self.kwargs['field_id']})
+        return reverse_lazy('card-detail', kwargs={'pk': self.kwargs['field_id']})
     
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         """
