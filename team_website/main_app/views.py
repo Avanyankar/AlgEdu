@@ -309,7 +309,7 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         Returns:
             str: URL of the reported field.
         """
-        return reverse_lazy('card-detail', kwargs={'pk': self.kwargs['field_id']})
+        return reverse_lazy('index')
     
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         """
@@ -319,7 +319,15 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
             Dict[str, Any]: Context with field and form.
         """
         context: Dict[str, Any] = super().get_context_data(**kwargs)
-        context['field'] = get_object_or_404(Field, id=self.kwargs['field_id'])
+        field = get_object_or_404(Field, id=self.kwargs['field_id'])
+        context['field'] = field
+        
+        context['existing_report'] = FieldReport.objects.filter(
+            field_id=field.id,
+            user=self.request.user,
+            is_resolved=False
+        ).first()
+        
         return context
     
     def form_valid(self, form) -> HttpResponse:

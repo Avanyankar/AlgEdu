@@ -1,28 +1,40 @@
 {% extends 'base.html' %}
 
-{% block title %}Жалоба на поле{% endblock %}
+{% block title %}Жалоба на карту{% endblock %}
 
 {% block content %}
     <main>
-        <h1>Жалоба на поле: {{ field.title }}</h1>
+        <h1>Жалоба на карту: {{ field.title }}</h1>
         
-        <form method="post">
-            {% csrf_token %}
-            
-            <div>
-                <label>{{ form.reason.label }}</label>
-                {{ form.reason }}
-                {{ form.reason.errors }}
+        {% if existing_report %}
+            <div class="alert alert-info">
+                Вы уже отправили жалобу на эту карту {{ existing_report.created_at|date:"d.m.Y H:i" }}.<br>
+                Причина: {{ existing_report.get_reason_display }}<br>
+                {% if existing_report.description %}
+                    Ваш комментарий: {{ existing_report.description }}
+                {% endif %}
             </div>
-            
-            <div>
-                <label>{{ form.description.label }}</label>
-                {{ form.description }}
-                {{ form.description.errors }}
-            </div>
-            
-            <button type="submit">Отправить жалобу</button>
-            <a href="{{ field.get_absolute_url }}">Отмена</a>
-        </form>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                
+                <div>
+                    <label>{{ form.reason.label }}</label>
+                    {{ form.reason }}
+                    {{ form.reason.errors }}
+                </div>
+                
+                <div>
+                    <label>{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
+                
+                <div>
+                    <button type="submit" class="btn">Отправить жалобу</button>
+                    <a href="{% url 'index' %}" class="btn">Отмена</a>
+                </div>
+            </form>
+        {% endif %}
     </main>
 {% endblock %}
