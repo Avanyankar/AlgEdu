@@ -30,6 +30,7 @@ urlpatterns = [
     path('cards/<int:pk>/toggle-like/', views.toggle_like, name='toggle-like'),
     path('cards/<int:pk>/toggle-favorite/', views.toggle_favorite, name='toggle-favorite'),
     path('api/search/', views.search_fields, name='search_api'),
+    path('cards/<int:pk>/add-comment/', views.add_comment, name='add_comment'),
 ]
 
 handler404 = views.NotFoundView.as_view()

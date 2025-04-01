@@ -5,7 +5,7 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Post, LikeField, FavoriteField
+from main_app.models import User, Field, Comment, Post, LikeField, FavoriteField
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
@@ -15,10 +15,10 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
-from .models import Field
+import json
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -332,3 +332,76 @@ def search_fields(request):
         results.append(field)
     
     return JsonResponse({'results': results})
+
+
+@require_POST
+@login_required
+def toggle_like(request, field_id):
+    field = Field.objects.get(id=field_id)
+    if request.user in field.likes.all():
+        field.likes.remove(request.user)
+        is_liked = False
+    else:
+        field.likes.add(request.user)
+        is_liked = True
+    return JsonResponse({
+        'is_liked': is_liked,
+        'likes_count': field.likes.count()
+    })
+
+
+@require_POST
+@login_required
+def toggle_favorite(request, field_id):
+    field = Field.objects.get(id=field_id)
+    if request.user in field.favorites.all():
+        field.favorites.remove(request.user)
+        is_favorited = False
+    else:
+        field.favorites.add(request.user)
+        is_favorited = True
+    return JsonResponse({
+        'is_favorited': is_favorited
+    })
+
+
+@require_POST
+@login_required
+def add_comment(request, pk):
+    try:
+        data = json.loads(request.body)
+        text = data.get('text', '').strip()
+
+        if not text:
+            return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
+
+        field = Field.objects.get(id=pk)
+        comment = Comment.objects.create(
+            field=field,
+            author=request.user,
+            text=text
+        )
+
+        return JsonResponse({
+            'success': True,
+            'author': comment.author.username,
+            'text': comment.text,
+            'created_at': comment.created_at.strftime("%Y-%m-%d %H:%M")
+        })
+
+    except Field.DoesNotExist:
+        return JsonResponse({'error': 'Field not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def field_detail(request, pk):
+    field = Field.objects.get(id=pk)
+    is_liked = request.user.is_authenticated and request.user in field.likes.all()
+    is_favorited = request.user.is_authenticated and request.user in field.favorites.all()
+
+    return render(request, 'your_app/field_detail.html', {
+        'field': field,
+        'is_liked': is_liked,
+        'is_favorited': is_favorited
+    })
