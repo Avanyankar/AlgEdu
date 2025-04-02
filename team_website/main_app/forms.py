@@ -3,9 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from main_app.models import User
-from .models import FieldReport
-
+from main_app.models import User, Comment, FieldReport
 
 class RegistrationForm(UserCreationForm):
     """
@@ -97,12 +95,3 @@ class ProfileUpdateForm(forms.ModelForm):
         if birth_date and birth_date.year < 1900:
             raise ValidationError(_('Некорректная дата рождения'))
         return birth_date
-
-
-class FieldReportForm(forms.ModelForm):
-    class Meta:
-        model = FieldReport
-        fields = ['reason', 'description']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-        }

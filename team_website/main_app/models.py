@@ -20,17 +20,17 @@ class Field(models.Model):
         return self.title
 
 
-
-
 class Comment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Comment by {self.user.username} on {self.field.title}"
+        return f'Comment by {self.author.username} on {self.field.title}'
 
 
 class LikeField(models.Model):
