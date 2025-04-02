@@ -429,8 +429,8 @@ def search_fields(request):
 
 @require_POST
 @login_required
-def toggle_like(request, field_id):
-    field = Field.objects.get(id=field_id)
+def toggle_like(request, pk):
+    field = Field.objects.get(id=pk)
     if request.user in field.likes.all():
         field.likes.remove(request.user)
         is_liked = False
@@ -445,8 +445,8 @@ def toggle_like(request, field_id):
 
 @require_POST
 @login_required
-def toggle_favorite(request, field_id):
-    field = Field.objects.get(id=field_id)
+def toggle_favorite(request, pk):
+    field = Field.objects.get(id=pk)
     if request.user in field.favorites.all():
         field.favorites.remove(request.user)
         is_favorited = False
