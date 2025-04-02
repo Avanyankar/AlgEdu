@@ -95,3 +95,12 @@ class ProfileUpdateForm(forms.ModelForm):
         if birth_date and birth_date.year < 1900:
             raise ValidationError(_('Некорректная дата рождения'))
         return birth_date
+    
+
+class FieldReportForm(forms.ModelForm):
+    class Meta:
+        model = FieldReport
+        fields = ['reason', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+        }
