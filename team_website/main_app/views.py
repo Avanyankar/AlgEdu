@@ -405,3 +405,40 @@ def field_detail(request, pk):
         'is_liked': is_liked,
         'is_favorited': is_favorited
     })
+
+
+@require_POST
+@login_required
+def toggle_comment_like(request, pk):
+    try:
+        comment = Comment.objects.get(id=pk)
+        if request.user in comment.likes.all():
+            comment.likes.remove(request.user)
+            is_liked = False
+        else:
+            comment.likes.add(request.user)
+            is_liked = True
+
+        return JsonResponse({
+            'success': True,
+            'is_liked': is_liked,
+            'likes_count': comment.likes.count()
+        })
+    except Comment.DoesNotExist:
+        return JsonResponse({'error': 'Комментарий не найден'}, status=404)
+
+
+@require_POST
+@login_required
+def report_comment(request, pk):
+    try:
+        comment = Comment.objects.get(id=pk)
+        if request.user not in comment.reports.all():
+            comment.reports.add(request.user)
+
+        return JsonResponse({
+            'success': True,
+            'reports_count': comment.reports.count()
+        })
+    except Comment.DoesNotExist:
+        return JsonResponse({'error': 'Комментарий не найден'}, status=404)

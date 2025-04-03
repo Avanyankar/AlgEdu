@@ -25,12 +25,20 @@ class Comment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(User, related_name='liked_comments', blank=True)
+    reports = models.ManyToManyField(User, related_name='reported_comments', blank=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f'Comment by {self.author.username} on {self.field.title}'
+        return f'Комментарий от {self.author.username} к {self.field.title}'
+
+    def likes_count(self):
+        return self.likes.count()
+
+    def reports_count(self):
+        return self.reports.count()
 
 
 class LikeField(models.Model):
