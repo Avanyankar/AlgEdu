@@ -15,6 +15,11 @@ class Field(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(User, related_name='liked_cards', blank=True)
     favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
+    is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
+
+    class Meta:
+        verbose_name = "Карта"
+        verbose_name_plural = "Карты"
 
     def __str__(self):
         return self.title
@@ -25,9 +30,12 @@ class Comment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
 
     class Meta:
         ordering = ['-created_at']
+        verbose_name = "Комментарий"
+        verbose_name_plural = "Комментарии"
 
     def __str__(self):
         return f'Comment by {self.author.username} on {self.field.title}'
@@ -88,6 +96,13 @@ class FieldReport(models.Model):
         ('other', 'Другое'),
     ]
 
+    STATUS_CHOICES = [
+        ('pending', 'На рассмотрении'),
+        ('approved', 'Жалоба одобрена'),
+        ('rejected', 'Жалоба отклонена'),
+    ]
+    
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     field = models.ForeignKey(Field, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)

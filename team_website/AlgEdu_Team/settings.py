@@ -132,3 +132,5 @@ AUTH_USER_MODEL = 'main_app.User'
 LOGIN_URL = 'login'
 
 LOGIN_REDIRECT_URL = 'profile'
+
+ADMIN_URL = 'moderation-panel'

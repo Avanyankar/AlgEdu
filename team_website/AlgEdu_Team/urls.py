@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/search/', views.search_fields, name='search_api'),
     path('cards/<int:field_id>/report/', ReportFieldView.as_view(), name='report_field'),
     path('cards/<int:pk>/add-comment/', views.add_comment, name='add_comment'),
+    
 ]
 
 handler404 = views.NotFoundView.as_view()

@@ -2,7 +2,7 @@ from typing import Dict, Any
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import UpdateView, DetailView, CreateView, TemplateView, ListView
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.core.exceptions import ValidationError
 from django.contrib import messages
 from main_app.models import User, Field, Comment, Post, LikeField, FavoriteField, Field, FieldReport
@@ -15,9 +15,11 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
+from django.contrib.admin.views.decorators import staff_member_required
+
 import json
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -498,3 +500,29 @@ def field_detail(request, pk):
         'is_liked': is_liked,
         'is_favorited': is_favorited
     })
+
+
+@staff_member_required
+def moderation_panel(request):
+    reports = FieldReport.objects.filter(status='pending').select_related('field', 'user')
+    return render(request, 'admin/moderation_panel.html', {
+        'reports': reports
+    })
+
+@staff_member_required
+def block_content(request, content_type, content_id):
+    content_models = {
+        'field': Field,
+        'comment': Comment,
+        'user': request.user.__class__  
+    }
+    
+    if content_type not in content_models:
+        raise Http404("Тип контента не поддерживается")
+    
+    model = content_models[content_type]
+    item = get_object_or_404(model, pk=content_id)
+    item.is_blocked = True
+    item.save()
+    messages.success(request, f'{content_type.capitalize()} успешно заблокирован')
+    return redirect(reverse_lazy('hidden-admin-panel'))
