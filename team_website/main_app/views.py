@@ -5,7 +5,7 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Comment, Post, LikeField, FavoriteField
+from main_app.models import User, Field, Comment, Wall, Cell
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
@@ -285,10 +285,28 @@ class FieldDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         field = self.get_object()
-        context['is_liked'] = field.likes.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
-        context['is_favorited'] = field.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
+
+        # Создаем клетки, если их еще нет
+        if not field.cells.exists():
+            self.create_cells(field)
+
+        context.update({
+            'is_liked': field.likes.filter(
+                id=self.request.user.id).exists() if self.request.user.is_authenticated else False,
+            'is_favorited': field.favorites.filter(
+                id=self.request.user.id).exists() if self.request.user.is_authenticated else False,
+            'cols': field.cols,
+            'rows': field.rows,
+        })
         return context
 
+    def create_cells(self, field):
+        """Создает клетки для поля при первом обращении"""
+        cells = []
+        for x in range(field.cols):
+            for y in range(field.rows):
+                cells.append(Cell(field=field, x=x, y=y))
+        Cell.objects.bulk_create(cells)
 
 @require_POST
 @login_required
@@ -442,3 +460,79 @@ def report_comment(request, pk):
         })
     except Comment.DoesNotExist:
         return JsonResponse({'error': 'Комментарий не найден'}, status=404)
+
+
+@require_POST
+@login_required
+def add_wall(request):
+    """Добавление новой стены"""
+    try:
+        data = json.loads(request.body)
+        field_id = data.get('field_id')
+        x = int(data.get('x'))
+        y = int(data.get('y'))
+        width = int(data.get('width', 1))
+        height = int(data.get('height', 1))
+
+        field = Field.objects.get(id=field_id)
+
+        # Проверка, что стена не выходит за границы
+        if x + width > field.cols or y + height > field.rows:
+            return JsonResponse({'error': 'Wall exceeds field boundaries'}, status=400)
+
+        wall = Wall.objects.create(
+            field=field,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            created_by=request.user
+        )
+
+        return JsonResponse({
+            'success': True,
+            'wall': {
+                'id': wall.id,
+                'x': wall.x,
+                'y': wall.y,
+                'width': wall.width,
+                'height': wall.height
+            }
+        })
+
+    except Field.DoesNotExist:
+        return JsonResponse({'error': 'Field not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@require_POST
+@login_required
+def remove_wall(request, pk):
+    """Удаление стены"""
+    try:
+        wall = Wall.objects.get(id=pk)
+        if wall.created_by != request.user and not request.user.is_staff:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+        wall.delete()
+        return JsonResponse({'success': True})
+
+    except Wall.DoesNotExist:
+        return JsonResponse({'error': 'Wall not found'}, status=404)
+
+
+def get_field_state(request, pk):
+    """Получение текущего состояния поля"""
+    try:
+        field = Field.objects.get(id=pk)
+        walls = Wall.objects.filter(field=field).values('id', 'x', 'y', 'width', 'height')
+
+        return JsonResponse({
+            'cols': field.cols,
+            'rows': field.rows,
+            'walls': list(walls)
+        })
+
+    except Field.DoesNotExist:
+        return JsonResponse({'error': 'Field not found'}, status=404)

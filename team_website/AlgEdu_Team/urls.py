@@ -33,6 +33,22 @@ urlpatterns = [
     path('cards/<int:pk>/add-comment/', views.add_comment, name='add_comment'),
     path('comments/<int:pk>/toggle-like/', views.toggle_comment_like, name='toggle_comment_like'),
     path('comments/<int:pk>/report/', views.report_comment, name='report_comment'),
+    path('field/<int:pk>/', views.FieldDetailView.as_view(), name='field_detail'),
+
+    # API для взаимодействия
+    path('api/field/<int:pk>/toggle-like/', views.toggle_like, name='toggle_like'),
+    path('api/field/<int:pk>/toggle-favorite/', views.toggle_favorite, name='toggle_favorite'),
+    path('api/field/<int:pk>/add-comment/', views.add_comment, name='add_comment'),
+    path('api/comment/<int:pk>/toggle-like/', views.toggle_comment_like, name='toggle_comment_like'),
+    path('api/comment/<int:pk>/report/', views.report_comment, name='report_comment'),
+
+    # API для игрового поля
+    path('api/field/<int:pk>/state/', views.get_field_state, name='field_state'),
+    path('api/walls/add/', views.add_wall, name='add_wall'),
+    path('api/walls/<int:pk>/remove/', views.remove_wall, name='remove_wall'),
+
+    # Поиск
+    path('api/search/', views.search_fields, name='search_fields'),
 ]
 
 handler404 = views.NotFoundView.as_view()

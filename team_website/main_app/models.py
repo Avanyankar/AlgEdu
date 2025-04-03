@@ -15,10 +15,34 @@ class Field(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(User, related_name='liked_cards', blank=True)
     favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
+    cols = models.IntegerField(default=10)  # Количество колонок
+    rows = models.IntegerField(default=10)  # Количество строк
 
     def __str__(self):
         return self.title
 
+class Cell(models.Model):
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='cells')
+    x = models.IntegerField()  # X координата
+    y = models.IntegerField()  # Y координата
+    is_blocked = models.BooleanField(default=False)  # Заблокирована ли клетка
+
+    class Meta:
+        unique_together = ('field', 'x', 'y')
+
+    def __str__(self):
+        return f"Cell ({self.x}, {self.y}) in {self.field.title}"
+
+class Wall(models.Model):
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='walls')
+    x = models.IntegerField()  # Начальная X координата
+    y = models.IntegerField()  # Начальная Y координата
+    width = models.IntegerField(default=1)  # Ширина стены (в клетках)
+    height = models.IntegerField(default=1)  # Высота стены (в клетках)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Wall at ({self.x}, {self.y}) in {self.field.title}"
 
 class Comment(models.Model):
     field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='comments')
