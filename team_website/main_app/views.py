@@ -541,18 +541,18 @@ import random
 
 
 def spinning_image_view(request):
-    phrases = ["Goida", "1488", "OGbolshieyayca", "tarZan pidor"]
+    phrases = ["Goida", "1488", "OGbolshieyayca", "tarZan pidor", "Ave Python", "meow"]
 
     # Создаем 20 фраз со случайными параметрами
     phrase_data = []
-    for _ in range(20):
+    for _ in range(30):
         phrase_data.append({
             'text': random.choice(phrases),
             'x': random.randint(5, 95),
             'y': random.randint(5, 95),
             'size': random.randint(16, 32),
             'color': f"rgb({random.randint(0, 255)}, {random.randint(0, 255)}, {random.randint(0, 255)})",
-            'speed': random.uniform(0.5, 2)
+            'speed': random.uniform(0.01, 1)
         })
 
     context = {
@@ -560,4 +560,10 @@ def spinning_image_view(request):
         'image_url': 'meow.jpg'  # Ваше изображение
     }
     return render(request, 'spinning_image.html', context)
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+
+def custom_logout(request):
+    logout(request)
+    return redirect('login')
 
