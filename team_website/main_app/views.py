@@ -222,7 +222,7 @@ class UserLoginView(LoginView):
         form_class (type[AuthenticationForm]): The form class used for authentication.
         redirect_authenticated_user (bool): If True, authenticated users will be redirected
                                             to the success URL.
-        success_url (str): The URL to redirect to after a successful login.
+        success_url (str): The URL to redirect to after a successful loginsddssd.
     """
 
     template_name: str = 'login.html'
