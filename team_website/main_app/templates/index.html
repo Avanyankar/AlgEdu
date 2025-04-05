@@ -16,7 +16,11 @@
             <ul id="fields-list">
                 {% for field in fields %}
                     <li>
-                        <h2>{{ field.title }}</h2>
+                        <h2>
+                            <a href="{% url 'card-detail' field.id %}" class="field-link">
+                                {{ field.title }}
+                            </a>
+                        </h2>
                         <p>{{ field.description }}</p>
                         <p>Создано: {{ field.created_at }}</p>
                     </li>

@@ -138,9 +138,9 @@ class IndexView(DetailView):
     View for displaying the index page.
     """
 
-    model: Field = Field
-    template_name: str = 'index.html'
-    context_object_name: str = 'user'
+    model = Field
+    template_name = 'index.html'
+    context_object_name = 'user'
 
     def get_object(self) -> User:
         """
@@ -158,10 +158,9 @@ class IndexView(DetailView):
         Returns:
             Dict[str, Any]: The context with the user's object and additional data.
         """
-        context: Dict[str, Any] = super().get_context_data(**kwargs)
-        context['fields'] = self.model.objects.all()
+        context = super().get_context_data(**kwargs)
+        context['fields'] = Field.objects.all()
         return context
-
 
 class UserRegisterView(CreateView):
     """
@@ -536,3 +535,28 @@ def get_field_state(request, pk):
 
     except Field.DoesNotExist:
         return JsonResponse({'error': 'Field not found'}, status=404)
+
+
+import random
+
+
+def spinning_image_view(request):
+    phrases = ["Goida", "1488", "OGbolshieyayca", "tarZan pidor"]
+
+    # Создаем 20 фраз со случайными параметрами
+    phrase_data = []
+    for _ in range(20):
+        phrase_data.append({
+            'text': random.choice(phrases),
+            'x': random.randint(5, 95),
+            'y': random.randint(5, 95),
+            'size': random.randint(16, 32),
+            'color': f"rgb({random.randint(0, 255)}, {random.randint(0, 255)}, {random.randint(0, 255)})",
+            'speed': random.uniform(0.5, 2)
+        })
+
+    context = {
+        'phrases': phrase_data,
+        'image_url': 'meow.jpg'  # Ваше изображение
+    }
+    return render(request, 'spinning_image.html', context)

@@ -1,139 +1,51 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ field.title }}</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }
-
         .card {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            border-radius: 8px;
             padding: 20px;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .field-description {
-            color: #666;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-        }
-
         .actions {
             display: flex;
             gap: 15px;
-            margin: 15px 0;
+            margin-top: 15px;
         }
-
         .like-btn, .favorite-btn {
             cursor: pointer;
-            padding: 8px 15px;
+            padding: 5px 10px;
             border: none;
             border-radius: 4px;
             background: #f0f0f0;
         }
-
         .like-btn.liked {
             background: #ffcccc;
         }
-
         .favorite-btn.favorited {
             background: #ffffcc;
         }
-
-        /* Стили для игрового поля */
-        .game-field-container {
-            margin: 20px 0;
-            position: relative;
-            width: 500px;
-            height: 500px;
-            margin: 0 auto;
-            border: 2px solid #333;
-            background-color: white;
-        }
-
-        .grid-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
-            gap: 1px;
-        }
-
-        .cell {
-            background-color: black;
-        }
-
-        .walls-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .wall {
-            position: absolute;
-            background-color: red;
-            z-index: 10;
-        }
-
-        .borders-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .border {
-            position: absolute;
-            background-color: yellow;
-            z-index: 5;
-        }
-
-        /* Стили для комментариев */
         .comments-section {
             margin-top: 30px;
             border-top: 1px solid #eee;
             padding-top: 20px;
         }
-
         .comment-form {
             margin-bottom: 20px;
         }
-
         .comment-input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             margin-bottom: 10px;
-            min-height: 80px;
         }
-
         .submit-comment {
             padding: 8px 15px;
             background: #4CAF50;
@@ -142,57 +54,41 @@
             border-radius: 4px;
             cursor: pointer;
         }
-
         .comments-list {
             margin-top: 20px;
         }
-
         .comment {
-            padding: 15px;
+            padding: 10px;
             border-bottom: 1px solid #eee;
-            margin-bottom: 15px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
+            margin-bottom: 10px;
         }
-
         .comment-author {
             font-weight: bold;
             margin-bottom: 5px;
-            color: #333;
         }
-
         .comment-text {
             margin-bottom: 5px;
-            color: #444;
         }
-
         .comment-date {
             font-size: 0.8em;
             color: #777;
         }
-
         .comment-actions {
             margin-top: 10px;
             display: flex;
             gap: 10px;
         }
-
         .comment-like-btn, .comment-report-btn {
-            padding: 5px 10px;
+            padding: 3px 8px;
             border: none;
             border-radius: 4px;
+            background: #f0f0f0;
             cursor: pointer;
             font-size: 0.9em;
         }
-
-        .comment-like-btn {
-            background: #e0e0e0;
-        }
-
         .comment-like-btn.liked {
             background: #ccffcc;
         }
-
         .comment-report-btn {
             background: #ffe6e6;
         }
@@ -201,10 +97,7 @@
 <body>
     <div class="card">
         <h1>{{ field.title }}</h1>
-
-        <div class="field-description">
-            {{ field.description }}
-        </div>
+        <p>{{ field.description }}</p>
 
         <div class="actions">
             <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}"
@@ -216,20 +109,6 @@
                     data-field-id="{{ field.id }}">
                 ⭐ Favorite
             </button>
-        </div>
-
-        <!-- Игровое поле -->
-        <div class="game-field-container">
-            <div class="grid-layer">
-                {% for i in "0123456789" %}
-                    {% for j in "0123456789" %}
-                        <div class="cell" data-x="{{ i }}" data-y="{{ j }}"></div>
-                    {% endfor %}
-                {% endfor %}
-            </div>
-
-            <div class="borders-layer" id="borders-layer"></div>
-            <div class="walls-layer" id="walls-layer"></div>
         </div>
 
         <!-- Секция комментариев -->
@@ -268,51 +147,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Константы для игрового поля
-            const cellSize = 50; // Размер клетки в пикселях
-            const cols = 10;
-            const rows = 10;
-
-            // Инициализация границ между клетками
-            function initBorders() {
-                const bordersLayer = document.getElementById('borders-layer');
-
-                // Вертикальные границы
-                for (let x = 0; x < cols; x++) {
-                    for (let y = 0; y < rows - 1; y++) {
-                        const border = document.createElement('div');
-                        border.className = 'border';
-                        border.style.width = '2px';
-                        border.style.height = `${cellSize}px`;
-                        border.style.left = `${x * cellSize - 1}px`;
-                        border.style.top = `${y * cellSize}px`;
-                        bordersLayer.appendChild(border);
-                    }
-                }
-
-                // Горизонтальные границы
-                for (let y = 0; y < rows; y++) {
-                    for (let x = 0; x < cols - 1; x++) {
-                        const border = document.createElement('div');
-                        border.className = 'border';
-                        border.style.width = `${cellSize}px`;
-                        border.style.height = '2px';
-                        border.style.left = `${x * cellSize}px`;
-                        border.style.top = `${y * cellSize - 1}px`;
-                        bordersLayer.appendChild(border);
-                    }
-                }
-            }
-
-            initBorders();
-
-            // Обработчики для карточки
             const likeBtn = document.getElementById('like-btn');
             const favoriteBtn = document.getElementById('favorite-btn');
             const submitCommentBtn = document.getElementById('submit-comment');
             const commentText = document.getElementById('comment-text');
             const commentsList = document.getElementById('comments-list');
 
+            // Обработчики для карточки
             if (likeBtn) {
                 likeBtn.addEventListener('click', function() {
                     const fieldId = this.getAttribute('data-field-id');
