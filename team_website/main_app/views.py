@@ -560,3 +560,6 @@ def spinning_image_view(request):
         'image_url': 'meow.jpg'  # Ваше изображение
     }
     return render(request, 'spinning_image.html', context)
+
+def help():
+    pass
