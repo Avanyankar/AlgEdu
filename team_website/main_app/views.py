@@ -561,5 +561,3 @@ def spinning_image_view(request):
     }
     return render(request, 'spinning_image.html', context)
 
-def help():
-    pass
