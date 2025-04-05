@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\lexer.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_win32.cpp" />
@@ -29,6 +30,7 @@
     <ClCompile Include="vendor\imgui-docking\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\lexer.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_dx12.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_win32.h" />
     <ClInclude Include="vendor\imgui-docking\imconfig.h" />
