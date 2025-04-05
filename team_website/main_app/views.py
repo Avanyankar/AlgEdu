@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import UpdateView, DetailView, CreateView, TemplateView, ListView
+from django.views.generic import View, UpdateView, DetailView, CreateView, TemplateView, ListView
 from django.http import HttpResponse, Http404
 from django.core.exceptions import ValidationError
 from django.contrib import messages
@@ -19,8 +19,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+
 
 import json
+
+
+class FieldListView(ListView):
+    model = Field
+    template_name = 'fields/list.html'
+    context_object_name = 'fields'
+
+    def get_queryset(self):
+        return Field.objects.filter(is_blocked=False).order_by('-created_at')
+
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -291,6 +303,12 @@ class FieldDetailView(DetailView):
         context['is_favorited'] = field.favorites.filter(id=self.request.user.id).exists() if self.request.user.is_authenticated else False
         return context
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if obj.is_blocked:
+            raise Http404("Карта заблокирована и недоступна для просмотра")
+        return obj
+
 
 class ReportFieldView(LoginRequiredMixin, CreateView):
     """
@@ -429,6 +447,103 @@ def search_fields(request):
     return JsonResponse({'results': results})
 
 
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    login_url = reverse_lazy('login')
+    raise_exception = True
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+
+class ModerationPanelView(StaffRequiredMixin, TemplateView):
+    template_name = 'moderation/panel.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['field_reports'] = FieldReport.objects.filter(
+            is_resolved=False
+        ).select_related('field', 'user')
+
+
+        context['blocked_fields'] = Field.objects.filter(
+            is_blocked=True
+        ).order_by('-updated_at')[:10]
+
+        context['blocked_comments'] = Comment.objects.filter(
+            is_blocked=True
+        ).order_by('-created_at')[:10]
+
+        return context
+
+
+class ResolveCommentReportView(StaffRequiredMixin, View):
+
+    def get(self, request, report_id):
+        report = get_object_or_404(ReportComment, id=report_id)
+        return render(request, 'moderation/resolve_comment.html', {
+            'report': report,
+        })
+
+    def post(self, request, report_id):
+        report = get_object_or_404(ReportComment, id=report_id)
+        action = request.POST.get('action')
+
+        if action == 'block':
+            report.comment.block()
+            report.status = 'approved'
+            messages.success(request, 'Комментарий заблокирован')
+        elif action == 'ignore':
+            report.status = 'rejected'
+            messages.info(request, 'Жалоба отклонена')
+
+        report.is_resolved = True
+        report.save()
+        return redirect('moderation_panel')
+
+class ResolveFieldReportView(StaffRequiredMixin, View):
+
+    def get(self, request, report_id):
+        report = get_object_or_404(FieldReport, id=report_id)
+        return render(request, 'moderation/resolve_field.html', {
+            'report': report,
+        })
+
+    def post(self, request, report_id):
+        report = get_object_or_404(FieldReport, id=report_id)
+        action = request.POST.get('action')
+
+        if action == 'block':
+            report.field.block()
+            report.status = 'approved'
+            messages.success(request, 'Карта заблокирована')
+        elif action == 'ignore':
+            report.status = 'rejected'
+            messages.info(request, 'Жалоба отклонена')
+
+        report.is_resolved = True
+        report.save()
+        return redirect('moderation_panel')
+
+
+class UnblockContentView(StaffRequiredMixin, View):
+
+    def post(self, request, content_type, content_id):
+        if content_type == 'field':
+            obj = get_object_or_404(Field, id=content_id)
+            obj.unblock()
+            messages.success(request, 'Карта разблокирована')
+        elif content_type == 'comment':
+            obj = get_object_or_404(Comment, id=content_id)
+            obj.unblock()
+            messages.success(request, 'Комментарий разблокирован')
+        else:
+            messages.error(request, 'Неверный тип контента')
+            return redirect('moderation_panel')
+
+        return redirect('moderation_panel')
+
+
 @require_POST
 @login_required
 def toggle_like(request, pk):
@@ -505,7 +620,7 @@ def field_detail(request, pk):
 @staff_member_required
 def moderation_panel(request):
     reports = FieldReport.objects.filter(status='pending').select_related('field', 'user')
-    return render(request, 'admin/moderation_panel.html', {
+    return render(request, 'moderation/moderation_panel.html', {
         'reports': reports
     })
 

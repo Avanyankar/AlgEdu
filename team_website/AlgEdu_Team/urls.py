@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 import main_app.views as views
-from main_app.views import ReportFieldView
+from main_app.views import ReportFieldView, ModerationPanelView, ResolveFieldReportView, ResolveCommentReportView, UnblockContentView
 
 
 urlpatterns = [
@@ -33,7 +33,10 @@ urlpatterns = [
     path('api/search/', views.search_fields, name='search_api'),
     path('cards/<int:field_id>/report/', ReportFieldView.as_view(), name='report_field'),
     path('cards/<int:pk>/add-comment/', views.add_comment, name='add_comment'),
-    
+    path('moderation/', ModerationPanelView.as_view(), name='moderation_panel'),
+    path('moderation/field/<int:report_id>/', ResolveFieldReportView.as_view(), name='resolve_field_report'),
+    path('moderation/comment/<int:report_id>/', ResolveCommentReportView.as_view(), name='resolve_comment_report'),
+    path('moderation/unblock/<str:content_type>/<int:content_id>/', UnblockContentView.as_view(), name='unblock_content'),
 ]
 
 handler404 = views.NotFoundView.as_view()

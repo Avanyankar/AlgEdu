@@ -17,9 +17,24 @@ class Field(models.Model):
     favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
     is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
 
+    def block(self):
+        self.is_blocked = True
+        self.save()
+
+    def unblock(self):
+        self.is_blocked = False
+        self.save()
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('field_detail', kwargs={'pk': self.pk})
+
     class Meta:
         verbose_name = "Карта"
         verbose_name_plural = "Карты"
+        permissions = [
+            ("can_view_blocked", "Может просматривать заблокированные карты"),
+        ]
 
     def __str__(self):
         return self.title
@@ -31,6 +46,14 @@ class Comment(models.Model):
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
+
+    def block(self):
+        self.is_blocked = True
+        self.save()
+
+    def unblock(self):
+        self.is_blocked = False
+        self.save()
 
     class Meta:
         ordering = ['-created_at']

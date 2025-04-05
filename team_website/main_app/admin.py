@@ -53,7 +53,7 @@ class FieldReportAdmin(admin.ModelAdmin):
             'app_label': self.model._meta.app_label,
             'title': 'Панель модерации жалоб',
         }
-        return render(request, 'admin/moderation_panel.html', context)
+        return render(request, 'moderation/moderation_panel.html', context)
     
     def change_report_status(self, request, report_id, action=None):
         if not action:
@@ -73,7 +73,7 @@ class FieldReportAdmin(admin.ModelAdmin):
         except FieldReport.DoesNotExist:
             messages.error(request, f'Жалоба #{report_id} не найдена')
         
-        return redirect('admin:fieldreport_moderation_panel')
+        return redirect('moderation:fieldreport_moderation_panel')
     
     def approve_selected_reports(self, request, queryset):
         updated = queryset.update(status='approved', is_resolved=True)

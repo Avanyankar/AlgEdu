@@ -15,11 +15,16 @@
         <div id="search-results">
             <ul id="fields-list">
                 {% for field in fields %}
-                    <li>
-                        <h2>{{ field.title }}</h2>
-                        <p>{{ field.description }}</p>
-                        <p>Создано: {{ field.created_at }}</p>
-                    </li>
+                    {% if not field.is_blocked or user.is_staff %}
+                        <li>
+                            <h2>{{ field.title }}</h2>
+                            <p>{{ field.description }}</p>
+                            <p>Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
+                            {% if field.is_blocked %}
+                                <span class="btn">Заблокировано</span>
+                            {% endif %}
+                        </li>
+                    {% endif %}
                 {% empty %}
                     <p>Поля не найдены.</p>
                 {% endfor %}
