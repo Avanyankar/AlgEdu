@@ -46,7 +46,9 @@ urlpatterns = [
     path('api/search/', views.search_fields, name='search_fields'),
     path('spinning/', views.spinning_image_view, name='spinning_image'),
 
-    path('logout/', views.custom_logout, name='logout')
+    path('logout/', views.custom_logout, name='logout'),
+    path('about/', views.AboutPageView.as_view(), name='about'),
+    path('goals/', views.GoalsPageView.as_view(), name='goals'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 handler404 = views.NotFoundView.as_view()
