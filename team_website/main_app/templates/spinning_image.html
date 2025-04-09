@@ -1,96 +1,95 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Crazy Spinning Page</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
-            animation: bgChange 10s infinite;
-        }
+{% extends "base.html" %}
 
-        @keyframes bgChange {
-            0% { background-color: #ff0000; }
-            20% { background-color: #00ff00; }
-            40% { background-color: #0000ff; }
-            60% { background-color: #ffff00; }
-            80% { background-color: #ff00ff; }
-            100% { background-color: #00ffff; }
-        }
+{% block title %}Crazy Spinning Page{% endblock %}
 
-        .center-image {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation: spin 5s linear infinite;
-            border-radius: 50%;
-            object-fit: cover;
-            z-index: 1;
-            border: 5px solid white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
+{% block content %}
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        animation: bgChange 10s infinite;
+    }
 
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
+    @keyframes bgChange {
+        0% { background-color: #ff0000; }
+        20% { background-color: #00ff00; }
+        40% { background-color: #0000ff; }
+        60% { background-color: #ffff00; }
+        80% { background-color: #ff00ff; }
+        100% { background-color: #00ffff; }
+    }
 
-        .phrase {
-            position: absolute;
-            font-weight: bold;
-            animation: phraseSpin linear infinite;
+    .center-image {
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: spin 5s linear infinite;
+        border-radius: 50%;
+        object-fit: cover;
+        z-index: 1;
+        border: 5px solid white;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .phrase {
+        position: absolute;
+        font-weight: bold;
+        animation: phraseSpin linear infinite;
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    @keyframes phraseSpin {
+        0% {
+            transform: rotate(0deg);
             opacity: 0;
-            animation-fill-mode: forwards;
         }
-
-        @keyframes phraseSpin {
-            0% {
-                transform: rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                transform: rotate(360deg);
-                opacity: 0;
-            }
+        10% {
+            opacity: 1;
         }
-    </style>
-</head>
-<body>
-    <!-- Ваше изображение в static/your_image.jpg -->
-    <img src="/static/{{ image_url }}" class="center-image" alt="Spinning Image">
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: rotate(360deg);
+            opacity: 0;
+        }
+    }
+</style>
 
-    {% for phrase in phrases %}
-    <div class="phrase" style="
-        left: {{ phrase.x }}%;
-        top: {{ phrase.y }}%;
-        font-size: {{ phrase.size }}px;
-        color: {{ phrase.color }};
-        animation-duration: {{ phrase.speed }}s;
-        animation-delay: {{ forloop.counter0|divisibleby:2|yesno:'0,' }}s;
-    ">
-        {{ phrase.text }}
-    </div>
-    {% endfor %}
+<!-- Ваше изображение в static/your_image.jpg -->
+<img src="/static/{{ image_url }}" class="center-image" alt="Spinning Image">
 
-    <script>
-        // Дополнительная анимация - фразы появляются в случайных местах
-        setInterval(() => {
-            const phrases = document.querySelectorAll('.phrase');
-            phrases.forEach(phrase => {
-                phrase.style.left = `${Math.random() * 90 + 5}%`;
-                phrase.style.top = `${Math.random() * 90 + 5}%`;
-            });
-        }, 3000);
-    </script>
-</body>
-</html>
+{% for phrase in phrases %}
+<div class="phrase" style="
+    left: {{ phrase.x }}%;
+    top: {{ phrase.y }}%;
+    font-size: {{ phrase.size }}px;
+    color: {{ phrase.color }};
+    animation-duration: {{ phrase.speed }}s;
+    animation-delay: {{ forloop.counter0|divisibleby:2|yesno:'0,' }}s;
+">
+    {{ phrase.text }}
+</div>
+{% endfor %}
+
+<script>
+    // Дополнительная анимация - фразы появляются в случайных местах
+    setInterval(() => {
+        const phrases = document.querySelectorAll('.phrase');
+        phrases.forEach(phrase => {
+            phrase.style.left = `${Math.random() * 90 + 5}%`;
+            phrase.style.top = `${Math.random() * 90 + 5}%`;
+        });
+    }, 3000);
+</script>
+{% endblock %}
