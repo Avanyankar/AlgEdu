@@ -641,3 +641,29 @@ def block_content(request, content_type, content_id):
     item.save()
     messages.success(request, f'{content_type.capitalize()} успешно заблокирован')
     return redirect(reverse_lazy('hidden-admin-panel'))
+
+
+class ProfileFieldsAPIView(View):
+    def get(self, request):
+        field_type = request.GET.get('type', 'my')
+        
+        if field_type == 'my':
+            fields = Field.objects.filter(user=request.user)
+        elif field_type == 'liked':
+            fields = request.user.liked_cards.all()
+        elif field_type == 'favorites':
+            fields = request.user.favorited_cards.all()
+        else:
+            fields = Field.objects.none()
+        
+        fields_data = []
+        for field in fields:
+            fields_data.append({
+                'id': field.id,
+                'title': field.title,
+                'description': field.description,
+                'created_at': field.created_at.strftime("%d.%m.%Y"),
+                'url': field.get_absolute_url()
+            })
+        
+        return JsonResponse({'fields': fields_data})

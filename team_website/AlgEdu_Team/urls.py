@@ -37,6 +37,7 @@ urlpatterns = [
     path('moderation/field/<int:report_id>/', ResolveFieldReportView.as_view(), name='resolve_field_report'),
     path('moderation/comment/<int:report_id>/', ResolveCommentReportView.as_view(), name='resolve_comment_report'),
     path('moderation/unblock/<str:content_type>/<int:content_id>/', UnblockContentView.as_view(), name='unblock_content'),
+    path('api/profile/fields/', views.ProfileFieldsAPIView.as_view(), name='profile_fields_api'),
 ]
 
 handler404 = views.NotFoundView.as_view()

@@ -27,7 +27,7 @@ class Field(models.Model):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('field_detail', kwargs={'pk': self.pk})
+        return reverse('card-detail', kwargs={'pk': self.pk})
 
     class Meta:
         verbose_name = "Карта"
