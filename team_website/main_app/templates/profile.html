@@ -95,6 +95,9 @@
                         <button class="tab-btn" data-tab="favorites">
                             <i class="fas fa-star"></i> Избранные
                         </button>
+                        <button class="tab-btn" data-tab="comments">
+                            <i class="fas fa-comments"></i> Комментарии ({{ profile_comments.count }})
+                        </button>
                         <button class="tab-btn" data-tab="activity">
                             <i class="fas fa-chart-line"></i> Активность
                         </button>
@@ -127,6 +130,37 @@
                         </div>
                     </div>
 
+                    <div class="tab-content" id="comments-tab">
+                        <div class="comments-section">
+                            <h3>Комментарии к моему профилю</h3>
+
+                            <div class="comments-list">
+                                {% for comment in profile_comments %}
+                                <div class="comment">
+                                    <div class="comment-header">
+                                        <a href="{% url 'profile_view' comment.author.username %}" class="comment-author">
+                                            {{ comment.author.username }}
+                                        </a>
+                                        <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+                                    </div>
+                                    <div class="comment-text">{{ comment.text }}</div>
+
+                                    <form method="post" action="{% url 'delete_profile_comment' comment.id %}" class="delete-comment-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-delete-comment">
+                                            <i class="fas fa-trash"></i> Удалить
+                                        </button>
+                                    </form>
+                                </div>
+                                {% empty %}
+                                <div class="empty-tab-message">
+                                    <p>Пока никто не оставил комментариев к вашему профилю.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="tab-content" id="activity-tab">
                         <div class="activity-feed">
                             <div class="empty-tab-message">
@@ -139,7 +173,6 @@
                 <div class="user-public-content">
                     <h2>Публичная активность</h2>
 
-                    <!-- Блок комментариев -->
                     <div class="comments-section">
                         <h3>Комментарии</h3>
 
@@ -157,7 +190,9 @@
                             {% for comment in profile_comments %}
                             <div class="comment">
                                 <div class="comment-header">
-                                    <span class="comment-author">{{ comment.author.username }}</span>
+                                    <a href="{% url 'profile_view' comment.author.username %}" class="comment-author">
+                                        {{ comment.author.username }}
+                                    </a>
                                     <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
                                 </div>
                                 <div class="comment-text">{{ comment.text }}</div>
@@ -165,7 +200,9 @@
                                 {% if comment.author == request.user or request.user.is_superuser %}
                                 <form method="post" action="{% url 'delete_profile_comment' comment.id %}" class="delete-comment-form">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-delete-comment">Удалить</button>
+                                    <button type="submit" class="btn btn-delete-comment">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </button>
                                 </form>
                                 {% endif %}
                             </div>
@@ -315,6 +352,7 @@
                 display: flex;
                 border-bottom: 1px solid #ddd;
                 margin-bottom: 20px;
+                overflow-x: auto;
             }
 
             .tab-btn {
@@ -326,6 +364,7 @@
                 font-weight: 500;
                 color: #666;
                 transition: all 0.3s;
+                white-space: nowrap;
             }
 
             .tab-btn:hover {
@@ -368,20 +407,9 @@
                 box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             }
 
-            .user-public-content h2 {
-                margin-bottom: 20px;
-                color: #333;
-            }
-
-            .empty-public-content {
-                text-align: center;
-                padding: 30px;
-                color: #666;
-            }
-
             /* Стили для комментариев */
             .comments-section {
-                margin-bottom: 30px;
+                margin: 20px 0;
                 background: #fff;
                 padding: 20px;
                 border-radius: 8px;
@@ -401,6 +429,8 @@
             .btn-comment {
                 background-color: #4a6fa5;
                 color: white;
+                border: none;
+                cursor: pointer;
             }
 
             .btn-comment:hover {
@@ -419,6 +449,7 @@
             .comment {
                 border-bottom: 1px solid #eee;
                 padding: 15px 0;
+                position: relative;
             }
 
             .comment:last-child {
@@ -429,31 +460,54 @@
                 display: flex;
                 justify-content: space-between;
                 margin-bottom: 8px;
-                color: #666;
-                font-size: 0.9em;
+                align-items: center;
             }
 
             .comment-author {
                 font-weight: bold;
                 color: #4a6fa5;
+                text-decoration: none;
+            }
+
+            .comment-author:hover {
+                text-decoration: underline;
+            }
+
+            .comment-date {
+                color: #666;
+                font-size: 0.9em;
             }
 
             .comment-text {
                 line-height: 1.5;
                 margin-bottom: 10px;
+                padding-right: 80px;
+            }
+
+            .delete-comment-form {
+                position: absolute;
+                top: 15px;
+                right: 0;
+            }
+
+            .btn-delete-comment {
+                background-color: #dc3545;
+                color: white;
+                padding: 5px 10px;
+                font-size: 0.8em;
+                border: none;
+                cursor: pointer;
+                border-radius: 4px;
+            }
+
+            .btn-delete-comment:hover {
+                background-color: #c82333;
             }
 
             .no-comments {
                 color: #999;
                 text-align: center;
                 padding: 20px;
-            }
-
-            .btn-delete-comment {
-                background-color: #dc3545;
-                color: white;
-                padding: 3px 8px;
-                font-size: 0.8em;
             }
 
             @media (max-width: 768px) {
@@ -471,9 +525,40 @@
                 .profile-actions form {
                     flex: 1 1 auto;
                 }
+
+                .comment-text {
+                    padding-right: 0;
+                    margin-bottom: 30px;
+                }
+
+                .delete-comment-form {
+                    position: static;
+                    margin-top: 10px;
+                }
             }
         </style>
 
-        <script src="{% static 'js/profile_fields.js' %}"></script>
+        <script>
+            // Активация вкладок
+            document.addEventListener('DOMContentLoaded', function() {
+                const tabButtons = document.querySelectorAll('.tab-btn');
+                const tabContents = document.querySelectorAll('.tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Удаляем активный класс у всех кнопок и контента
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Добавляем активный класс текущей кнопке
+                        button.classList.add('active');
+
+                        // Показываем соответствующий контент
+                        const tabId = button.getAttribute('data-tab') + '-tab';
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+            });
+        </script>
     </main>
 {% endblock %}

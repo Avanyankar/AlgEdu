@@ -119,11 +119,11 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context['is_profile_page'] = True
         context['is_own_profile'] = (self.object == self.request.user)
 
-        # Добавляем комментарии для чужого профиля
-        if not context['is_own_profile']:
-            context['profile_comments'] = ProfileComment.objects.filter(
-                profile=self.object
-            ).select_related('author')
+        # Добавляем комментарии для всех случаев
+        context['profile_comments'] = ProfileComment.objects.filter(
+            profile=self.object
+        ).select_related('author').order_by('-created_at')
+
         return context
 
 
@@ -142,14 +142,17 @@ def add_profile_comment(request, username):
     return redirect('profile_view', username=username)
 
 
+
 @login_required
 def delete_profile_comment(request, comment_id):
     comment = get_object_or_404(ProfileComment, id=comment_id)
-    if request.user == comment.author or request.user.is_superuser:
+
+    # Проверяем, что пользователь может удалить этот комментарий
+    if request.user == comment.profile or request.user == comment.author or request.user.is_superuser:
         comment.delete()
         messages.success(request, 'Комментарий удален')
-    return redirect('profile_view', username=comment.profile.username)
 
+    return redirect('profile')
 
 class IndexView(DetailView):
     """
