@@ -15,18 +15,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 import main_app.views as views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('profile/', views.ProfileView.as_view() , name='profile'),
+
     path('', views.IndexView.as_view() , name='index'),
     path('profile_update/', views.ProfileUpdateView.as_view() , name='profile_update'),
     path('registration/', views.UserRegisterView.as_view() , name='registration'),
-    path('login/', views.UserLoginView.as_view() , name='login'),
+    path('accounts/login/', views.UserLoginView.as_view() , name='login'),
     path('cards/<int:pk>/', views.FieldDetailView.as_view(), name='card-detail'),
     path('cards/<int:pk>/toggle-like/', views.toggle_like, name='toggle-like'),
     path('cards/<int:pk>/toggle-favorite/', views.toggle_favorite, name='toggle-favorite'),
@@ -45,10 +45,14 @@ urlpatterns = [
     path('api/walls/<int:pk>/remove/', views.remove_wall, name='remove_wall'),
     path('api/search/', views.search_fields, name='search_fields'),
     path('spinning/', views.spinning_image_view, name='spinning_image'),
-
+    path('accounts/', include('django.contrib.auth.urls')),
     path('logout/', views.custom_logout, name='logout'),
     path('about/', views.AboutPageView.as_view(), name='about'),
     path('goals/', views.GoalsPageView.as_view(), name='goals'),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    path('profile/', views.ProfileView.as_view(), name='profile'),  # Текущий профиль
+    path('profile/<str:username>/', views.ProfileView.as_view(), name='profile_view'),
+    path('profile/<str:username>/comment/', views.add_profile_comment, name='add_profile_comment'),
+    path('profile/comment/<int:comment_id>/delete/', views.delete_profile_comment, name='delete_profile_comment'),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = views.NotFoundView.as_view()

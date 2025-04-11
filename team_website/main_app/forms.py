@@ -97,13 +97,3 @@ class ProfileUpdateForm(forms.ModelForm):
             raise ValidationError(_('Некорректная дата рождения'))
         return birth_date
 
-class CommentForm(forms.ModelForm):
-    class Meta:
-        model = Comment
-        fields = ['text']
-        widgets = {
-            'text': forms.Textarea(attrs={
-                'class': 'comment-input',
-                'placeholder': 'Write your comment...'
-            }),
-        }

@@ -5,7 +5,7 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Comment, Wall, Cell
+from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
@@ -100,37 +100,55 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 class ProfileView(LoginRequiredMixin, DetailView):
     """
     View for displaying user profile details.
-
-    Inherits from `DetailView` and uses the `User` model.
-    Available only to authorized users thanks to `LoginRequiredMixin`.
+    Can display both current user profile and other users' profiles.
     """
-
-    model: User = User
-    template_name: str = 'profile.html'
-    context_object_name: str = 'user'
+    model = User
+    template_name = 'profile.html'
+    context_object_name = 'profile_user'  # Изменено с 'user' чтобы избежать конфликта
 
     def get_object(self, queryset=None) -> User:
         """
-        Returns the user object associated with the current request.
-
-        Args:
-            queryset: QuerySet from which you can select an object (not used in this case).
-
-        Returns:
-            User: The object of the current user.
+        Returns the user object based on username in URL or current user.
         """
+        if 'username' in self.kwargs:
+            return get_object_or_404(User, username=self.kwargs['username'])
         return self.request.user
 
-    def get_context_data(self, **kwargs) -> Dict[str, Any]:
-        """
-        Adds additional data to the template context.
-
-        Returns:
-            Dict[str, Any]: The context with the user's object and additional data.
-        """
-        context: Dict[str, Any] = super().get_context_data(**kwargs)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         context['is_profile_page'] = True
+        context['is_own_profile'] = (self.object == self.request.user)
+
+        # Добавляем комментарии для чужого профиля
+        if not context['is_own_profile']:
+            context['profile_comments'] = ProfileComment.objects.filter(
+                profile=self.object
+            ).select_related('author')
         return context
+
+
+@login_required
+def add_profile_comment(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    if request.method == 'POST':
+        text = request.POST.get('comment_text', '').strip()
+        if text:
+            ProfileComment.objects.create(
+                profile=profile_user,
+                author=request.user,
+                text=text
+            )
+            messages.success(request, 'Комментарий добавлен')
+    return redirect('profile_view', username=username)
+
+
+@login_required
+def delete_profile_comment(request, comment_id):
+    comment = get_object_or_404(ProfileComment, id=comment_id)
+    if request.user == comment.author or request.user.is_superuser:
+        comment.delete()
+        messages.success(request, 'Комментарий удален')
+    return redirect('profile_view', username=comment.profile.username)
 
 
 class IndexView(DetailView):
@@ -646,4 +664,14 @@ from django.shortcuts import redirect
 def custom_logout(request):
     logout(request)
     return redirect('login')
+def add_comment(request):
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.save()
+            return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
 
