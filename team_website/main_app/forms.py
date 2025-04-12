@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from main_app.models import User, Comment
+from main_app.models import User, Field
 
 
 class RegistrationForm(UserCreationForm):
@@ -97,3 +97,33 @@ class ProfileUpdateForm(forms.ModelForm):
             raise ValidationError(_('Некорректная дата рождения'))
         return birth_date
 
+
+class DBFileField(forms.FileField):
+    def to_python(self, data):
+        data = super().to_python(data)
+        if data is None:
+            return None
+
+        return {
+            'name': data.name,
+            'content_type': data.content_type,
+            'size': data.size,
+            'data': data.read()
+        }
+
+
+class FieldForm(forms.ModelForm):
+    file = DBFileField(required=False, label="Прикрепленный файл")
+
+    class Meta:
+        model = Field
+        fields = ['title', 'description', 'cols', 'rows']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+            'cols': forms.NumberInput(attrs={'min': 1, 'max': 20}),
+            'rows': forms.NumberInput(attrs={'min': 1, 'max': 20}),
+        }
+        labels = {
+            'cols': 'Количество колонок',
+            'rows': 'Количество строк',
+        }

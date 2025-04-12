@@ -53,6 +53,8 @@ urlpatterns = [
     path('profile/<str:username>/', views.ProfileView.as_view(), name='profile_view'),
     path('profile/<str:username>/comment/', views.add_profile_comment, name='add_profile_comment'),
     path('profile/comment/<int:comment_id>/delete/', views.delete_profile_comment, name='delete_profile_comment'),
+    path('fields/create/', views.FieldCreateView.as_view(), name='create_field'),
+    path('files/download/<int:pk>/', views.download_file, name='download_file'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = views.NotFoundView.as_view()

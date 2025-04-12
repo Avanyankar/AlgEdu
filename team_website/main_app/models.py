@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
-
+from django.core.files.base import ContentFile
 
 class User(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
@@ -22,6 +22,18 @@ class ProfileComment(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+
+class FieldFile(models.Model):
+    name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    data = models.BinaryField()
+    size = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def to_file(self):
+        return ContentFile(self.data, name=self.name)
+
+
 class Field(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
@@ -30,8 +42,9 @@ class Field(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(User, related_name='liked_cards', blank=True)
     favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
-    cols = models.IntegerField(default=10)  # Количество колонок
-    rows = models.IntegerField(default=10)  # Количество строк
+    cols = models.IntegerField(default=10)
+    rows = models.IntegerField(default=10)
+    file = models.OneToOneField(FieldFile, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.title

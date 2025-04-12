@@ -5,12 +5,12 @@ from django.views.generic import UpdateView, DetailView, CreateView, TemplateVie
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment
+from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django_registration.signals import user_registered
-from .forms import RegistrationForm, ProfileUpdateForm
+from .forms import RegistrationForm, ProfileUpdateForm, FieldForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -667,14 +667,32 @@ from django.shortcuts import redirect
 def custom_logout(request):
     logout(request)
     return redirect('login')
-def add_comment(request):
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.user = request.user
-            comment.save()
-            return JsonResponse({'success': True})
-    return JsonResponse({'success': False})
 
 
+class FieldCreateView(LoginRequiredMixin, CreateView):
+    model = Field
+    form_class = FieldForm
+    template_name = 'create_field.html'
+    success_url = reverse_lazy('index')
+
+    def form_valid(self, form):
+        field = form.save(commit=False)
+        field.user = self.request.user
+
+        file_data = form.cleaned_data.get('file')
+        if file_data:
+            field_file = FieldFile.objects.create(
+                name=file_data['name'],
+                content_type=file_data['content_type'],
+                data=file_data['data'],
+                size=file_data['size']
+            )
+            field.file = field_file
+
+        field.save()
+        return super().form_valid(form)
+def download_file(request, pk):
+    field_file = get_object_or_404(FieldFile, pk=pk)
+    response = HttpResponse(field_file.data, content_type=field_file.content_type)
+    response['Content-Disposition'] = f'attachment; filename="{field_file.name}"'
+    return response
