@@ -92,7 +92,7 @@ class FieldCreateViewTest(TestCase):
             username='testuser',
             password='12345'
         )
-        self.url = reverse('create_field')  # Замените на ваш URL name
+        self.url = reverse('create_field')
         self.form_data = {
             'title': 'Test Field',
             'description': 'Test Description',
@@ -110,7 +110,7 @@ class FieldCreateViewTest(TestCase):
         request = self.factory.post(self.url, self.form_data)
         request.user = self.user
         response = FieldCreateView.as_view()(request)
-        self.assertEqual(response.status_code, 302)  # Redirect after success
+        self.assertEqual(response.status_code, 302)
 
         field = Field.objects.first()
         self.assertEqual(field.title, 'Test Field')
@@ -149,7 +149,7 @@ class DownloadFileViewTest(TestCase):
             data=b'Test content',
             size=12
         )
-        self.url = reverse('download_file', args=[self.field_file.pk])  # Замените на ваш URL name
+        self.url = reverse('download_file', args=[self.field_file.pk])
 
     def test_download_file(self):
         request = self.factory.get(self.url)
@@ -164,6 +164,6 @@ class DownloadFileViewTest(TestCase):
         self.assertEqual(response.content, b'Test content')
 
     def test_download_nonexistent_file(self):
-        request = self.factory.get(self.url + '999')  # Несуществующий ID
+        request = self.factory.get(self.url + '999')
         response = download_file(request, 999)
         self.assertEqual(response.status_code, 404)
