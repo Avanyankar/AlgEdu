@@ -104,7 +104,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
     """
     model = User
     template_name = 'profile.html'
-    context_object_name = 'profile_user'  # Изменено с 'user' чтобы избежать конфликта
+    context_object_name = 'profile_user'
 
     def get_object(self, queryset=None) -> User:
         """
@@ -119,7 +119,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context['is_profile_page'] = True
         context['is_own_profile'] = (self.object == self.request.user)
 
-        # Добавляем комментарии для всех случаев
+
         context['profile_comments'] = ProfileComment.objects.filter(
             profile=self.object
         ).select_related('author').order_by('-created_at')
@@ -147,7 +147,8 @@ def add_profile_comment(request, username):
 def delete_profile_comment(request, comment_id):
     comment = get_object_or_404(ProfileComment, id=comment_id)
 
-    # Проверяем, что пользователь может удалить этот комментарий
+
+
     if request.user == comment.profile or request.user == comment.author or request.user.is_superuser:
         comment.delete()
         messages.success(request, 'Комментарий удален')
@@ -306,7 +307,7 @@ class FieldDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         field = self.get_object()
 
-        # Создаем клетки, если их еще нет
+
         if not field.cells.exists():
             self.create_cells(field)
 
@@ -377,7 +378,7 @@ class AboutPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Добавляем данные в контекст
+
         context['company_name'] = "Моя Компания"
         context['foundation_year'] = "2010"
         context['team_size'] = "50"
@@ -409,7 +410,7 @@ class GoalsPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Добавляем данные в контекст
+
         context['mission'] = "Мы стремимся создавать инновационные решения, которые делают бизнес эффективнее."
         context['goals'] = [
             {
@@ -576,7 +577,7 @@ def add_wall(request):
 
         field = Field.objects.get(id=field_id)
 
-        # Проверка, что стена не выходит за границы
+
         if x + width > field.cols or y + height > field.rows:
             return JsonResponse({'error': 'Wall exceeds field boundaries'}, status=400)
 
@@ -643,8 +644,6 @@ import random
 
 def spinning_image_view(request):
     phrases = ["Goida", "1488", "OGbolshieyayca", "tarZan pidor", "Ave Python", "meow"]
-
-    # Создаем 20 фраз со случайными параметрами
     phrase_data = []
     for _ in range(30):
         phrase_data.append({
@@ -658,7 +657,7 @@ def spinning_image_view(request):
 
     context = {
         'phrases': phrase_data,
-        'image_url': 'meow.jpg'  # Ваше изображение
+        'image_url': 'meow.jpg'
     }
     return render(request, 'spinning_image.html', context)
 from django.contrib.auth import logout
