@@ -5,18 +5,29 @@
 
 {% block content %}
     <main>
-        <h1>Список полей</h1>
-        
-        <div>
+        <div class="page-header">
+            <h1>Список полей</h1>
+            {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}" class="profile-btn">
+                    <i class="fas fa-user"></i> Мой профиль
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="search-container">
             <input type="text" id="search-input" placeholder="Поиск карт...">
             <button id="search-button">Найти</button>
         </div>
-        
+
         <div id="search-results">
             <ul id="fields-list">
                 {% for field in fields %}
                     <li>
-                        <h2>{{ field.title }}</h2>
+                        <h2>
+                            <a href="{% url 'card-detail' field.id %}" class="field-link">
+                                {{ field.title }}
+                            </a>
+                        </h2>
                         <p>{{ field.description }}</p>
                         <p>Создано: {{ field.created_at }}</p>
                     </li>
@@ -25,7 +36,7 @@
                 {% endfor %}
             </ul>
         </div>
-        
+
         <script src="{% static 'js/search.js' %}"></script>
     </main>
 {% endblock %}

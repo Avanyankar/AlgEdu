@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}О нашей компании{% endblock %}
+
+{% block extra_css %}
+<style>
+    .home-button {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 20px 0;
+        transition: all 0.3s;
+        font-weight: bold;
+        border: 2px solid #3498db;
+    }
+    .home-button:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .button-container {
+        text-align: center;
+        margin: 30px 0;
+    }
+    .history-timeline {
+        position: relative;
+        padding-left: 50px;
+        margin: 40px 0;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: -30px;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #3498db;
+    }
+    .timeline-item:after {
+        content: '';
+        position: absolute;
+        left: -21px;
+        top: 20px;
+        width: 2px;
+        height: calc(100% + 10px);
+        background: #3498db;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="button-container">
+    <a href="/" class="home-button">← На главную</a>
+</div>
+
+<header>
+    <h1>О нашей компании</h1>
+</header>
+
+<section>
+    <h2>Наша история</h2>
+    <p>Мы начали свой путь в 2010 году.</p>
+
+    <div class="history-timeline">
+        <div class="timeline-item">
+            <h3>2010 - Основание</h3>
+            <p>Начало нашего пути.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

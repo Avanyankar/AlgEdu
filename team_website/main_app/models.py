@@ -1,10 +1,37 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 
 class User(AbstractUser):
-    location = models.CharField(max_length=30, blank=True)
     birth_date = models.DateField(null=True, blank=True)
-    bio = models.TextField(blank=True)
+    bio = models.TextField(max_length=500, blank=True)
+    location = models.CharField(max_length=100, blank=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+
+    def __str__(self):
+        return self.username
+
+class ProfileComment(models.Model):
+    profile = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class FieldFile(models.Model):
+    name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    data = models.BinaryField()
+    size = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def to_file(self):
+        return ContentFile(self.data, name=self.name)
 
 
 class Field(models.Model):
@@ -15,22 +42,57 @@ class Field(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(User, related_name='liked_cards', blank=True)
     favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
+    cols = models.IntegerField(default=10)
+    rows = models.IntegerField(default=10)
+    file = models.OneToOneField(FieldFile, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.title
 
+
+class Cell(models.Model):
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='cells')
+    x = models.IntegerField()  # X координата
+    y = models.IntegerField()  # Y координата
+    is_blocked = models.BooleanField(default=False)  # Заблокирована ли клетка
+
+    class Meta:
+        unique_together = ('field', 'x', 'y')
+
+    def __str__(self):
+        return f"Cell ({self.x}, {self.y}) in {self.field.title}"
+
+class Wall(models.Model):
+    field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='walls')
+    x = models.IntegerField()  # Начальная X координата
+    y = models.IntegerField()  # Начальная Y координата
+    width = models.IntegerField(default=1)  # Ширина стены (в клетках)
+    height = models.IntegerField(default=1)  # Высота стены (в клетках)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Wall at ({self.x}, {self.y}) in {self.field.title}"
 
 class Comment(models.Model):
     field = models.ForeignKey(Field, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(User, related_name='liked_comments', blank=True)
+    reports = models.ManyToManyField(User, related_name='reported_comments', blank=True)
+    is_blocked = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f'Comment by {self.author.username} on {self.field.title}'
+        return f'Комментарий от {self.author.username} к {self.field.title}'
+
+    def likes_count(self):
+        return self.likes.count()
+
+    def reports_count(self):
+        return self.reports.count()
 
 
 class LikeField(models.Model):

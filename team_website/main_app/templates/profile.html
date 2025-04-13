@@ -1,46 +1,564 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Профиль{% endblock %}
+{% block title %}Профиль {{ profile_user.username }}{% endblock %}
 
 {% block content %}
     <main>
-        <h1>Профиль</h1>
-        {% if user.is_authenticated %}
-            <div>
-                <div>
-                    <p>Имя пользователя: {{ user.username }}</p>
-                    <p>Email: {{ user.email }}</p>
+        <div class="profile-navigation">
+            <a href="{% url 'index' %}" class="btn btn-home">На главную</a>
+            {% if is_own_profile %}
+                <a href="{% url 'profile' %}" class="btn btn-my-profile">Мой профиль</a>
+            {% endif %}
+        </div>
 
-                    {% if user.first_name or user.last_name or user.birth_date or user.bio or user.location %}
-                        {% if user.first_name %}<p>Имя: {{ user.first_name }}</p>{% endif %}
-                        {% if user.last_name %}<p>Фамилия: {{ user.last_name }}</p>{% endif %}
-                        {% if user.birth_date %}<p>Дата рождения: {{ user.birth_date|date:"d.m.Y" }}</p>{% endif %}
-                        {% if user.bio %}<p>Информация о себе: {{ user.bio }}</p>{% endif %}
-                        {% if user.location %}<p>Локация: {{ user.location }}</p>{% endif %}
+        <h1>Профиль {{ profile_user.username }}</h1>
+
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    {% if profile_user.avatar %}
+                        <img src="{{ profile_user.avatar.url }}" alt="Аватар {{ profile_user.username }}" class="avatar-img">
                     {% else %}
-                        <p>Профиль не заполнен. <a href="{% url 'profile_update' %}">Заполнить профиль</a></p>
+                        <div class="avatar-placeholder">
+                            {{ profile_user.username|first|upper }}
+                        </div>
                     {% endif %}
                 </div>
 
-                <div>
-                    <div>
-                        <button class="fields-nav-btn" data-type="my">Мои карты</button>
-                        <button class="fields-nav-btn" data-type="liked">Лайкнутые</button>
-                        <button class="fields-nav-btn" data-type="favorites">Избранные</button>
+                <div class="profile-info">
+                    <div class="info-section">
+                        <h2>Основная информация</h2>
+                        <p><strong>Имя пользователя:</strong> {{ profile_user.username }}</p>
+                        {% if is_own_profile %}
+                            <p><strong>Email:</strong> {{ profile_user.email }}</p>
+                        {% endif %}
                     </div>
-                    
-                    <div id="fields-container">
-                        <!-- For cards in future -->
+
+                    {% if profile_user.first_name or profile_user.last_name %}
+                        <div class="info-section">
+                            <h2>Личные данные</h2>
+                            {% if profile_user.first_name %}<p><strong>Имя:</strong> {{ profile_user.first_name }}</p>{% endif %}
+                            {% if profile_user.last_name %}<p><strong>Фамилия:</strong> {{ profile_user.last_name }}</p>{% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if profile_user.birth_date or profile_user.location %}
+                        <div class="info-section">
+                            <h2>Дополнительно</h2>
+                            {% if profile_user.birth_date %}<p><strong>Дата рождения:</strong> {{ profile_user.birth_date|date:"d.m.Y" }}</p>{% endif %}
+                            {% if profile_user.location %}<p><strong>Локация:</strong> {{ profile_user.location }}</p>{% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if profile_user.bio %}
+                        <div class="info-section bio-section">
+                            <h2>О себе</h2>
+                            <p>{{ profile_user.bio }}</p>
+                        </div>
+                    {% endif %}
+
+                    {% if is_own_profile and not profile_user.first_name and not profile_user.last_name and not profile_user.bio and not profile_user.location %}
+                        <div class="empty-profile-notice">
+                            <p>Ваш профиль почти пуст. <a href="{% url 'profile_update' %}" class="fill-profile-link">Заполните информацию</a>, чтобы другие пользователи могли узнать вас лучше.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if is_own_profile %}
+                    <div class="profile-actions">
+                        <a href="{% url 'profile_update' %}" class="btn btn-edit">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </a>
+                        <a href="{% url 'password_change' %}" class="btn btn-change-password">
+                            <i class="fas fa-key"></i> Сменить пароль
+                        </a>
+                        <form action="{% url 'logout' %}" method="post" class="logout-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-logout">
+                                <i class="fas fa-sign-out-alt"></i> Выйти
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if is_own_profile %}
+                <div class="profile-content">
+                    <div class="profile-tabs">
+                        <button class="tab-btn active" data-tab="my-cards">
+                            <i class="fas fa-id-card"></i> Мои карты
+                        </button>
+                        <button class="tab-btn" data-tab="liked-cards">
+                            <i class="fas fa-heart"></i> Лайкнутые
+                        </button>
+                        <button class="tab-btn" data-tab="favorites">
+                            <i class="fas fa-star"></i> Избранные
+                        </button>
+                        <button class="tab-btn" data-tab="comments">
+                            <i class="fas fa-comments"></i> Комментарии ({{ profile_comments.count }})
+                        </button>
+                        <button class="tab-btn" data-tab="activity">
+                            <i class="fas fa-chart-line"></i> Активность
+                        </button>
+                    </div>
+
+                    <div class="tab-content active" id="my-cards-tab">
+                        <div class="cards-grid">
+                            <div class="empty-tab-message">
+                                <p>У вас пока нет созданных карточек.</p>
+                                <a href="{% url 'create_field' %}" class="btn btn-create-card">
+                                    <i class="fas fa-plus"></i> Создать первую карточку
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="liked-cards-tab">
+                        <div class="cards-grid">
+                            <div class="empty-tab-message">
+                                <p>Вы еще не лайкнули ни одной карточки.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="favorites-tab">
+                        <div class="cards-grid">
+                            <div class="empty-tab-message">
+                                <p>У вас пока нет избранных карточек.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="comments-tab">
+                        <div class="comments-section">
+                            <h3>Комментарии к моему профилю</h3>
+
+                            <div class="comments-list">
+                                {% for comment in profile_comments %}
+                                <div class="comment">
+                                    <div class="comment-header">
+                                        <a href="{% url 'profile_view' comment.author.username %}" class="comment-author">
+                                            {{ comment.author.username }}
+                                        </a>
+                                        <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+                                    </div>
+                                    <div class="comment-text">{{ comment.text }}</div>
+
+                                    <form method="post" action="{% url 'delete_profile_comment' comment.id %}" class="delete-comment-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-delete-comment">
+                                            <i class="fas fa-trash"></i> Удалить
+                                        </button>
+                                    </form>
+                                </div>
+                                {% empty %}
+                                <div class="empty-tab-message">
+                                    <p>Пока никто не оставил комментариев к вашему профилю.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="activity-tab">
+                        <div class="activity-feed">
+                            <div class="empty-tab-message">
+                                <p>Ваша активность будет отображаться здесь.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% else %}
-            <p>
-                Чтобы просмотреть профиль, <a href="{% url 'login' %}">войдите в систему</a> или <a href="{% url 'register' %}">зарегистрируйтесь</a>.
-            </p>
-        {% endif %}
-        
-        <script src="{% static 'js/profile_fields.js' %}"></script>
+            {% else %}
+                <div class="user-public-content">
+                    <h2>Публичная активность</h2>
+
+                    <div class="comments-section">
+                        <h3>Комментарии</h3>
+
+                        {% if request.user.is_authenticated %}
+                        <form method="post" action="{% url 'add_profile_comment' profile_user.username %}" class="comment-form">
+                            {% csrf_token %}
+                            <textarea name="comment_text" placeholder="Напишите комментарий..." required></textarea>
+                            <button type="submit" class="btn btn-comment">Отправить</button>
+                        </form>
+                        {% else %}
+                        <p class="auth-required">Чтобы оставить комментарий, <a href="{% url 'login' %}">войдите</a> или <a href="{% url 'register' %}">зарегистрируйтесь</a>.</p>
+                        {% endif %}
+
+                        <div class="comments-list">
+                            {% for comment in profile_comments %}
+                            <div class="comment">
+                                <div class="comment-header">
+                                    <a href="{% url 'profile_view' comment.author.username %}" class="comment-author">
+                                        {{ comment.author.username }}
+                                    </a>
+                                    <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+                                <div class="comment-text">{{ comment.text }}</div>
+
+                                {% if comment.author == request.user or request.user.is_superuser %}
+                                <form method="post" action="{% url 'delete_profile_comment' comment.id %}" class="delete-comment-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-delete-comment">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <p class="no-comments">Пока нет комментариев. Будьте первым!</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="public-cards-grid">
+                        <div class="empty-public-content">
+                            <p>{{ profile_user.username }} пока не имеет публичной активности.</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <style>
+            .profile-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .profile-header {
+                display: flex;
+                gap: 30px;
+                margin-bottom: 40px;
+                background: #fff;
+                padding: 25px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            .profile-avatar {
+                flex: 0 0 150px;
+            }
+
+            .avatar-img {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid #f0f0f0;
+            }
+
+            .avatar-placeholder {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                background: #4a6fa5;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 60px;
+                font-weight: bold;
+            }
+
+            .profile-info {
+                flex: 1;
+            }
+
+            .info-section {
+                margin-bottom: 20px;
+            }
+
+            .info-section h2 {
+                font-size: 1.2rem;
+                color: #333;
+                margin-bottom: 10px;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .info-section p {
+                margin: 5px 0;
+                color: #555;
+            }
+
+            .bio-section p {
+                white-space: pre-line;
+                line-height: 1.6;
+            }
+
+            .profile-actions {
+                flex: 0 0 200px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 8px 15px;
+                border-radius: 5px;
+                text-align: center;
+                text-decoration: none;
+                font-weight: 500;
+                transition: all 0.3s;
+            }
+
+            .btn-edit {
+                background-color: #4a6fa5;
+                color: white;
+            }
+
+            .btn-edit:hover {
+                background-color: #3a5a8a;
+            }
+
+            .btn-change-password {
+                background-color: #6c757d;
+                color: white;
+            }
+
+            .btn-change-password:hover {
+                background-color: #5a6268;
+            }
+
+            .btn-logout {
+                background-color: #dc3545;
+                color: white;
+                border: none;
+                cursor: pointer;
+                width: 100%;
+            }
+
+            .btn-logout:hover {
+                background-color: #c82333;
+            }
+
+            .empty-profile-notice {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 5px;
+                margin-top: 20px;
+            }
+
+            .fill-profile-link {
+                color: #4a6fa5;
+                font-weight: 500;
+            }
+
+            .profile-tabs {
+                display: flex;
+                border-bottom: 1px solid #ddd;
+                margin-bottom: 20px;
+                overflow-x: auto;
+            }
+
+            .tab-btn {
+                padding: 10px 20px;
+                background: none;
+                border: none;
+                border-bottom: 3px solid transparent;
+                cursor: pointer;
+                font-weight: 500;
+                color: #666;
+                transition: all 0.3s;
+                white-space: nowrap;
+            }
+
+            .tab-btn:hover {
+                color: #4a6fa5;
+            }
+
+            .tab-btn.active {
+                color: #4a6fa5;
+                border-bottom-color: #4a6fa5;
+            }
+
+            .tab-content {
+                display: none;
+            }
+
+            .tab-content.active {
+                display: block;
+            }
+
+            .empty-tab-message {
+                text-align: center;
+                padding: 40px 20px;
+                color: #666;
+            }
+
+            .btn-create-card {
+                background-color: #28a745;
+                color: white;
+                margin-top: 15px;
+            }
+
+            .btn-create-card:hover {
+                background-color: #218838;
+            }
+
+            .user-public-content {
+                background: #fff;
+                padding: 25px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            /* Стили для комментариев */
+            .comments-section {
+                margin: 20px 0;
+                background: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+
+            .comment-form textarea {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                resize: vertical;
+                min-height: 80px;
+                margin-bottom: 10px;
+            }
+
+            .btn-comment {
+                background-color: #4a6fa5;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+
+            .btn-comment:hover {
+                background-color: #3a5a8a;
+            }
+
+            .auth-required {
+                color: #666;
+                margin-bottom: 20px;
+            }
+
+            .comments-list {
+                margin-top: 20px;
+            }
+
+            .comment {
+                border-bottom: 1px solid #eee;
+                padding: 15px 0;
+                position: relative;
+            }
+
+            .comment:last-child {
+                border-bottom: none;
+            }
+
+            .comment-header {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                align-items: center;
+            }
+
+            .comment-author {
+                font-weight: bold;
+                color: #4a6fa5;
+                text-decoration: none;
+            }
+
+            .comment-author:hover {
+                text-decoration: underline;
+            }
+
+            .comment-date {
+                color: #666;
+                font-size: 0.9em;
+            }
+
+            .comment-text {
+                line-height: 1.5;
+                margin-bottom: 10px;
+                padding-right: 80px;
+            }
+
+            .delete-comment-form {
+                position: absolute;
+                top: 15px;
+                right: 0;
+            }
+
+            .btn-delete-comment {
+                background-color: #dc3545;
+                color: white;
+                padding: 5px 10px;
+                font-size: 0.8em;
+                border: none;
+                cursor: pointer;
+                border-radius: 4px;
+            }
+
+            .btn-delete-comment:hover {
+                background-color: #c82333;
+            }
+
+            .no-comments {
+                color: #999;
+                text-align: center;
+                padding: 20px;
+            }
+
+            @media (max-width: 768px) {
+                .profile-header {
+                    flex-direction: column;
+                }
+
+                .profile-actions {
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                    margin-top: 20px;
+                }
+
+                .profile-actions .btn,
+                .profile-actions form {
+                    flex: 1 1 auto;
+                }
+
+                .comment-text {
+                    padding-right: 0;
+                    margin-bottom: 30px;
+                }
+
+                .delete-comment-form {
+                    position: static;
+                    margin-top: 10px;
+                }
+            }
+        </style>
+
+        <script>
+            // Активация вкладок
+            document.addEventListener('DOMContentLoaded', function() {
+                const tabButtons = document.querySelectorAll('.tab-btn');
+                const tabContents = document.querySelectorAll('.tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Удаляем активный класс у всех кнопок и контента
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+
+                        // Добавляем активный класс текущей кнопке
+                        button.classList.add('active');
+
+                        // Показываем соответствующий контент
+                        const tabId = button.getAttribute('data-tab') + '-tab';
+                        document.getElementById(tabId).classList.add('active');
+                    });
+                });
+            });
+        </script>
     </main>
 {% endblock %}

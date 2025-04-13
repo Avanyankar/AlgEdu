@@ -1,197 +1,239 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ field.title }}</title>
-    <style>
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            max-width: 500px;
-            margin: 20px auto;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .like-btn, .favorite-btn {
-            cursor: pointer;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            background: #f0f0f0;
-        }
-        .like-btn.liked {
-            background: #ffcccc;
-        }
-        .favorite-btn.favorited {
-            background: #ffffcc;
-        }
-        .comments-section {
-            margin-top: 30px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-        .comment-form {
-            margin-bottom: 20px;
-        }
-        .comment-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .submit-comment {
-            padding: 8px 15px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .comments-list {
-            margin-top: 20px;
-        }
-        .comment {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 10px;
-        }
-        .comment-author {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .comment-text {
-            margin-bottom: 5px;
-        }
-        .comment-date {
-            font-size: 0.8em;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>{{ field.title }}</h1>
-        <p>{{ field.description }}</p>
+{% extends "base.html" %}
 
-        <div class="actions">
-            <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}"
-                    data-field-id="{{ field.id }}">
-                ❤️ Like (<span id="likes-count">{{ field.likes.count }}</span>)
-            </button>
+{% block title %}{{ field.title }}{% endblock %}
 
-            <button id="favorite-btn" class="favorite-btn {% if is_favorited %}favorited{% endif %}"
-                    data-field-id="{{ field.id }}">
-                ⭐ Favorite
-            </button>
-            <a href="{% url 'report_field' field.id %}" class="report-button">
-                Пожаловаться
-            </a>            
-        </div>
+{% block content %}
+<div class="card">
+    <h1>{{ field.title }}</h1>
+    <p>{{ field.description }}</p>
 
-        <!-- Секция комментариев -->
-        <div class="comments-section">
-            <h3>Comments</h3>
+    <div class="actions">
+        <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}"
+                data-field-id="{{ field.id }}">
+            ❤️ Like (<span id="likes-count">{{ field.likes.count }}</span>)
+        </button>
 
-            <!-- Форма добавления комментария -->
-            <div class="comment-form">
-                <textarea id="comment-text" class="comment-input" placeholder="Write your comment..."></textarea>
-                <button id="submit-comment" class="submit-comment" data-field-id="{{ field.id }}">Post Comment</button>
-            </div>
-
-            <!-- Список комментариев -->
-            <div class="comments-list" id="comments-list">
-                {% for comment in field.comments.all %}
-                <div class="comment">
-                    <div class="comment-author">{{ comment.author.username }}</div>
-                    <div class="comment-text">{{ comment.text }}</div>
-                    <div class="comment-date">{{ comment.created_at|date:"Y-m-d H:i" }}</div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+        <button id="favorite-btn" class="favorite-btn {% if is_favorited %}favorited{% endif %}"
+                data-field-id="{{ field.id }}">
+            ⭐ Favorite
+        </button>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const likeBtn = document.getElementById('like-btn');
-            const favoriteBtn = document.getElementById('favorite-btn');
-            const submitCommentBtn = document.getElementById('submit-comment');
-            const commentText = document.getElementById('comment-text');
-            const commentsList = document.getElementById('comments-list');
+    <!-- Секция комментариев -->
+    <div class="comments-section">
+        <h3>Comments</h3>
 
-            if (likeBtn) {
-                likeBtn.addEventListener('click', function() {
-                    const fieldId = this.getAttribute('data-field-id');
-                    toggleLike(fieldId);
-                });
-            }
+        <!-- Форма добавления комментария -->
+        <div class="comment-form">
+            <textarea id="comment-text" class="comment-input" placeholder="Write your comment..."></textarea>
+            <button id="submit-comment" class="submit-comment" data-field-id="{{ field.id }}">Post Comment</button>
+        </div>
 
-            if (favoriteBtn) {
-                favoriteBtn.addEventListener('click', function() {
-                    const fieldId = this.getAttribute('data-field-id');
-                    toggleFavorite(fieldId);
-                });
-            }
+        <!-- Список комментариев -->
+        <div class="comments-list" id="comments-list">
+            {% for comment in field.comments.all %}
+            <div class="comment" data-comment-id="{{ comment.id }}">
+                <div class="comment-author">{{ comment.author.username }}</div>
+                <div class="comment-text">{{ comment.text }}</div>
+                <div class="comment-date">{{ comment.created_at|date:"Y-m-d H:i" }}</div>
 
-            if (submitCommentBtn) {
-                submitCommentBtn.addEventListener('click', function() {
-                    const fieldId = this.getAttribute('data-field-id');
-                    const text = commentText.value.trim();
+                <div class="comment-actions">
+                    <button class="comment-like-btn {% if request.user in comment.likes.all %}liked{% endif %}"
+                            data-comment-id="{{ comment.id }}">
+                        👍 Like (<span class="likes-count">{{ comment.likes.count }}</span>)
+                    </button>
 
-                    if (text) {
-                        addComment(fieldId, text);
-                    }
-                });
-            }
+                    <button class="comment-report-btn" data-comment-id="{{ comment.id }}">
+                        ⚠️ Report (<span class="reports-count">{{ comment.reports.count }}</span>)
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
-            function toggleLike(fieldId) {
-                fetch(`/cards/${fieldId}/toggle-like/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'same-origin'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.is_liked !== undefined) {
-                        likeBtn.classList.toggle('liked', data.is_liked);
-                        document.getElementById('likes-count').textContent = data.likes_count;
-                    } else {
-                        window.location.href = '/accounts/login/?next=' + window.location.pathname;
-                    }
-                });
-            }
+<style>
+    .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 500px;
+        margin: 20px auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .like-btn, .favorite-btn {
+        cursor: pointer;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 4px;
+        background: #f0f0f0;
+    }
+    .like-btn.liked {
+        background: #ffcccc;
+    }
+    .favorite-btn.favorited {
+        background: #ffffcc;
+    }
+    .comments-section {
+        margin-top: 30px;
+        border-top: 1px solid #eee;
+        padding-top: 20px;
+    }
+    .comment-form {
+        margin-bottom: 20px;
+    }
+    .comment-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    .submit-comment {
+        padding: 8px 15px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .comments-list {
+        margin-top: 20px;
+    }
+    .comment {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 10px;
+    }
+    .comment-author {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .comment-text {
+        margin-bottom: 5px;
+    }
+    .comment-date {
+        font-size: 0.8em;
+        color: #777;
+    }
+    .comment-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+    .comment-like-btn, .comment-report-btn {
+        padding: 3px 8px;
+        border: none;
+        border-radius: 4px;
+        background: #f0f0f0;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    .comment-like-btn.liked {
+        background: #ccffcc;
+    }
+    .comment-report-btn {
+        background: #ffe6e6;
+    }
+</style>
 
-            function toggleFavorite(fieldId) {
-                fetch(`/cards/${fieldId}/toggle-favorite/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'same-origin'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.is_favorited !== undefined) {
-                        favoriteBtn.classList.toggle('favorited', data.is_favorited);
-                    } else {
-                        window.location.href = '/accounts/login/?next=' + window.location.pathname;
-                    }
-                });
-            }
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const likeBtn = document.getElementById('like-btn');
+        const favoriteBtn = document.getElementById('favorite-btn');
+        const submitCommentBtn = document.getElementById('submit-comment');
+        const commentText = document.getElementById('comment-text');
+        const commentsList = document.getElementById('comments-list');
 
-            function addComment(fieldId, text) {
-            fetch(`/cards/${fieldId}/add-comment/`, {  // Изменили этот URL
+        // Обработчики для карточки
+        if (likeBtn) {
+            likeBtn.addEventListener('click', function() {
+                const fieldId = this.getAttribute('data-field-id');
+                toggleLike(fieldId);
+            });
+        }
+
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', function() {
+                const fieldId = this.getAttribute('data-field-id');
+                toggleFavorite(fieldId);
+            });
+        }
+
+        if (submitCommentBtn) {
+            submitCommentBtn.addEventListener('click', function() {
+                const fieldId = this.getAttribute('data-field-id');
+                const text = commentText.value.trim();
+
+                if (text) {
+                    addComment(fieldId, text);
+                }
+            });
+        }
+
+        // Обработчики для комментариев
+        document.querySelectorAll('.comment-like-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                toggleCommentLike(commentId);
+            });
+        });
+
+        document.querySelectorAll('.comment-report-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                reportComment(commentId);
+            });
+        });
+
+        // Функции для карточки
+        function toggleLike(fieldId) {
+            fetch(`/cards/${fieldId}/toggle-like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_liked !== undefined) {
+                    likeBtn.classList.toggle('liked', data.is_liked);
+                    document.getElementById('likes-count').textContent = data.likes_count;
+                } else {
+                    window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                }
+            });
+        }
+
+        function toggleFavorite(fieldId) {
+            fetch(`/cards/${fieldId}/toggle-favorite/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_favorited !== undefined) {
+                    favoriteBtn.classList.toggle('favorited', data.is_favorited);
+                } else {
+                    window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                }
+            });
+        }
+
+        function addComment(fieldId, text) {
+            fetch(`/cards/${fieldId}/add-comment/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
@@ -200,50 +242,104 @@
                 body: JSON.stringify({text: text}),
                 credentials: 'same-origin'
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Очищаем поле ввода
-                        commentText.value = '';
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    commentText.value = '';
 
-                        // Добавляем новый комментарий в список
-                        const commentDiv = document.createElement('div');
-                        commentDiv.className = 'comment';
-                        commentDiv.innerHTML = `
-                            <div class="comment-author">${data.author}</div>
-                            <div class="comment-text">${data.text}</div>
-                            <div class="comment-date">${data.created_at}</div>
-                        `;
+                    const commentDiv = document.createElement('div');
+                    commentDiv.className = 'comment';
+                    commentDiv.setAttribute('data-comment-id', data.comment_id);
+                    commentDiv.innerHTML = `
+                        <div class="comment-author">${data.author}</div>
+                        <div class="comment-text">${data.text}</div>
+                        <div class="comment-date">${data.created_at}</div>
+                        <div class="comment-actions">
+                            <button class="comment-like-btn" data-comment-id="${data.comment_id}">
+                                👍 Like (<span class="likes-count">0</span>)
+                            </button>
+                            <button class="comment-report-btn" data-comment-id="${data.comment_id}">
+                                ⚠️ Report (<span class="reports-count">0</span>)
+                            </button>
+                        </div>
+                    `;
 
-                        // Вставляем новый комментарий в начало списка
-                        commentsList.insertBefore(commentDiv, commentsList.firstChild);
-                    } else if (data.redirect) {
-                        window.location.href = '/accounts/login/?next=' + window.location.pathname;
-                    } else if (data.error) {
-                        alert(data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            }
-            
-            // Функция для получения CSRF токена
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
+                    commentsList.insertBefore(commentDiv, commentsList.firstChild);
+
+                    // Добавляем обработчики для новых кнопок
+                    commentDiv.querySelector('.comment-like-btn').addEventListener('click', function() {
+                        toggleCommentLike(this.getAttribute('data-comment-id'));
+                    });
+
+                    commentDiv.querySelector('.comment-report-btn').addEventListener('click', function() {
+                        reportComment(this.getAttribute('data-comment-id'));
+                    });
+                }
+            });
+        }
+
+        // Функции для комментариев
+        function toggleCommentLike(commentId) {
+            fetch(`/comments/${commentId}/toggle-like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const btn = document.querySelector(`.comment-like-btn[data-comment-id="${commentId}"]`);
+                    const countSpan = btn.querySelector('.likes-count');
+
+                    btn.classList.toggle('liked', data.is_liked);
+                    countSpan.textContent = data.likes_count;
+                } else if (data.redirect) {
+                    window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                }
+            });
+        }
+
+        function reportComment(commentId) {
+            fetch(`/comments/${commentId}/report/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const btn = document.querySelector(`.comment-report-btn[data-comment-id="${commentId}"]`);
+                    const countSpan = btn.querySelector('.reports-count');
+
+                    countSpan.textContent = data.reports_count;
+                    alert('Thank you for your report! We will review this comment.');
+                } else if (data.redirect) {
+                    window.location.href = '/accounts/login/?next=' + window.location.pathname;
+                }
+            });
+        }
+
+        // Функция для получения CSRF токена
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
                     }
                 }
-                return cookieValue;
             }
-        });
-    </script>
-</body>
-</html>
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}
