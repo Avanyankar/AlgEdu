@@ -1,4 +1,4 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/base.html" %}
 
 {% block content %}
 <div class="module">
@@ -7,7 +7,8 @@
     <table>
         <thead>
             <tr>
-                <th>Карта</th>
+                <th>Тип</th>
+                <th>Объект</th>
                 <th>Пользователь</th>
                 <th>Причина</th>
                 <th>Дата</th>
@@ -17,23 +18,52 @@
         <tbody>
             {% for report in reports %}
             <tr>
-                <td>{{ report.field.title }}</td>
+                <td>Карта</td>
+                <td>
+                    <a href="{% url 'field_detail' pk=report.field.id %}">
+                        {{ report.field.title }}
+                    </a>
+                </td>
                 <td>{{ report.user.username }}</td>
                 <td>{{ report.get_reason_display }}</td>
                 <td>{{ report.created_at|date:"d.m.Y H:i" }}</td>
-                <td>
-                    <a href="{% url 'admin:main_app_fieldreport_change' report.id %}" 
-                       class="button">
-                        Просмотр
+                <td class="actions">
+                    <form method="post" action="{% url 'block_content' content_type='field' content_id=report.field.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="button" {% if report.field.is_blocked %}disabled{% endif %}>
+                            Заблокировать
+                        </button>
+                    </form>
+                    
+                    <form method="post" action="{% url 'unblock_content' content_type='field' content_id=report.field.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="button" {% if not report.field.is_blocked %}disabled{% endif %}>
+                            Разблокировать
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'admin:main_app_fieldreport_change' report.id %}" class="button">
+                        Подробнее
                     </a>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5">Нет жалоб для модерации</td>
+                <td colspan="6">Нет жалоб для модерации</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<style>
+    .actions form {
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
 {% endblock %}

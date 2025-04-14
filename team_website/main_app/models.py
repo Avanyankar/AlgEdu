@@ -3,12 +3,27 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+import logging
+
+logger = logging.getLogger(__name__)
 
 class User(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
     bio = models.TextField(max_length=500, blank=True)
     location = models.CharField(max_length=100, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+
+    def safe_ban(self):
+        try:
+            self.is_active = False
+            self.save(update_fields=['is_active'])
+            
+            Field.objects.filter(user=self).update(is_blocked=True)
+            Comment.objects.filter(author=self).update(is_blocked=True)
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка бана User {self.id}: {str(e)}")
+            return False
 
     def __str__(self):
         return self.username
@@ -54,6 +69,32 @@ class Field(models.Model):
     def unblock(self):
         self.is_blocked = False
         self.save()
+
+        def safe_block(self):
+            try:
+                if not isinstance(self.cols, int):
+                    try:
+                        self.cols = int(self.cols) if str(self.cols).isdigit() else 10
+                    except (TypeError, ValueError):
+                        self.cols = 10
+                
+                self.is_blocked = True
+                self.save(update_fields=['is_blocked', 'cols'])
+                
+                self.comments.update(is_blocked=True)
+                return True
+            except Exception as e:
+                logger.error(f"Ошибка блокировки Field {self.id}: {str(e)}")
+                return False
+
+    def safe_unblock(self):
+        try:
+            self.is_blocked = False
+            self.save(update_fields=['is_blocked'])
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка разблокировки Field {self.id}: {str(e)}")
+            return False
 
     def get_absolute_url(self):
         from django.urls import reverse
@@ -110,6 +151,16 @@ class Comment(models.Model):
     def unblock(self):
         self.is_blocked = False
         self.save()
+
+    def safe_block(self):
+        try:
+            self.is_blocked = True
+            self.save(update_fields=['is_blocked'])
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка блокировки Comment {self.id}: {str(e)}")
+            return False
+
 
     class Meta:
         ordering = ['-created_at']

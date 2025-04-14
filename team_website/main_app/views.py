@@ -6,7 +6,7 @@ from django.http import HttpResponse, Http404
 from django.core.exceptions import ValidationError
 from django.contrib import messages
 from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, Post, LikeField, FavoriteField, FieldReport, ReportComment
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from django_registration.signals import user_registered
@@ -20,10 +20,10 @@ from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-
-
+import logging
 import json
 
+logger = logging.getLogger(__name__)
 
 class FieldListView(ListView):
     model = Field
@@ -750,21 +750,152 @@ def moderation_panel(request):
 
 @staff_member_required
 def block_content(request, content_type, content_id):
-    content_models = {
-        'field': Field,
-        'comment': Comment,
-        'user': request.user.__class__  
+    """Универсальная функция блокировки контента"""
+    CONTENT_TYPES = {
+        'field': {
+            'model': Field,
+            'block_method': 'safe_block',
+            'unblock_method': 'safe_unblock',
+            'name': 'карта'
+        },
+        'comment': {
+            'model': Comment,
+            'block_method': 'safe_block',
+            'unblock_method': 'safe_unblock', 
+            'name': 'комментарий'
+        },
+        'user': {
+            'model': User,
+            'block_method': 'safe_ban',
+            'unblock_method': None,
+            'name': 'пользователь'
+        }
     }
+
+    try:
+        if content_type not in CONTENT_TYPES:
+            raise Http404("Тип контента не поддерживается")
+        
+        config = CONTENT_TYPES[content_type]
+        model = config['model']
+        item = get_object_or_404(model, pk=content_id)
+        
+        action = request.POST.get('action', 'block')
+        
+        if action == 'block' and config['block_method']:
+            method = getattr(item, config['block_method'])
+            success_msg = f"{config['name'].capitalize()} успешно заблокирован"
+            log_action = 'блокировка'
+        elif action == 'unblock' and config['unblock_method']:
+            method = getattr(item, config['unblock_method'])
+            success_msg = f"{config['name'].capitalize()} разблокирован"
+            log_action = 'разблокировка'
+        else:
+            messages.error(request, "Действие недоступно для этого типа контента")
+            return redirect('admin-panel')
+
+        if method():
+            messages.success(request, success_msg)
+            logger.info(f"{log_action.capitalize()} {config['name']} {content_id}")
+        else:
+            messages.error(request, f"Не удалось выполнить действие для {config['name']}")
+
+    except Exception as e:
+        logger.error(f"Ошибка в block_content: {str(e)}", exc_info=True)
+        messages.error(request, f"Произошла ошибка: {str(e)}")
+
+    return redirect(reverse_lazy('admin-panel'))
+
+class BlockContentView(View):
+    """Класс для блокировки контента"""
     
-    if content_type not in content_models:
-        raise Http404("Тип контента не поддерживается")
+    def post(self, request, content_type, content_id):
+        CONTENT_TYPES = {
+            'field': {
+                'model': Field,
+                'block_method': 'safe_block',
+                'name': 'карта',
+                'detail_url': 'field_detail'
+            },
+            'comment': {
+                'model': Comment,
+                'block_method': 'safe_block',
+                'name': 'комментарий',
+                'detail_url': None
+            },
+            'user': {
+                'model': User,
+                'block_method': 'safe_ban',
+                'name': 'пользователь',
+                'detail_url': 'profile_view'
+            }
+        }
+        
+        try:
+            if content_type not in CONTENT_TYPES:
+                raise ValueError("Неизвестный тип контента")
+            
+            config = CONTENT_TYPES[content_type]
+            item = config['model'].objects.get(pk=content_id)
+            
+            if hasattr(item, config['block_method']):
+                getattr(item, config['block_method'])()
+                messages.success(
+                    request, 
+                    f"{config['name'].capitalize()} успешно заблокирована"
+                )
+                logger.info(f"Заблокирован {content_type} {content_id}")
+            else:
+                messages.error(request, "Не удалось заблокировать")
+                
+        except Exception as e:
+            messages.error(request, f"Ошибка: {str(e)}")
+            logger.error(f"Ошибка блокировки: {str(e)}")
+        
+        return redirect(reverse('moderation_panel'))
+
+
+class UnblockContentView(View):
+    """Класс для разблокировки контента"""
     
-    model = content_models[content_type]
-    item = get_object_or_404(model, pk=content_id)
-    item.is_blocked = True
-    item.save()
-    messages.success(request, f'{content_type.capitalize()} успешно заблокирован')
-    return redirect(reverse_lazy('hidden-admin-panel'))
+    def post(self, request, content_type, content_id):
+        CONTENT_TYPES = {
+            'field': {
+                'model': Field,
+                'unblock_method': 'safe_unblock',
+                'name': 'карта',
+                'detail_url': 'field_detail'
+            },
+            'comment': {
+                'model': Comment,
+                'unblock_method': 'safe_unblock',
+                'name': 'комментарий',
+                'detail_url': None
+            }
+        }
+        
+        try:
+            if content_type not in CONTENT_TYPES:
+                raise ValueError("Неизвестный тип контента")
+            
+            config = CONTENT_TYPES[content_type]
+            item = config['model'].objects.get(pk=content_id)
+            
+            if hasattr(item, config['unblock_method']):
+                getattr(item, config['unblock_method'])()
+                messages.success(
+                    request, 
+                    f"{config['name'].capitalize()} успешно разблокирована"
+                )
+                logger.info(f"Разблокирован {content_type} {content_id}")
+            else:
+                messages.error(request, "Не удалось разблокировать")
+                
+        except Exception as e:
+            messages.error(request, f"Ошибка: {str(e)}")
+            logger.error(f"Ошибка разблокировки: {str(e)}")
+        
+        return redirect(reverse('moderation_panel'))
 
 
 class ProfileFieldsAPIView(View):

@@ -31,6 +31,10 @@
                 data-field-id="{{ field.id }}">
             ⭐ Favorite
         </button>
+
+        <a href="{% url 'report_field' field.id %}" class="report-button">
+            Пожаловаться
+        </a>  
     </div>
 
     <!-- Секция комментариев -->
