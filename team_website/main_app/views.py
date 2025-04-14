@@ -1,11 +1,11 @@
 from typing import Dict, Any
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import UpdateView, DetailView, CreateView, TemplateView, ListView
-from django.http import HttpResponse
+from django.views.generic import View, UpdateView, DetailView, CreateView, TemplateView, ListView
+from django.http import HttpResponse, Http404
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, Post, LikeField, FavoriteField, FieldReport
+from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, Post, LikeField, FavoriteField, FieldReport, ReportComment
 from django.urls import reverse_lazy
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
@@ -15,10 +15,24 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+
+
 import json
+
+
+class FieldListView(ListView):
+    model = Field
+    template_name = 'fields/list.html'
+    context_object_name = 'fields'
+
+    def get_queryset(self):
+        return Field.objects.filter(is_blocked=False).order_by('-created_at')
+
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -321,6 +335,12 @@ class FieldDetailView(DetailView):
         })
         return context
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if obj.is_blocked:
+            raise Http404("Карта заблокирована и недоступна для просмотра")
+        return obj
+
     def create_cells(self, field):
         """Создает клетки для поля при первом обращении"""
         cells = []
@@ -464,6 +484,103 @@ def search_fields(request):
         results.append(field)
     
     return JsonResponse({'results': results})
+
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    login_url = reverse_lazy('login')
+    raise_exception = True
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+
+class ModerationPanelView(StaffRequiredMixin, TemplateView):
+    template_name = 'moderation/panel.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['field_reports'] = FieldReport.objects.filter(
+            is_resolved=False
+        ).select_related('field', 'user')
+
+
+        context['blocked_fields'] = Field.objects.filter(
+            is_blocked=True
+        ).order_by('-updated_at')[:10]
+
+        context['blocked_comments'] = Comment.objects.filter(
+            is_blocked=True
+        ).order_by('-created_at')[:10]
+
+        return context
+
+
+class ResolveCommentReportView(StaffRequiredMixin, View):
+
+    def get(self, request, report_id):
+        report = get_object_or_404(ReportComment, id=report_id)
+        return render(request, 'moderation/resolve_comment.html', {
+            'report': report,
+        })
+
+    def post(self, request, report_id):
+        report = get_object_or_404(ReportComment, id=report_id)
+        action = request.POST.get('action')
+
+        if action == 'block':
+            report.comment.block()
+            report.status = 'approved'
+            messages.success(request, 'Комментарий заблокирован')
+        elif action == 'ignore':
+            report.status = 'rejected'
+            messages.info(request, 'Жалоба отклонена')
+
+        report.is_resolved = True
+        report.save()
+        return redirect('moderation_panel')
+
+class ResolveFieldReportView(StaffRequiredMixin, View):
+
+    def get(self, request, report_id):
+        report = get_object_or_404(FieldReport, id=report_id)
+        return render(request, 'moderation/resolve_field.html', {
+            'report': report,
+        })
+
+    def post(self, request, report_id):
+        report = get_object_or_404(FieldReport, id=report_id)
+        action = request.POST.get('action')
+
+        if action == 'block':
+            report.field.block()
+            report.status = 'approved'
+            messages.success(request, 'Карта заблокирована')
+        elif action == 'ignore':
+            report.status = 'rejected'
+            messages.info(request, 'Жалоба отклонена')
+
+        report.is_resolved = True
+        report.save()
+        return redirect('moderation_panel')
+
+
+class UnblockContentView(StaffRequiredMixin, View):
+
+    def post(self, request, content_type, content_id):
+        if content_type == 'field':
+            obj = get_object_or_404(Field, id=content_id)
+            obj.unblock()
+            messages.success(request, 'Карта разблокирована')
+        elif content_type == 'comment':
+            obj = get_object_or_404(Comment, id=content_id)
+            obj.unblock()
+            messages.success(request, 'Комментарий разблокирован')
+        else:
+            messages.error(request, 'Неверный тип контента')
+            return redirect('moderation_panel')
+
+        return redirect('moderation_panel')
 
 
 class AboutPageView(TemplateView):
@@ -622,6 +739,58 @@ def field_detail(request, pk):
         'is_liked': is_liked,
         'is_favorited': is_favorited
     })
+
+
+@staff_member_required
+def moderation_panel(request):
+    reports = FieldReport.objects.filter(status='pending').select_related('field', 'user')
+    return render(request, 'moderation/moderation_panel.html', {
+        'reports': reports
+    })
+
+@staff_member_required
+def block_content(request, content_type, content_id):
+    content_models = {
+        'field': Field,
+        'comment': Comment,
+        'user': request.user.__class__  
+    }
+    
+    if content_type not in content_models:
+        raise Http404("Тип контента не поддерживается")
+    
+    model = content_models[content_type]
+    item = get_object_or_404(model, pk=content_id)
+    item.is_blocked = True
+    item.save()
+    messages.success(request, f'{content_type.capitalize()} успешно заблокирован')
+    return redirect(reverse_lazy('hidden-admin-panel'))
+
+
+class ProfileFieldsAPIView(View):
+    def get(self, request):
+        field_type = request.GET.get('type', 'my')
+        
+        if field_type == 'my':
+            fields = Field.objects.filter(user=request.user)
+        elif field_type == 'liked':
+            fields = request.user.liked_cards.all()
+        elif field_type == 'favorites':
+            fields = request.user.favorited_cards.all()
+        else:
+            fields = Field.objects.none()
+        
+        fields_data = []
+        for field in fields:
+            fields_data.append({
+                'id': field.id,
+                'title': field.title,
+                'description': field.description,
+                'created_at': field.created_at.strftime("%d.%m.%Y"),
+                'url': field.get_absolute_url()
+            })
+        
+        return JsonResponse({'fields': fields_data})
 
 
 @require_POST

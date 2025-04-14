@@ -22,15 +22,20 @@
         <div id="search-results">
             <ul id="fields-list">
                 {% for field in fields %}
-                    <li>
-                        <h2>
+                    {% if not field.is_blocked or user.is_staff %}
+                        <li>
+                            <h2>
                             <a href="{% url 'card-detail' field.id %}" class="field-link">
                                 {{ field.title }}
                             </a>
                         </h2>
-                        <p>{{ field.description }}</p>
-                        <p>Создано: {{ field.created_at }}</p>
-                    </li>
+                            <p>{{ field.description }}</p>
+                            <p>Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
+                            {% if field.is_blocked %}
+                                <span class="btn">Заблокировано</span>
+                            {% endif %}
+                        </li>
+                    {% endif %}
                 {% empty %}
                     <p>Поля не найдены.</p>
                 {% endfor %}

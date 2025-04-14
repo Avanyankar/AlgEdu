@@ -42,9 +42,29 @@ class Field(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(User, related_name='liked_cards', blank=True)
     favorites = models.ManyToManyField(User, related_name='favorited_cards', blank=True)
+    is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
     cols = models.IntegerField(default=10)
     rows = models.IntegerField(default=10)
     file = models.OneToOneField(FieldFile, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def block(self):
+        self.is_blocked = True
+        self.save()
+
+    def unblock(self):
+        self.is_blocked = False
+        self.save()
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('card-detail', kwargs={'pk': self.pk})
+
+    class Meta:
+        verbose_name = "Карта"
+        verbose_name_plural = "Карты"
+        permissions = [
+            ("can_view_blocked", "Может просматривать заблокированные карты"),
+        ]
 
     def __str__(self):
         return self.title
@@ -81,9 +101,20 @@ class Comment(models.Model):
     likes = models.ManyToManyField(User, related_name='liked_comments', blank=True)
     reports = models.ManyToManyField(User, related_name='reported_comments', blank=True)
     is_blocked = models.BooleanField(default=False)
+    is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
+
+    def block(self):
+        self.is_blocked = True
+        self.save()
+
+    def unblock(self):
+        self.is_blocked = False
+        self.save()
 
     class Meta:
         ordering = ['-created_at']
+        verbose_name = "Комментарий"
+        verbose_name_plural = "Комментарии"
 
     def __str__(self):
         return f'Комментарий от {self.author.username} к {self.field.title}'
@@ -150,6 +181,13 @@ class FieldReport(models.Model):
         ('other', 'Другое'),
     ]
 
+    STATUS_CHOICES = [
+        ('pending', 'На рассмотрении'),
+        ('approved', 'Жалоба одобрена'),
+        ('rejected', 'Жалоба отклонена'),
+    ]
+    
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     field = models.ForeignKey(Field, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)

@@ -56,6 +56,11 @@ urlpatterns = [
     path('profile/comment/<int:comment_id>/delete/', views.delete_profile_comment, name='delete_profile_comment'),
     path('fields/create/', views.FieldCreateView.as_view(), name='create_field'),
     path('files/download/<int:pk>/', views.download_file, name='download_file'),
+    path('moderation/', views.ModerationPanelView.as_view(), name='moderation_panel'),
+    path('moderation/field/<int:report_id>/', views.ResolveFieldReportView.as_view(), name='resolve_field_report'),
+    path('moderation/comment/<int:report_id>/', views.ResolveCommentReportView.as_view(), name='resolve_comment_report'),
+    path('moderation/unblock/<str:content_type>/<int:content_id>/', views.UnblockContentView.as_view(), name='unblock_content'),
+    path('api/profile/fields/', views.ProfileFieldsAPIView.as_view(), name='profile_fields_api'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = views.NotFoundView.as_view()
