@@ -55,7 +55,7 @@
                         </label>
                         <input type="number" class="form-control" id="{{ form.cols.id_for_label }}"
                                name="{{ form.cols.html_name }}" value="{{ form.cols.value|default:'10' }}"
-                               min="1" max="20" required>
+                               min="1" max="10" required>
                         {% if form.cols.errors %}
                             <div class="alert alert-danger mt-2">
                                 {% for error in form.cols.errors %}
@@ -70,7 +70,7 @@
                         </label>
                         <input type="number" class="form-control" id="{{ form.rows.id_for_label }}"
                                name="{{ form.rows.html_name }}" value="{{ form.rows.value|default:'10' }}"
-                               min="1" max="20" required>
+                               min="1" max="10" required>
                         {% if form.rows.errors %}
                             <div class="alert alert-danger mt-2">
                                 {% for error in form.rows.errors %}

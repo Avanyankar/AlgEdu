@@ -219,8 +219,8 @@
         const commentsList = document.getElementById('comments-list');
 
         // Переменные для карты
-        let gridX = 5; // Размер по X (можно изменить)
-        let gridY = 5; // Размер по Y (можно изменить)
+        let gridX = {{ field.cols }};
+        let gridY = {{ field.rows }}; // Размер по Y (можно изменить)
         let robotPosition = {x: 1, y: 1}; // Позиция робота
         let walls = [{x: 2, y: 1}, {x: 1, y: 3}, {x: 3, y: 3}]; // Координаты стен
         let targetPosition = {x: 4, y: 4}; // Целевая позиция
