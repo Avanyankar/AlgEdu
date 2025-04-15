@@ -6,17 +6,32 @@
         {% load static %}
         <title>{% block title %}NotImplementedError{% endblock %}</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Jaini+Purva&display=swap" rel="stylesheet">
         <style>
-              /* Стилизация стандартного вывода form.as_p */
-              form.as-p p {
+            .jaini-font {
+                font-family: 'Jaini Purva', cursive;
+            }
+            body {
+                croll-behavior: smooth;
+            }
+        /* Стилизация стандартного вывода form.as_p */
+            form.as-p p {
                 @apply mb-4;
-              }
-              form.as-p label {
+            }
+            form.as-p label {
                 @apply block text-sm font-medium mb-1;
-              }
-              form.as-p input {
+            }
+            form.as-p input {
                 @apply w-full px-3 py-2 border border-gray-300 rounded focus:ring-black focus:border-black;
-              }
+            }
+        /* ANIMKA */
+            .math-symbol {
+                animation: float 3s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0) rotate(0deg); }
+                50% { transform: translateY(-8px) rotate(5deg); }
+            }
         </style>
 
     </head>
