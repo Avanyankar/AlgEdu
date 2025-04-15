@@ -1,65 +1,80 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            button.classList.add('active');
+            const tabId = button.getAttribute('data-tab') + '-tab';
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
     function loadFields(fieldType) {
-        var container = document.getElementById('fields-container');
+        let containerId;
+        switch(fieldType) {
+            case 'my':
+                containerId = 'fields-container';
+                break;
+            case 'liked':
+                containerId = 'liked-fields-container';
+                break;
+            case 'favorites':
+                containerId = 'favorites-fields-container';
+                break;
+            default:
+                return;
+        }
+        
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
         container.innerHTML = '<p>Загрузка...</p>';
         
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/api/profile/fields/?type=' + fieldType, true);
-        
-        xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                var data = JSON.parse(xhr.responseText);
-                renderFields(data.fields);
-            } else {
-                container.innerHTML = '<p>Ошибка загрузки</p>';
-                console.error('Ошибка:', xhr.statusText);
-            }
-        };
-        
-        xhr.onerror = function() {
-            container.innerHTML = '<p>Ошибка сети</p>';
-            console.error('Ошибка сети');
-        };
-        
-        xhr.send();
+        fetch(`/api/profile/fields/?type=${fieldType}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка загрузки');
+                return response.json();
+            })
+            .then(data => renderFields(container, data.fields))
+            .catch(error => {
+                console.error('Ошибка:', error);
+                container.innerHTML = '<div class="empty-tab-message"><p>Ошибка загрузки данных</p></div>';
+            });
     }
 
-    function renderFields(fields) {
-        var container = document.getElementById('fields-container');
+    function renderFields(container, fields) {
         container.innerHTML = '';
         
-        if (fields.length === 0) {
-            container.innerHTML = '<p>Нет карт для отображения</p>';
+        if (!fields || fields.length === 0) {
+            container.innerHTML = '<div class="empty-tab-message"><p>Нет карт для отображения</p></div>';
             return;
         }
         
-        for (var i = 0; i < fields.length; i++) {
-            var field = fields[i];
-            var fieldElement = document.createElement('div');
-            
-            fieldElement.innerHTML = 
-                '<h3>' + field.title + '</h3>' +
-                '<p>' + (field.description || 'Нет описания') + '</p>' +
-                '<small>Создано: ' + field.created_at + '</small>';
-            
-            fieldElement.onclick = function(id) {
-                return function() {
-                    window.location.href = '/fields/' + id + '/';
-                };
-            }(field.id);
-            
+        fields.forEach(field => {
+            const fieldElement = document.createElement('div');
+            fieldElement.className = 'field-card';
+            fieldElement.innerHTML = `
+                <h3>${field.title}</h3>
+                <p>${field.description || 'Нет описания'}</p>
+                <small>Создано: ${field.created_at}</small>
+            `;
+            fieldElement.addEventListener('click', () => {
+                window.location.href = `/cards/${field.id}/`;
+            });
             container.appendChild(fieldElement);
-        }
-    }
-
-    var buttons = document.querySelectorAll('.fields-nav-btn');
-    for (var i = 0; i < buttons.length; i++) {
-        buttons[i].addEventListener('click', function() {
-            loadFields(this.getAttribute('data-type'));
         });
     }
 
-    if (buttons.length > 0) {
-        loadFields('my');
+    document.querySelectorAll('.fields-nav-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            loadFields(this.getAttribute('data-type'));
+        });
+    });
+
+    if (document.querySelector('.fields-nav-btn.active')) {
+        loadFields(document.querySelector('.fields-nav-btn.active').getAttribute('data-type'));
     }
 });
