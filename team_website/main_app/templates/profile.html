@@ -86,13 +86,13 @@
             {% if is_own_profile %}
                 <div class="profile-content">
                     <div class="profile-tabs">
-                        <button class="tab-btn active" data-tab="my-cards">
+                        <button class="tab-btn fields-nav-btn active" data-type="my" data-tab="my-cards">
                             <i class="fas fa-id-card"></i> Мои карты
                         </button>
-                        <button class="tab-btn" data-tab="liked-cards">
+                        <button class="tab-btn fields-nav-btn" data-type="liked" data-tab="liked-cards">
                             <i class="fas fa-heart"></i> Лайкнутые
                         </button>
-                        <button class="tab-btn" data-tab="favorites">
+                        <button class="tab-btn fields-nav-btn" data-type="favorites" data-tab="favorites">
                             <i class="fas fa-star"></i> Избранные
                         </button>
                         <button class="tab-btn" data-tab="comments">
@@ -105,27 +105,33 @@
 
                     <div class="tab-content active" id="my-cards-tab">
                         <div class="cards-grid">
-                            <div class="empty-tab-message">
-                                <p>У вас пока нет созданных карточек.</p>
-                                <a href="{% url 'create_field' %}" class="btn btn-create-card">
-                                    <i class="fas fa-plus"></i> Создать первую карточку
-                                </a>
+                            <div id="fields-container">
+                                <div class="empty-tab-message">
+                                    <p>У вас пока нет созданных карточек.</p>
+                                    <a href="{% url 'create_field' %}" class="btn btn-create-card">
+                                        <i class="fas fa-plus"></i> Создать первую карточку
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="tab-content" id="liked-cards-tab">
                         <div class="cards-grid">
-                            <div class="empty-tab-message">
-                                <p>Вы еще не лайкнули ни одной карточки.</p>
+                            <div id="liked-fields-container">
+                                <div class="empty-tab-message">
+                                    <p>Вы еще не лайкнули ни одной карточки.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="tab-content" id="favorites-tab">
                         <div class="cards-grid">
-                            <div class="empty-tab-message">
-                                <p>У вас пока нет избранных карточек.</p>
+                            <div id="favorites-fields-container">
+                                <div class="empty-tab-message">
+                                    <p>У вас пока нет избранных карточек.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -510,6 +516,27 @@
                 padding: 20px;
             }
 
+            .profile-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            
+            .field-card {
+                cursor: pointer;
+                padding: 15px;
+                margin-bottom: 15px;
+                border-radius: 8px;
+                background: #fff;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                transition: transform 0.2s;
+            }
+            
+            .field-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+
             @media (max-width: 768px) {
                 .profile-header {
                     flex-direction: column;
@@ -535,30 +562,30 @@
                     position: static;
                     margin-top: 10px;
                 }
+
+                .profile-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            
+            .field-card {
+                cursor: pointer;
+                padding: 15px;
+                margin-bottom: 15px;
+                border-radius: 8px;
+                background: #fff;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                transition: transform 0.2s;
+            }
+            
+            .field-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
             }
         </style>
 
-        <script>
-            // Активация вкладок
-            document.addEventListener('DOMContentLoaded', function() {
-                const tabButtons = document.querySelectorAll('.tab-btn');
-                const tabContents = document.querySelectorAll('.tab-content');
-
-                tabButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        // Удаляем активный класс у всех кнопок и контента
-                        tabButtons.forEach(btn => btn.classList.remove('active'));
-                        tabContents.forEach(content => content.classList.remove('active'));
-
-                        // Добавляем активный класс текущей кнопке
-                        button.classList.add('active');
-
-                        // Показываем соответствующий контент
-                        const tabId = button.getAttribute('data-tab') + '-tab';
-                        document.getElementById(tabId).classList.add('active');
-                    });
-                });
-            });
-        </script>
+        <script src="{% static 'js/profile_fields.js' %}"></script>
     </main>
 {% endblock %}
