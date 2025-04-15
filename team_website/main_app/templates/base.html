@@ -5,6 +5,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         {% load static %}
         <title>{% block title %}NotImplementedError{% endblock %}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+              /* Стилизация стандартного вывода form.as_p */
+              form.as-p p {
+                @apply mb-4;
+              }
+              form.as-p label {
+                @apply block text-sm font-medium mb-1;
+              }
+              form.as-p input {
+                @apply w-full px-3 py-2 border border-gray-300 rounded focus:ring-black focus:border-black;
+              }
+        </style>
+
     </head>
     <body>
         {% include 'header.html' %}
