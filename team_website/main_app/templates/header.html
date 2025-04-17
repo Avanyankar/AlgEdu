@@ -1,13 +1,20 @@
 <header class="bg-white border-b border-gray-200">
-        <div class="container mx-auto px-6 py-5">
-            <div class="flex justify-center items-center">
-                <!-- Анимированный символ -->
-                <span class="math-symbol text-3xl mr-4 text-gray-600">∑</span>
+  <div class="container mx-auto px-6 py-5 relative">
+    <!-- Логотип по центру -->
+    <div class="flex justify-center items-center">
+      <span class="text-3xl mr-4 text-gray-600 animate-bounce">∑</span>
+      <h1 class="jaini-font text-4xl text-gray-800">AlgEdu</h1>
+    </div>
 
-                <h1 class="jaini-font text-4xl text-gray-800">
-                    AlgEdu
-                </h1>
-            </div>
-        </div>
+    <!-- Иконка входа справа -->
+    <a href="/login" class="absolute right-6 top-1/2 transform -translate-y-1/2
+                   p-2 rounded-full hover:bg-gray-100 transition-colors duration-300"
+       aria-label="Войти">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#566246]" fill="none"
+           viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+      </svg>
+    </a>
+  </div>
 </header>
-

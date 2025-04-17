@@ -1,79 +1,136 @@
 {% extends 'base.html' %}
 
-{% block title %}О нашей компании{% endblock %}
-
-{% block extra_css %}
-<style>
-    .home-button {
-        display: inline-block;
-        padding: 12px 24px;
-        background-color: #3498db;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 20px 0;
-        transition: all 0.3s;
-        font-weight: bold;
-        border: 2px solid #3498db;
-    }
-    .home-button:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .button-container {
-        text-align: center;
-        margin: 30px 0;
-    }
-    .history-timeline {
-        position: relative;
-        padding-left: 50px;
-        margin: 40px 0;
-    }
-    .timeline-item {
-        position: relative;
-        margin-bottom: 30px;
-    }
-    .timeline-item:before {
-        content: '';
-        position: absolute;
-        left: -30px;
-        top: 0;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #3498db;
-    }
-    .timeline-item:after {
-        content: '';
-        position: absolute;
-        left: -21px;
-        top: 20px;
-        width: 2px;
-        height: calc(100% + 10px);
-        background: #3498db;
-    }
-</style>
-{% endblock %}
+{% block title %}О Нас - Разработчики{% endblock %}
 
 {% block content %}
-<div class="button-container">
-    <a href="/" class="home-button">← На главную</a>
-</div>
-
-<header>
-    <h1>О нашей компании</h1>
-</header>
-
-<section>
-    <h2>Наша история</h2>
-    <p>Мы начали свой путь в 2010 году.</p>
-
-    <div class="history-timeline">
-        <div class="timeline-item">
-            <h3>2010 - Основание</h3>
-            <p>Начало нашего пути.</p>
+<div class="flex h-screen bg-white">
+    <!-- Боковое меню -->
+    <div class="w-64 border-r border-gray-300 bg-gray-100 p-4 flex flex-col">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold mb-4 text-black">Меню</h2>
+            <nav class="space-y-2">
+                <a href="/" class="block px-4 py-2 border border-black rounded hover:bg-gray-200 transition text-black">Главная</a>
+                <a href="#" class="block px-4 py-2 border border-black rounded bg-gray-200 font-bold transition text-black">О Нас</a>
+                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-200 transition text-black">Карты</a>
+                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-200 transition text-black">AlgEdu</a>
+            </nav>
         </div>
     </div>
-</section>
+
+    <!-- Основной контент -->
+    <div class="flex-1 overflow-auto p-8 max-w-4xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold mb-4 text-black">Наша команда</h1>
+            <p class="text-gray-700 mb-6">Талантливые разработчики, создающие инновационные решения</p>
+        </header>
+
+        <!-- Вертикальный список карточек -->
+        <div class="space-y-8">
+            <!-- Карт1-->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start">
+                <div class="w-24 h-24 rounded-full bg-gray-300 mr-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">ИП</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-black mb-2">Иван Петров</h3>
+                    <p class="text-gray-700 text-lg mb-3">Team Lead</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 8 лет. Специализация: архитектура систем. Отвечает за общее техническое руководство проектом.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Python</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Django</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">AWS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карт2 -->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start flex-row-reverse">
+                <div class="w-24 h-24 rounded-full bg-gray-300 ml-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">АС</div>
+                <div class="text-right">
+                    <h3 class="text-2xl font-bold text-black mb-2">Анна Смирнова</h3>
+                    <p class="text-gray-700 text-lg mb-3">Frontend Developer</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 5 лет. Создает интуитивно понятные интерфейсы с акцентом на пользовательский опыт.</p>
+                    <div class="flex flex-wrap gap-2 justify-end">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">React</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">TypeScript</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Tailwind</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карт3 -->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start">
+                <div class="w-24 h-24 rounded-full bg-gray-300 mr-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">ДК</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-black mb-2">Дмитрий Козлов</h3>
+                    <p class="text-gray-700 text-lg mb-3">Backend Developer</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 6 лет. Разрабатывает надежные и масштабируемые серверные решения.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Node.js</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">PostgreSQL</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">GraphQL</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карт4 -->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start flex-row-reverse">
+                <div class="w-24 h-24 rounded-full bg-gray-300 ml-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">ЕВ</div>
+                <div class="text-right">
+                    <h3 class="text-2xl font-bold text-black mb-2">Елена Васнецова</h3>
+                    <p class="text-gray-700 text-lg mb-3">UX/UI Designer</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 7 лет. Превращает сложные задачи в простые и элегантные интерфейсы.</p>
+                    <div class="flex flex-wrap gap-2 justify-end">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Figma</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Adobe XD</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">User Research</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карт 5-->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start">
+                <div class="w-24 h-24 rounded-full bg-gray-300 mr-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">МЛ</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-black mb-2">Михаил Лебедев</h3>
+                    <p class="text-gray-700 text-lg mb-3">DevOps Engineer</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 5 лет. Обеспечивает бесперебойную работу и масштабируемость инфраструктуры.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Docker</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Kubernetes</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">CI/CD</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карт6  -->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start flex-row-reverse">
+                <div class="w-24 h-24 rounded-full bg-gray-300 ml-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">ОЗ</div>
+                <div class="text-right">
+                    <h3 class="text-2xl font-bold text-black mb-2">Ольга Зайцева</h3>
+                    <p class="text-gray-700 text-lg mb-3">QA Engineer</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 4 года. Гарантирует высочайшее качество продукта через тестирование.</p>
+                    <div class="flex flex-wrap gap-2 justify-end">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Selenium</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Jest</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Cypress</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка 7 - аватарка слева -->
+            <div class="border-2 border-black rounded-lg p-6 hover:shadow-lg transition flex items-start">
+                <div class="w-24 h-24 rounded-full bg-gray-300 mr-6 flex-shrink-0 flex items-center justify-center text-2xl font-bold">СМ</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-black mb-2">Сергей Морозов</h3>
+                    <p class="text-gray-700 text-lg mb-3">Fullstack Developer</p>
+                    <p class="text-gray-800 mb-4">Опыт работы: 5 лет. Работает на всех уровнях стека технологий для создания комплексных решений.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">JavaScript</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">Django</span>
+                        <span class="px-3 py-1 bg-gray-200 rounded-full text-sm text-black">React</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
