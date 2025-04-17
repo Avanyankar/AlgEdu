@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="ru">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        {% load static %}
-        <title>404 error</title>
-    </head>
-    <body>
-        <main>
-            <h1>404</h1>
-            <p>Страница, которую вы ищете, не найдена.</p>
-            <p><a href="{% url 'index' %}">Вернуться на главную</a></p>
-        </main>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <title>404 error</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <main class="text-center p-8">
+        <h1 class="text-9xl font-bold text-gray-800 mb-4">404</h1>
+        <p class="text-xl text-gray-600 mb-8">Страница, которую вы ищете, не найдена.</p>
+        <p>
+            <a href="{% url 'index' %}" class="text-blue-600 hover:text-blue-800 font-medium underline">
+                Вернуться на главную
+            </a>
+        </p>
+    </main>
+</body>
 </html>
