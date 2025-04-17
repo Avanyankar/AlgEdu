@@ -22,3 +22,15 @@ form.as-p input {
     0%, 100% { transform: translateY(0) rotate(0deg); }
     50% { transform: translateY(-8px) rotate(5deg); }
 }
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+@keyframes slide {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(15px); }
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

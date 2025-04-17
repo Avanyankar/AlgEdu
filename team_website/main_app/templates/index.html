@@ -4,44 +4,160 @@
 {% block title %}AlgEdu Team{% endblock %}
 
 {% block content %}
-    <main>
-        <div class="page-header">
-            <h1>Список полей</h1>
-            {% if user.is_authenticated %}
-                <a href="{% url 'profile' %}" class="profile-btn">
-                    <i class="fas fa-user"></i> Мой профиль
-                </a>
-            {% endif %}
+<div class="flex h-screen bg-white">
+    <!-- Боковое меню -->
+    <div class="w-64 border-r border-gray-200 bg-gray-50 p-4 flex flex-col">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold mb-4">Меню</h2>
+            <nav class="space-y-2">
+                <a href="{% url 'profile' %}" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition">Профиль</a>
+                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition">О нас</a>
+                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition">Карты</a>
+                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition font-bold">AlgEdu</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="flex-1 overflow-auto p-8">
+        <!-- Поисковая строка -->
+        <div class="flex mb-8 max-w-2xl">
+            <input type="text" id="search-input" placeholder="Поиск карт..."
+                   class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-black">
+            <button id="search-button" class="bg-black text-white px-6 py-2 rounded-r-lg hover:bg-gray-800 transition">
+                Найти
+            </button>
         </div>
 
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Поиск карт...">
-            <button id="search-button">Найти</button>
+        <!-- Сетка из 9 квадратов -->
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <!-- Карта 1 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 1</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Иван</span>
+                    <span class="text-sm font-bold text-green-600">87%</span>
+                </div>
+            </div>
+
+            <!-- Карта 2 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 2</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Мария</span>
+                    <span class="text-sm font-bold text-red-600">25%</span>
+                </div>
+            </div>
+
+            <!-- Карта 3 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 3</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Алексей</span>
+                    <span class="text-sm font-bold text-gray-600">45%</span>
+                </div>
+            </div>
+
+            <!-- Карта 4 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 4</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Елена</span>
+                    <span class="text-sm font-bold text-yellow-500">100%</span>
+                </div>
+            </div>
+
+            <!-- Карта 5 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 5</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Дмитрий</span>
+                    <span class="text-sm font-bold text-green-600">78%</span>
+                </div>
+            </div>
+
+            <!-- Карта 6 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 6</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Ольга</span>
+                    <span class="text-sm font-bold text-red-600">15%</span>
+                </div>
+            </div>
+
+            <!-- Карта 7 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 7</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Сергей</span>
+                    <span class="text-sm font-bold text-gray-600">60%</span>
+                </div>
+            </div>
+
+            <!-- Карта 8 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 8</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор: Анна</span>
+                    <span class="text-sm font-bold text-green-600">92%</span>
+                </div>
+            </div>
+
+            <!-- Карта 9 -->
+            <div class="border-2 border-black flex flex-col">
+                <div class="aspect-square flex items-center justify-center">
+                    <span class="text-xl font-medium">Карта 9</span>
+                </div>
+                <div class="p-2 border-t border-gray-300 flex justify-between">
+                    <span class="text-sm">Автор:   Игорь</span>
+                    <span class="text-sm font-bold text-red-600">10%</span>
+                </div>
+            </div>
         </div>
 
+        <!-- Список полей -->
         <div id="search-results">
-            <ul id="fields-list">
+            <ul id="fields-list" class="space-y-4">
                 {% for field in fields %}
                     {% if not field.is_blocked or user.is_staff %}
-                        <li>
-                            <h2>
-                            <a href="{% url 'card-detail' field.id %}" class="field-link">
-                                {{ field.title }}
-                            </a>
-                        </h2>
-                            <p>{{ field.description }}</p>
-                            <p>Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
-                            {% if field.is_blocked %}
-                                <span class="btn">Заблокировано</span>
-                            {% endif %}
+                        <li class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h2 class="text-lg font-semibold">
+                                        <a href="{% url 'card-detail' field.id %}" class="hover:underline">{{ field.title }}</a>
+                                    </h2>
+                                    <p class="text-gray-600 mt-1">{{ field.description }}</p>
+                                    <p class="text-sm text-gray-500 mt-2">Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
+                                </div>
+                                {% if field.is_blocked %}
+                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Заблокировано</span>
+                                {% endif %}
+                            </div>
                         </li>
                     {% endif %}
                 {% empty %}
-                    <p>Поля не найдены.</p>
+                    <p class="text-gray-500">Поля не найдены.</p>
                 {% endfor %}
             </ul>
         </div>
+    </div>
+</div>
 
-        <script src="{% static 'js/search.js' %}"></script>
-    </main>
+<script src="{% static 'js/search.js' %}"></script>
 {% endblock %}
