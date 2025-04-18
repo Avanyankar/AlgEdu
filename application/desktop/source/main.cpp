@@ -910,4 +910,4 @@ FrameContext* WaitForNextFrameResources()
 
     WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
     return frameCtx;
-} 
+}  
