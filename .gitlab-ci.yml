@@ -56,7 +56,7 @@ deploy-job:
   environment: production
   script:
     - echo "Deploying to production..."
-    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd /opt/team_website && git fetch && git checkout WDev && git pull && docker-compose down && docker-compose up -d --build"'
+    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd /opt/final-project/team_website && git fetch && git checkout WDev && git pull && docker compose -f docker-compose.yml down && docker compose -f docker-compose.yml up -d --build"'
   after_script:
     - echo "Cleaning up..."
     - docker system prune -f
