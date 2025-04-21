@@ -183,32 +183,52 @@ int main(int, char**)
         totalTime += deltaTime;
 
         // обработка анимации
+
         if (isAnimating) {
             animProgress += ANIMATION_SPEED * deltaTime;
 
             if (animProgress >= 1.0f) {
-                // анимация завершена, обновляем позицию
+                // обновление позиции
                 squarePos = targetPos;
                 isAnimating = false;
 
-                if (runningCommands) {
-                    bool commandCompleted = false;
-                    ExecuteGridCommand(commands[currentCommand], squarePos, grid, commandCompleted);
+                // проверка на баг
+                if (runningCommands && currentCommand < commands.size()) {
 
-                    if (commandCompleted) {
-                        currentCommand++;
-                        if (currentCommand >= commands.size()) {
-                            runningCommands = false;
-                        }
+                    currentCommand++;
+                    if (currentCommand >= commands.size()) {
+                        runningCommands = false;
                     }
                 }
             }
             else {
-                // линейная интерполяция для плавного движения между ячейками
+
                 animX = static_cast<float>(squarePos.x) * (1.0f - animProgress) +
                     static_cast<float>(targetPos.x) * animProgress;
                 animY = static_cast<float>(squarePos.y) * (1.0f - animProgress) +
                     static_cast<float>(targetPos.y) * animProgress;
+            }
+        }
+        else if (runningCommands && currentCommand < commands.size()) {
+            bool commandCompleted = false;
+
+            // обновление позиции
+            ExecuteGridCommand(commands[currentCommand], squarePos, grid, commandCompleted);
+
+            if (commands[currentCommand].type != CMD_WAIT) {
+
+                targetPos = squarePos;
+                isAnimating = true;
+                animProgress = 0.0f;
+            }
+            else {
+
+                if (commandCompleted) {
+                    currentCommand++;
+                    if (currentCommand >= commands.size()) {
+                        runningCommands = false;
+                    }
+                }
             }
         }
         // если не анимируем, но выполняем команды, выполняем следующую команду
@@ -544,22 +564,27 @@ int main(int, char**)
 
 // инициализация карты
 void InitializeDefaultGrid(std::vector<std::vector<Cell>>& grid, int size) {
-    grid.resize(size, std::vector<Cell>(size));
 
-    // карта
+    if (size < 5) size = 5;
+
+    grid.clear();
+    grid.resize(size);
+    for (int i = 0; i < size; i++) {
+        grid[i].resize(size);
+    }
     grid[0][0].isStart = true;
     grid[size - 1][size - 1].isEnd = true;
 
     if (size >= 10) {
-        for (int i = 2; i < 8; i++) {
+        for (int i = 2; i < 8 && i < size; i++) {
             grid[3][i].isWall = true;
         }
 
-        for (int i = 3; i < 7; i++) {
+        for (int i = 3; i < 7 && i < size; i++) {
             grid[i][7].isWall = true;
         }
 
-        for (int i = 2; i < 6; i++) {
+        for (int i = 2; i < 6 && i < size; i++) {
             grid[6][i].isWall = true;
         }
     }
@@ -623,91 +648,111 @@ std::vector<GridCommand> ParseGridCommands(const char* commandText) {
 
 void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, const std::vector<std::vector<Cell>>& grid, bool& completed) {
     int gridSize = static_cast<int>(grid.size());
+    
+    auto isCellWall = [&grid](int y, int x) -> bool {
 
-    auto isValidPosition = [&grid, gridSize](int x, int y) -> bool {
-        return x >= 0 && x < gridSize && y >= 0 && y < gridSize && !grid[y][x].isWall;
-        };
-
+        if (y < 0 || y >= static_cast<int>(grid.size())) return true;
+        if (x < 0 || x >= static_cast<int>(grid[y].size())) return true; 
+        return grid[y][x].isWall;
+    };
+    
     completed = false;
-
-    static int stepsExecuted = 0;
-    static int waitCounter = 0;
-
+    static int waitCounter = 0;   
+    
     switch (cmd.type) {
-    case CMD_MOVE_LEFT:
-        if (stepsExecuted == 0) stepsExecuted = 1;
-
-        if (isValidPosition(position.x - 1, position.y)) {
-            position.x--;
-            stepsExecuted++;
-            if (stepsExecuted > cmd.steps) {
+        case CMD_MOVE_LEFT:
+            {
+                int targetX = position.x;
+                for (int step = 0; step < cmd.steps && targetX > 0; step++) {
+                    if (!isCellWall(position.y, targetX - 1)) {
+                        targetX--;
+                    } else {
+                        break;  
+                    }
+                }
+                position.x = targetX;
                 completed = true;
-                stepsExecuted = 0;
             }
-        }
-        else {
+            break;
+            
+        case CMD_MOVE_RIGHT:
 
-            completed = true;
-            stepsExecuted = 0;
-        }
-        break;
-
-    case CMD_MOVE_RIGHT:
-        if (stepsExecuted == 0) stepsExecuted = 1;
-
-        if (isValidPosition(position.x + 1, position.y)) {
-            position.x++;
-            stepsExecuted++;
-            if (stepsExecuted > cmd.steps) {
+            {
+                int targetX = position.x;
+                for (int step = 0; step < cmd.steps && targetX < gridSize - 1; step++) {
+                    if (!isCellWall(position.y, targetX + 1)) {
+                        targetX++;
+                    } else {
+                        break;  
+                    }
+                }
+                position.x = targetX;
                 completed = true;
-                stepsExecuted = 0;
             }
-        }
-        else {
-            completed = true;
-            stepsExecuted = 0;
-        }
-        break;
+            break;
+            
+        case CMD_MOVE_UP:
 
-    case CMD_MOVE_UP:
-        if (stepsExecuted == 0) stepsExecuted = 1;
-
-        if (isValidPosition(position.x, position.y - 1)) {
-            position.y--;
-            stepsExecuted++;
-            if (stepsExecuted > cmd.steps) {
+            {
+                int targetY = position.y;
+                for (int step = 0; step < cmd.steps && targetY > 0; step++) {
+                    if (!isCellWall(targetY - 1, position.x)) {
+                        targetY--;
+                    } else {
+                        break;  
+                    }
+                }
+                position.y = targetY;
                 completed = true;
-                stepsExecuted = 0;
             }
-        }
-        else {
-            completed = true;
-            stepsExecuted = 0;
-        }
-        break;
+            break;
+            
+        case CMD_MOVE_DOWN:
 
-    case CMD_MOVE_DOWN:
-        if (stepsExecuted == 0) stepsExecuted = 1;
-
-        if (isValidPosition(position.x, position.y + 1)) {
-            position.y++;
-            stepsExecuted++;
-            if (stepsExecuted > cmd.steps) {
+            {
+                int targetY = position.y;
+                for (int step = 0; step < cmd.steps && targetY < gridSize - 1; step++) {
+                    if (!isCellWall(targetY + 1, position.x)) {
+                        targetY++;
+                    } else {
+                        break; 
+                    }
+                }
+                position.y = targetY;
                 completed = true;
-                stepsExecuted = 0;
             }
-        }
-        else {
+            break;
+            
+        case CMD_JUMP_TO:
+ 
+            if (cmd.x >= 0 && cmd.x < gridSize && cmd.y >= 0 && cmd.y < gridSize && !isCellWall(cmd.y, cmd.x)) {
+                position.x = cmd.x;
+                position.y = cmd.y;
+            }
             completed = true;
-            stepsExecuted = 0;
-        }
-        break;
-
-    case CMD_NONE:
-    default:
-        completed = true;
-        break;
+            break;
+            
+        case CMD_WAIT:
+    
+            if (waitCounter == 0) waitCounter = 1;
+            else waitCounter++;
+            
+            if (waitCounter >= cmd.steps) {
+                completed = true;
+                waitCounter = 0;
+            }
+            break;
+            
+        case CMD_NONE:
+        default:
+            completed = true;
+            break;
     }
+    
+    if (position.x < 0) position.x = 0;
+    if (position.x >= gridSize) position.x = gridSize - 1;
+    if (position.y < 0) position.y = 0;
+    if (position.y >= gridSize) position.y = gridSize - 1;
 }
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
