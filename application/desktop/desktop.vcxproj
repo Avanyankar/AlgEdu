@@ -41,6 +41,7 @@
     <ClInclude Include="vendor\imgui-docking\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="grammat.txt" />
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

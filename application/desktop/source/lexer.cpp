@@ -129,7 +129,8 @@ private:
     }
 
 public:
-    Lexer (std::string source) {
+    Lexer (std::string source) 
+    {
         this->source = source + '\n';
         this->curChar = '\0';
         this->curPos = EOF;

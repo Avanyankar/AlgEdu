@@ -74,5 +74,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
+    <Text Include="grammat.txt" />
   </ItemGroup>
 </Project>
