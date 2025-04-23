@@ -5,18 +5,7 @@
 
 {% block content %}
 <div class="flex h-screen bg-white">
-    <!-- Боковое меню -->
-    <div class="w-64 border-r border-gray-200 bg-gray-50 p-4 flex flex-col">
-        <div class="mb-8">
-            <h2 class="text-xl font-bold mb-4">Меню</h2>
-            <nav class="space-y-2">
-                <a href="{% url 'profile' %}" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition">Профиль</a>
-                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition">О нас</a>
-                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition">Карты</a>
-                <a href="#" class="block px-4 py-2 border border-black rounded hover:bg-gray-100 transition font-bold">AlgEdu</a>
-            </nav>
-        </div>
-    </div>
+
 
     <!-- Основной контент -->
     <div class="flex-1 overflow-auto p-8">
@@ -32,104 +21,58 @@
         <!-- Сетка из 9 квадратов -->
         <div class="grid grid-cols-3 gap-6 mb-8">
             <!-- Карта 1 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 1</span>
+            <div class="border-2 border-black rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col bg-white">
+                <!-- Основная область карточки -->
+                <div class="aspect-square flex items-center justify-center bg-gray-50 p-4">
+                    <span class="text-2xl font-semibold text-gray-800">Карта 8</span>
                 </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Иван</span>
-                    <span class="text-sm font-bold text-green-600">87%</span>
+
+                <!-- Нижний блок с информацией -->
+                <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <span class="text-sm text-gray-600 font-medium">Автор: Анна</span>
+                    <div class="flex items-center">
+
+                        <span class="text-sm font-bold text-green-600">92</span>
+                    </div>
                 </div>
             </div>
 
 
             <!-- Карта 2 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 2</span>
+            <div class="border-2 border-black rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col bg-white">
+                <!-- Основная область карточки -->
+                <div class="aspect-square flex items-center justify-center bg-gray-50 p-4">
+                    <span class="text-2xl font-semibold text-gray-800">Карта 8</span>
                 </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Мария</span>
-                    <span class="text-sm font-bold text-red-600">25%</span>
+
+                <!-- Нижний блок с информацией -->
+                <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <span class="text-sm text-gray-600 font-medium">Автор: Анна</span>
+                    <div class="flex items-center">
+
+                        <span class="text-sm font-bold text-green-600">92</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Карта 3 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 3</span>
+            <div class="border-2 border-black rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col bg-white">
+                <!-- Основная область карточки -->
+                <div class="aspect-square flex items-center justify-center bg-gray-50 p-4">
+                    <span class="text-2xl font-semibold text-gray-800">Карта 8</span>
                 </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Алексей</span>
-                    <span class="text-sm font-bold text-gray-600">45%</span>
+
+                <!-- Нижний блок с информацией -->
+                <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <span class="text-sm text-gray-600 font-medium">Автор: Анна</span>
+                    <div class="flex items-center">
+
+                        <span class="text-sm font-bold text-green-600">92</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Карта 4 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 4</span>
-                </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Елена</span>
-                    <span class="text-sm font-bold text-yellow-500">100%</span>
-                </div>
-            </div>
 
-            <!-- Карта 5 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 5</span>
-                </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Дмитрий</span>
-                    <span class="text-sm font-bold text-green-600">78%</span>
-                </div>
-            </div>
-
-            <!-- Карта 6 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 6</span>
-                </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Ольга</span>
-                    <span class="text-sm font-bold text-red-600">15%</span>
-                </div>
-            </div>
-
-            <!-- Карта 7 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 7</span>
-                </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Сергей</span>
-                    <span class="text-sm font-bold text-gray-600">60%</span>
-                </div>
-            </div>
-
-            <!-- Карта 8 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 8</span>
-                </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор: Анна</span>
-                    <span class="text-sm font-bold text-green-600">92%</span>
-                </div>
-            </div>
-
-            <!-- Карта 9 -->
-            <div class="border-2 border-black flex flex-col">
-                <div class="aspect-square flex items-center justify-center">
-                    <span class="text-xl font-medium">Карта 9</span>
-                </div>
-                <div class="p-2 border-t border-gray-300 flex justify-between">
-                    <span class="text-sm">Автор:   Игорь</span>
-                    <span class="text-sm font-bold text-red-600">10%</span>
-                </div>
-            </div>
         </div>
 
         <!-- Список полей -->
