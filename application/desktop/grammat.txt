@@ -6,9 +6,10 @@ statement ::= "PRINT" (expression | string) nl
             | "FOR" expression "REPEAT" nl {statement} "ENDFOR" nl             | "LET" identifier "=" expression nl
             | "INPUT" identifier nl
             | "FILL" color nl
-            | "GO" direction nl
+            | "GO" nl
+            | "Turn" direction nl
             | "SCAN" orientation nl
-            | "GET" orientation (cell_parameter | "FILLED") nl
+            | "GET" orientation variable nl
 logic_expression ::= ("("logic_term {"OR" logic_term}")")+ logic_term ::= ("("comparison {"AND" comparison}")")+
 comparison ::= ["NOT"] ("("expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)")")+
 expression ::= term {( "-" | "+" ) term}

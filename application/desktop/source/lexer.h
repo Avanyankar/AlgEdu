@@ -1,15 +1,19 @@
 #pragma once
 
-class Token
+class Lexer
 {
 private:
     std::string source;
-    TokenType type;
+    char curChar;
+    int curPos;
+    static const std::unordered_map<std::string, TokenType> tokenMap;
 public:
-    Token(){}
-    Token(std::string source, TokenType type){}
-    Token& setType(TokenType type){}
-    TokenType getType(){}
-    Token& setSource(std::string source){}
-    std::string getSource(){}
+    void nextChar();
+    void skipWhitespace();
+    void skipComment();
+    Token getToken();
+    void defineToken(Token& token);
+    char peek();
+    void abort(const std::string& message);
+    Lexer(std::string source);
 };
