@@ -39,7 +39,7 @@
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_win32.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="source\field.cpp">
+    <ClCompile Include="source\variable.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
