@@ -90,6 +90,48 @@ public:
         return (another.value != 0);
     }
 
+    bool validate_addition(int number) const
+    {
+        if (number > 0 && value > max - number) return false;
+        if (number < 0 && value < min - number) return false;
+        return true;
+    }
+
+    bool validate_subtraction(int number) const
+    {
+        if (number < 0 && value > max + number) return false;
+        if (number > 0 && value < min + number) return false;
+        return true;
+    }
+
+    bool validate_multiplication(int number) const
+    {
+        if (value == 0 || number == 0) return true;
+        if ((value > 0) && ((number > 0 && value > max / number) || (number < 0 && number < min / value)))
+        {
+            return false;
+        }
+        else if ((number > 0 && value < min / number) || (number < 0 && value < max / number))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    bool validate_division(int number) const
+    {
+        if ((number == 0) || (value == min && number == -1))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    bool validate_modulo_division(int number) const
+    {
+        return (number != 0);
+    }
+
     Variable operator+(const Variable another)
     {
         if (!validate_addition(another))
@@ -147,4 +189,69 @@ public:
         value %= another.value;
         return *this;
     }
+
+    Variable operator+(int number)
+    {
+        if (!validate_addition(number))
+        {
+            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при сложении");
+        }
+        value += number;
+        return *this;
+    }
+
+    Variable operator-(int number)
+    {
+        if (!validate_subtraction(number))
+        {
+            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при вычитании");
+        }
+        value -= number;
+        return *this;
+    }
+
+    Variable operator*(int number)
+    {
+        if (!validate_multiplication(number))
+        {
+            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при умножении");
+        }
+        value *= number;
+        return *this;
+    }
+
+    Variable operator/(int number)
+    {
+        if (number == 0)
+        {
+            throw std::runtime_error("Ошибка: деление на ноль в переменной " + name);
+        }
+        if (!validate_division(number))
+        {
+            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при делении");
+        }
+        value /= number;
+        return *this;
+    }
+
+    Variable operator%(int number)
+    {
+        if (number == 0)
+        {
+            throw std::runtime_error("Ошибка: деление на ноль при взятии остатка в переменной " + name);
+        }
+        if (!validate_modulo_division(number))
+        {
+            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при взятии остатка");
+        }
+        value %= number;
+        return *this;
+    }
 };
+
+int main() {
+    Variable a = Variable("a", 5, 0, 1000);
+    Variable b = Variable("b", 1, 0, 1000);
+    a = a / 0;
+    std::cout << a.value;
+}
