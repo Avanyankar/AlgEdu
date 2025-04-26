@@ -4,44 +4,48 @@
 {% block title %}AlgEdu Team{% endblock %}
 
 {% block content %}
-    <main>
-        <div class="page-header">
-            <h1>Список полей</h1>
-            {% if user.is_authenticated %}
-                <a href="{% url 'profile' %}" class="profile-btn">
-                    <i class="fas fa-user"></i> Мой профиль
-                </a>
-            {% endif %}
+<div class="flex h-screen bg-white">
+
+
+    <!-- Основной контент -->
+    <div class="flex-1 overflow-auto p-8">
+        <!-- Поисковая строка -->
+        <div class="flex mb-8 max-w-2xl">
+            <input type="text" id="search-input" placeholder="Поиск карт..."
+                   class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-black">
+            <button id="search-button" class="bg-black text-white px-6 py-2 rounded-r-lg hover:bg-gray-800 transition">
+                Найти
+            </button>
         </div>
 
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Поиск карт...">
-            <button id="search-button">Найти</button>
-        </div>
 
+        <!-- Список полей -->
         <div id="search-results">
-            <ul id="fields-list">
+            <ul id="fields-list" class="space-y-4">
                 {% for field in fields %}
                     {% if not field.is_blocked or user.is_staff %}
-                        <li>
-                            <h2>
-                            <a href="{% url 'card-detail' field.id %}" class="field-link">
-                                {{ field.title }}
-                            </a>
-                        </h2>
-                            <p>{{ field.description }}</p>
-                            <p>Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
-                            {% if field.is_blocked %}
-                                <span class="btn">Заблокировано</span>
-                            {% endif %}
+                        <li class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h2 class="text-lg font-semibold">
+                                        <a href="{% url 'card-detail' field.id %}" class="hover:underline">{{ field.title }}</a>
+                                    </h2>
+                                    <p class="text-gray-600 mt-1">{{ field.description }}</p>
+                                    <p class="text-sm text-gray-500 mt-2">Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
+                                </div>
+                                {% if field.is_blocked %}
+                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Заблокировано</span>
+                                {% endif %}
+                            </div>
                         </li>
                     {% endif %}
                 {% empty %}
-                    <p>Поля не найдены.</p>
+                    <p class="text-gray-500">Поля не найдены.</p>
                 {% endfor %}
             </ul>
         </div>
+    </div>
+</div>
 
-        <script src="{% static 'js/search.js' %}"></script>
-    </main>
+<script src="{% static 'js/search.js' %}"></script>
 {% endblock %}

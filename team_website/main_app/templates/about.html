@@ -1,79 +1,107 @@
 {% extends 'base.html' %}
 
-{% block title %}О нашей компании{% endblock %}
-
-{% block extra_css %}
-<style>
-    .home-button {
-        display: inline-block;
-        padding: 12px 24px;
-        background-color: #3498db;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 20px 0;
-        transition: all 0.3s;
-        font-weight: bold;
-        border: 2px solid #3498db;
-    }
-    .home-button:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .button-container {
-        text-align: center;
-        margin: 30px 0;
-    }
-    .history-timeline {
-        position: relative;
-        padding-left: 50px;
-        margin: 40px 0;
-    }
-    .timeline-item {
-        position: relative;
-        margin-bottom: 30px;
-    }
-    .timeline-item:before {
-        content: '';
-        position: absolute;
-        left: -30px;
-        top: 0;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #3498db;
-    }
-    .timeline-item:after {
-        content: '';
-        position: absolute;
-        left: -21px;
-        top: 20px;
-        width: 2px;
-        height: calc(100% + 10px);
-        background: #3498db;
-    }
-</style>
-{% endblock %}
+{% block title %}О Нас - Разработчики{% endblock %}
 
 {% block content %}
-<div class="button-container">
-    <a href="/" class="home-button">← На главную</a>
-</div>
+<div class="min-h-screen bg-[#F1F2EB] py-12">
+    <div class="max-w-3xl mx-auto px-4">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-[#566246] mb-4">Наша команда</h1>
+            <p class="text-xl text-gray-600">Профессионалы, создающие инновационные решения</p>
+        </header>
 
-<header>
-    <h1>О нашей компании</h1>
-</header>
+        <div class="space-y-6">
+            <!-- Карточка 1 -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-l-4 border-[#566246] flex items-center gap-6">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                     АК
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800">Karen</h3>
+                    <p class="text-lg text-[#566246]">Team Lead</p>
+                </div>
+            </div>
 
-<section>
-    <h2>Наша история</h2>
-    <p>Мы начали свой путь в 2010 году.</p>
+            <!-- Карточка 2 (зеркальная) -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-r-4 border-[#566246] flex items-center gap-6 flex-row-reverse">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                    АА
+                </div>
+                <div class="text-right">
+                    <h3 class="text-2xl font-bold text-gray-800">КТОТО</h3>
+                    <p class="text-lg text-[#566246]">КТОТО</p>
+                </div>
+            </div>
 
-    <div class="history-timeline">
-        <div class="timeline-item">
-            <h3>2010 - Основание</h3>
-            <p>Начало нашего пути.</p>
+            <!-- Карточка 3 -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-l-4 border-[#566246] flex items-center gap-6">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                    РО
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800">КТОТО</h3>
+                    <p class="text-lg text-[#566246]">КТОТО</p>
+                </div>
+            </div>
+
+            <!-- Карточка 4 (зеркальная) -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-r-4 border-[#566246] flex items-center gap-6 flex-row-reverse">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                    РО
+                </div>
+                <div class="text-right">
+                    <h3 class="text-2xl font-bold text-gray-800">ТКО</h3>
+                    <p class="text-lg text-[#566246]">аа</p>
+                </div>
+            </div>
+
+            <!-- Карточка 5 -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-l-4 border-[#566246] flex items-center gap-6">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                    аа
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800">аа</h3>
+                    <p class="text-lg text-[#566246]">ааа</p>
+                </div>
+            </div>
+
+            <!-- Карточка 6 (зеркальная) -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-r-4 border-[#566246] flex items-center gap-6 flex-row-reverse">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                    аа
+                </div>
+                <div class="text-right">
+                    <h3 class="text-2xl font-bold text-gray-800">аа</h3>
+                    <p class="text-lg text-[#566246]">аа</p>
+                </div>
+            </div>
+
+            <!-- Карточка 7 -->
+            <div class="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow
+                        border-l-4 border-[#566246] flex items-center gap-6">
+                <div class="w-16 h-16 rounded-full bg-[#F1F2EB] border-2 border-[#566246]/30
+                            flex items-center justify-center text-xl font-bold text-[#566246]">
+                    аа
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800">аа</h3>
+                    <p class="text-lg text-[#566246]">аа</p>
+                </div>
+            </div>
         </div>
     </div>
-</section>
+</div>
 {% endblock %}
