@@ -26,19 +26,17 @@ variables:
   DOCKER_DRIVER: "overlay2"
   PROJECT_DIR: "/opt/final-project"
 
-.only_python_changes: &only_python_changes
-  changes:
-    - application_website/**/*
-    - team_website/**/*
-    - docker-compose.yml
-    - .gitlab-ci.yml
-
 # ----------------------------
 # Application Website (Python)
 # ----------------------------
 build-app-website:
   stage: build
-  <<: *only_python_changes
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - application_website/**/*
+        - docker-compose.yml
+        - .gitlab-ci.yml
   script:
     - echo "Building Application Website..."
     - cd application_website
@@ -47,7 +45,10 @@ build-app-website:
 
 test-app-website:
   stage: test
-  <<: *only_python_changes
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - application_website/**/*
   script:
     - echo "Testing Application Website..."
     - cd application_website
@@ -58,7 +59,12 @@ test-app-website:
 # --------------------
 build-team-website:
   stage: build
-  <<: *only_python_changes
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - team_website/**/*
+        - docker-compose.yml
+        - .gitlab-ci.yml
   script:
     - echo "Building Team Website..."
     - cd team_website
@@ -67,7 +73,10 @@ build-team-website:
 
 test-team-website:
   stage: test
-  <<: *only_python_changes
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - team_website/**/*
   script:
     - echo "Testing Team Website..."
     - cd team_website
@@ -80,24 +89,36 @@ test-team-website:
 # -----------------
 deploy-app-website:
   stage: deploy
-  <<: *only_python_changes
-  environment: production
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - application_website/**/*
+      when: manual
+  environment:
+    name: production
+    url: http://$SERVER_IP
   script:
     - echo "Deploying Application Website..."
-    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/application_website && git fetch && git reset --hard origin/$CI_COMMIT_REF_NAME && docker compose down && docker compose up -d --build"'
-  when: manual  
+    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/application_website && git fetch && git reset --hard origin/WDev && docker compose down && docker compose up -d --build"'
 
 deploy-team-website:
   stage: deploy
-  <<: *only_python_changes
-  environment: production
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - team_website/**/*
+  environment:
+    name: production
+    url: http://$SERVER_IP
   script:
     - echo "Deploying Team Website..."
-    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/team_website && git fetch && git reset --hard origin/$CI_COMMIT_REF_NAME && docker compose down && docker compose up -d --build"'
+    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/team_website && git fetch && git reset --hard origin/WDev && docker compose down && docker compose up -d --build"'
 
 # Общая очистка
 cleanup:
   stage: deploy
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
   script:
     - echo "Cleaning up..."
     - docker system prune -f
