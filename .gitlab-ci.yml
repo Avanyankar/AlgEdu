@@ -24,39 +24,81 @@ stages:
 variables:
   DOCKER_HOST: "tcp://docker:2375"
   DOCKER_DRIVER: "overlay2"
+  PROJECT_DIR: "/opt/final-project"
 
-build-job:
+.only_python_changes: &only_python_changes
+  changes:
+    - application_website/**/*
+    - team_website/**/*
+    - docker-compose.yml
+    - .gitlab-ci.yml
+
+# ----------------------------
+# Application Website (Python)
+# ----------------------------
+build-app-website:
   stage: build
-  only:
-    - WDev
+  <<: *only_python_changes
   script:
-    - echo "Building Docker images..."
+    - echo "Building Application Website..."
+    - cd application_website
     - docker-compose build
+    - cd ..
 
-unit-test-job:
+test-app-website:
   stage: test
-  only:
-    - WDev
+  <<: *only_python_changes
   script:
-    - echo "Running unit tests..."
+    - echo "Testing Application Website..."
+    - cd application_website
+    - cd ..
+
+# --------------------
+# Team Website (Python)
+# --------------------
+build-team-website:
+  stage: build
+  <<: *only_python_changes
+  script:
+    - echo "Building Team Website..."
+    - cd team_website
+    - docker-compose build
+    - cd ..
+
+test-team-website:
+  stage: test
+  <<: *only_python_changes
+  script:
+    - echo "Testing Team Website..."
+    - cd team_website
     - docker-compose run --rm web python manage.py test
-
-lint-test-job:
-  stage: test
-  only:
-    - WDev
-  script:
-    - echo "Linting code..."
     - docker-compose run --rm web flake8 .
+    - cd ..
 
-deploy-job:
+# -----------------
+# Deploy (Both Python projects)
+# -----------------
+deploy-app-website:
   stage: deploy
-  only:
-    - WDev
+  <<: *only_python_changes
   environment: production
   script:
-    - echo "Deploying to production..."
-    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd /opt/final-project/team_website && git fetch && git checkout WDev && git pull && docker compose -f docker-compose.yml down && docker compose -f docker-compose.yml up -d --build"'
-  after_script:
+    - echo "Deploying Application Website..."
+    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/application_website && git fetch && git reset --hard origin/$CI_COMMIT_REF_NAME && docker compose down && docker compose up -d --build"'
+  when: manual  
+
+deploy-team-website:
+  stage: deploy
+  <<: *only_python_changes
+  environment: production
+  script:
+    - echo "Deploying Team Website..."
+    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/team_website && git fetch && git reset --hard origin/$CI_COMMIT_REF_NAME && docker compose down && docker compose up -d --build"'
+
+# Общая очистка
+cleanup:
+  stage: deploy
+  script:
     - echo "Cleaning up..."
     - docker system prune -f
+  when: always
