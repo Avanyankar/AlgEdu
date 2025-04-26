@@ -39,6 +39,9 @@
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_win32.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="source\lexer.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\imgui-docking\imconfig.h">
@@ -65,8 +68,12 @@
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_win32.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="source\lexer.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
+    <Text Include="grammat.txt" />
   </ItemGroup>
 </Project>

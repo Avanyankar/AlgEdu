@@ -19,8 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\lexer.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\parser.cpp" />
+    <ClCompile Include="source\token.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="vendor\imgui-docking\imgui.cpp" />
@@ -31,6 +33,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\parser.h" />
+    <ClInclude Include="source\lexer.h" />
+    <ClInclude Include="source\token.h" />
+    <ClInclude Include="source\tokenType.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_dx12.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_win32.h" />
     <ClInclude Include="vendor\imgui-docking\imconfig.h" />
@@ -41,6 +46,7 @@
     <ClInclude Include="vendor\imgui-docking\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="grammat.txt" />
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
