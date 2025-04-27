@@ -54,6 +54,7 @@ python-checks:
   image: python:${PYTHON_VERSION}
   before_script:
     - pip install pylint coverage flake8
+    - pip install -r team_website/requirements.txt
   script:
     - |
       echo "Running Python checks..."
