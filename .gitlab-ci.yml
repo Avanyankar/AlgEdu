@@ -17,109 +17,117 @@
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 
 stages:
-  - build
+  - lint
   - test
   - deploy
 
 variables:
+  PYTHON_VERSION: "3.11"
   DOCKER_HOST: "tcp://docker:2375"
-  DOCKER_DRIVER: "overlay2"
   PROJECT_DIR: "/opt/final-project"
 
 # ----------------------------
-# Application Website (Python)
+# Правила для WDev (Python проекты)
 # ----------------------------
-build-app-website:
-  stage: build
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "WDev"'
-      changes:
-        - application_website/**/*
-        - docker-compose.yml
-        - .gitlab-ci.yml
-  script:
-    - echo "Building Application Website..."
-    - cd application_website
-    - docker-compose build
-    - cd ..
-
-test-app-website:
-  stage: test
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "WDev"'
-      changes:
-        - application_website/**/*
-  script:
-    - echo "Testing Application Website..."
-    - cd application_website
-    - cd ..
-
-# --------------------
-# Team Website (Python)
-# --------------------
-build-team-website:
-  stage: build
+.wdev-rules: &wdev-rules
   rules:
     - if: '$CI_COMMIT_REF_NAME == "WDev"'
       changes:
         - team_website/**/*
-        - docker-compose.yml
-        - .gitlab-ci.yml
-  script:
-    - echo "Building Team Website..."
-    - cd team_website
-    - docker-compose build
-    - cd ..
+        - application_website/**/*
 
-test-team-website:
-  stage: test
+# ----------------------------
+# Правила для DDev (C++ проект)
+# ----------------------------
+.ddev-rules: &ddev-rules
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+    - if: '$CI_COMMIT_REF_NAME == "DDev"'
       changes:
-        - team_website/**/*
-  script:
-    - echo "Testing Team Website..."
-    - cd team_website
-    - docker-compose run --rm web python manage.py test
-    - docker-compose run --rm web flake8 .
-    - cd ..
+        - application/**/*
 
-# -----------------
-# Deploy (Both Python projects)
-# -----------------
-deploy-app-website:
+# ----------------------------
+# Python проверки (WDev)
+# ----------------------------
+python-checks:
+  <<: *wdev-rules
+  stage: lint
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install pylint coverage flake8
+  script:
+    - |
+      echo "Running Python checks..."
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Checking $project"
+          cd $project
+          pylint --fail-under=8.0 . || exit 1
+          flake8 --max-line-length=120 .
+          coverage run --source='.' manage.py test
+          coverage report --fail-under=70
+          cd ..
+        fi
+      done
+
+# ----------------------------
+# C++ проверки (DDev)
+# ----------------------------
+cpp-checks:
+  <<: *ddev-rules
+  stage: lint
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y git python3 cpplint
+  script:
+    - |
+      echo "Running C++ checks..."
+      cpplint --filter=-build/include_subdir \
+              --recursive \
+              --repository=application \
+              --verbose=2 \
+              --linelength=120 \
+              application/
+
+# ----------------------------
+# Деплой Python проектов (WDev)
+# ----------------------------
+deploy-python:
+  <<: *wdev-rules
   stage: deploy
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "WDev"'
-      changes:
-        - application_website/**/*
-      when: manual
   environment:
     name: production
-    url: http://$SERVER_IP
+    url: http://${SERVER_IP}
   script:
-    - echo "Deploying Application Website..."
-    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/application_website && git fetch && git reset --hard origin/WDev && docker compose down && docker compose up -d --build"'
+    - |
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Deploying $project..."
+          ssh -o StrictHostKeyChecking=no root@${SERVER_IP} "
+            cd ${PROJECT_DIR}/${project} &&
+            git fetch &&
+            git reset --hard origin/WDev &&
+            docker compose down &&
+            docker compose up -d --build
+          "
+        fi
+      done
 
-deploy-team-website:
+# ----------------------------
+# Сборка C++ проекта (DDev)
+# ----------------------------
+build-cpp:
+  <<: *ddev-rules
   stage: deploy
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "WDev"'
-      changes:
-        - team_website/**/*
-  environment:
-    name: production
-    url: http://$SERVER_IP
+  tags:
+    - cpp
   script:
-    - echo "Deploying Team Website..."
-    - 'ssh -o StrictHostKeyChecking=no root@$SERVER_IP "cd $PROJECT_DIR/team_website && git fetch && git reset --hard origin/WDev && docker compose down && docker compose up -d --build"'
-
-# Общая очистка
-cleanup:
-  stage: deploy
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "WDev"'
-  script:
-    - echo "Cleaning up..."
-    - docker system prune -f
-  when: always
+    - echo "Building C++ project..."
+    - cd application
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make
+  artifacts:
+    paths:
+      - application/build/
