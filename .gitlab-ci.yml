@@ -26,6 +26,7 @@ variables:
   DOCKER_HOST: "tcp://docker:2375"
   PROJECT_DIR: "/opt/final-project"
   DATABASE_URL: "sqlite:///:memory:" 
+  DJANGO_SETTINGS_MODULE: "AlgEdu_Team.settings"
 
 # ----------------------------
 # Общие правила для веток
@@ -59,6 +60,7 @@ python-lint:
   script:
     - |
       echo "Running Python linting..."
+      export PYTHONPATH="$CI_PROJECT_DIR/team_website"
       for project in team_website application_website; do
         if [ -d "$project" ]; then
           echo "Linting $project"
