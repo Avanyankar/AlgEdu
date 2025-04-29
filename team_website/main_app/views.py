@@ -1093,3 +1093,4 @@ def download_file(request, pk):
     response = HttpResponse(field_file.data, content_type=field_file.content_type)
     response['Content-Disposition'] = f'attachment; filename="{field_file.name}"'
     return response
+
