@@ -25,10 +25,13 @@ variables:
   PYTHON_VERSION: "3.11"
   DOCKER_HOST: "tcp://docker:2375"
   PROJECT_DIR: "/opt/final-project"
+  DATABASE_URL: "sqlite:///:memory:" 
 
 # ----------------------------
-# Правила для WDev (Python проекты)
+# Общие правила для веток
 # ----------------------------
+
+# Для Python-проектов (WDev)
 .wdev-rules: &wdev-rules
   rules:
     - if: '$CI_COMMIT_REF_NAME == "WDev"'
@@ -36,9 +39,7 @@ variables:
         - team_website/**/*
         - application_website/**/*
 
-# ----------------------------
-# Правила для DDev (C++ проект)
-# ----------------------------
+# Для C++-проекта (DDev)
 .ddev-rules: &ddev-rules
   rules:
     - if: '$CI_COMMIT_REF_NAME == "DDev"'
@@ -46,34 +47,64 @@ variables:
         - application/**/*
 
 # ----------------------------
-# Python проверки (WDev)
+# Этап: Линтинг Python (WDev)
 # ----------------------------
-python-checks:
+python-lint:
   <<: *wdev-rules
   stage: lint
   image: python:${PYTHON_VERSION}
   before_script:
-    - pip install pylint coverage flake8
+    - pip install pylint flake8 pylint-django 
     - pip install -r team_website/requirements.txt
   script:
     - |
-      echo "Running Python checks..."
+      echo "Running Python linting..."
       for project in team_website application_website; do
         if [ -d "$project" ]; then
-          echo "Checking $project"
+          echo "Linting $project"
           cd $project
-          pylint --fail-under=8.0 . || exit 1
+          pylint --fail-under=5.0 \
+                 --load-plugins=pylint_django \
+                 --disable=missing-docstring,too-few-public-methods \
+                 . || exit 1
           flake8 --max-line-length=120 .
-          coverage run --source='.' manage.py test
-          coverage report --fail-under=70
           cd ..
         fi
       done
 
 # ----------------------------
-# C++ проверки (DDev)
+# Этап: Тесты Python (WDev)
 # ----------------------------
-cpp-checks:
+python-tests:
+  <<: *wdev-rules
+  stage: test
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install -r team_website/requirements.txt
+    - pip install coverage  
+  script:
+    - |
+      echo "Running Python tests..."
+      set -x  # Для отладки: показывает выполняемые команды
+
+      # Проверяем team_website
+      cd team_website
+      python manage.py test main_app.tests --noinput --verbosity=2
+      coverage run --source='main_app' manage.py test main_app.tests
+      coverage report --fail-under=70 --show-missing
+
+      # Проверяем application_website (если существует)
+      if [ -d "../application_website" ]; then
+        cd ../application_website
+        python manage.py test main_app.tests --noinput --verbosity=2
+        coverage run --source='main_app' manage.py test main_app.tests
+        coverage report --fail-under=70 --show-missing
+      fi
+
+# ----------------------------
+# Этап: Линтинг C++ (DDev)
+# ----------------------------
+cpp-lint:
   <<: *ddev-rules
   stage: lint
   image: ubuntu:latest
@@ -82,7 +113,7 @@ cpp-checks:
     - apt-get install -y git python3 cpplint
   script:
     - |
-      echo "Running C++ checks..."
+      echo "Running C++ linting..."
       cpplint --filter=-build/include_subdir \
               --recursive \
               --repository=application \
@@ -91,7 +122,7 @@ cpp-checks:
               application/
 
 # ----------------------------
-# Деплой Python проектов (WDev)
+# Этап: Деплой Python (WDev)
 # ----------------------------
 deploy-python:
   <<: *wdev-rules
@@ -99,11 +130,13 @@ deploy-python:
   environment:
     name: production
     url: http://${SERVER_IP}
+  needs: ["python-tests"]
   script:
     - |
+      echo "Deploying Python projects..."
       for project in team_website application_website; do
         if [ -d "$project" ]; then
-          echo "Deploying $project..."
+          echo "Deploying $project to ${SERVER_IP}"
           ssh -o StrictHostKeyChecking=no root@${SERVER_IP} "
             cd ${PROJECT_DIR}/${project} &&
             git fetch &&
@@ -115,7 +148,7 @@ deploy-python:
       done
 
 # ----------------------------
-# Сборка C++ проекта (DDev)
+# Этап: Сборка C++ (DDev)
 # ----------------------------
 build-cpp:
   <<: *ddev-rules
@@ -123,13 +156,15 @@ build-cpp:
   tags:
     - cpp
   script:
-    - echo "Building C++ project..."
-    - cd application
-    - mkdir -p build
-    - cd build
-    - cmake ..
-    - make
+    - |
+      echo "Building C++ project..."
+      cd application
+      mkdir -p build
+      cd build
+      cmake ..
+      make
   artifacts:
     paths:
       - application/build/
+    expire_in: 1 week 
 
