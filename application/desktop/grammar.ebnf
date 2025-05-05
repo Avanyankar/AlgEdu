@@ -2,6 +2,7 @@
 
 <statement> ::= 
       <assignment>
+    | <declaration>
     | <print>
     | <input>
     | <if>
@@ -14,7 +15,9 @@
     | <scan>
     | <get>
 
-<assignment> ::= "LET" <identifier> "=" <expression> <nl>
+<declaration> ::= "LET" <identifier>("," <identifier>)* <nl>
+
+<assignment> ::= <identifier> "=" <expression> <nl>
 
 <print> ::= "PRINT" (<expression> | <string>)("," <expression> | <string>)* <nl>
 

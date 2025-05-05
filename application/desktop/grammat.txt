@@ -1,24 +1,0 @@
-﻿program ::= {statement}
-statement ::= "PRINT" (expression | string) nl
-            | "IF" logic_expression "THEN" nl {statement} ["ELSE" nl {statement}] "ENDIF" nl
-            | "WHILE" logic_expression "REPEAT" nl {statement} "ENDWHILE" nl
-            | "DOWHILE" logic_expression "REPEAT" nl {statement} "ENDDOWHILE" nl
-            | "FOR" expression "REPEAT" nl {statement} "ENDFOR" nl             | "LET" identifier "=" expression nl
-            | "INPUT" identifier nl
-            | "FILL" color nl
-            | "GO" nl
-            | "Turn" direction nl
-            | "SCAN" orientation nl
-            | "GET" orientation variable nl
-logic_expression ::= ("("logic_term {"OR" logic_term}")")+ logic_term ::= ("("comparison {"AND" comparison}")")+
-comparison ::= ["NOT"] ("("expression (("==" | "!=" | ">" | ">=" | "<" | "<=") expression)")")+
-expression ::= term {( "-" | "+" ) term}
-term ::= unary {( "/" | "*" ) unary}
-unary ::= ["+" | "-"] primary
-primary ::= number | identifier
-orientation ::= "FRONT" | "DOWN"
-direction ::= "UP" | "RIGHT" | "DOWN" | "LEFT"
-color ::= "RED" | "GREEN" | "BLUE" | "YELLOW" | "WHITE" | "BLACK" | rgb_color
-rgb_color ::= TODO
-nl ::= '\n'+
-comment ::= "#" {any} nl
