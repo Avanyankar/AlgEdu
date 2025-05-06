@@ -19,6 +19,7 @@
 stages:
   - lint
   - test
+  - docs
   - deploy
 
 variables:
@@ -27,6 +28,7 @@ variables:
   PROJECT_DIR: "/opt/final-project"
   DATABASE_URL: "sqlite:///:memory:" 
   DJANGO_SETTINGS_MODULE: "AlgEdu_Team.settings"
+  DOCS_OUTPUT_DIR: "public/docs"
 
 # ----------------------------
 # Общие правила для веток
@@ -169,4 +171,21 @@ build-cpp:
     paths:
       - application/build/
     expire_in: 1 week 
+
+
+build-docs:
+  stage: docs
+  image: python:3.11
+  before_script:
+    - pip install sphinx sphinx-rtd-theme
+    - cd team_website
+  script:
+    - sphinx-apidoc -o docs/source main_app 
+    - sphinx-build -b html docs/source docs/build
+    - mkdir -p $DOCS_OUTPUT_DIR
+    - cp -r docs/build/* $DOCS_OUTPUT_DIR/
+  artifacts:
+    paths:
+      - $DOCS_OUTPUT_DIR
+    expire_in: 1 week
 
