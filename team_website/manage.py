@@ -17,6 +17,9 @@ def main():
         ) from exc
     execute_from_command_line(sys.argv)
 
+if 'build_docs' in sys.argv:
+    os.system('sphinx-build -b html docs/source docs/build')
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

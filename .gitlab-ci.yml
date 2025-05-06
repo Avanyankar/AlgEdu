@@ -180,12 +180,11 @@ build-docs:
     - pip install sphinx sphinx-rtd-theme
     - cd team_website
   script:
-    - sphinx-apidoc -o docs/source main_app 
+    - sphinx-apidoc -f -o docs/source main_app
     - sphinx-build -b html docs/source docs/build
-    - mkdir -p $DOCS_OUTPUT_DIR
-    - cp -r docs/build/* $DOCS_OUTPUT_DIR/
+    - mkdir -p static/docs/
+    - cp -r docs/build/* static/docs/
   artifacts:
     paths:
-      - $DOCS_OUTPUT_DIR
-    expire_in: 1 week
+      - team_website/main_app/static/docs/
 

@@ -1,10 +1,11 @@
 .. AlgEdu Team documentation master file
 
-Добро пожаловать в документацию AlgEdu Team!
-===========================================
+Документация проекта AlgEdu Team
+================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Основные разделы:
+   :maxdepth: 3
+   :caption: Основные модули:
 
-   modules 
+   modules
+   main_app.rst

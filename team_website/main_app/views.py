@@ -20,6 +20,7 @@ from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.conf import settings
 import logging
 import json
 
@@ -1094,3 +1095,11 @@ def download_file(request, pk):
     response['Content-Disposition'] = f'attachment; filename="{field_file.name}"'
     return response
 
+
+class DocsView(TemplateView):
+    template_name = 'docs/build/index.html'
+
+    def get(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            raise Http404("Документация доступна только в режиме DEBUG")
+        return super().get(request, *args, **kwargs)

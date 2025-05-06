@@ -20,6 +20,7 @@ import main_app.views as views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -62,6 +63,7 @@ urlpatterns = [
     path('moderation/comment/<int:report_id>/', views.ResolveCommentReportView.as_view(), name='resolve_comment_report'),
     path('moderation/unblock/<str:content_type>/<int:content_id>/', views.UnblockContentView.as_view(), name='unblock_content'),
     path('api/profile/fields/', views.ProfileFieldsAPIView.as_view(), name='profile_fields_api'),
+    path('docs/', RedirectView.as_view(url='/static/index.html')),
     path('moderation/block/<str:content_type>/<int:content_id>/', 
          staff_member_required(views.BlockContentView.as_view()), 
          name='block_content'),
@@ -69,5 +71,6 @@ urlpatterns = [
          staff_member_required(views.UnblockContentView.as_view()), 
          name='unblock_content'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 handler404 = views.NotFoundView.as_view()

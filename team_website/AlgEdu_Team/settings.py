@@ -144,6 +144,10 @@ ROBOTS_IGNORE_URLS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
-# Максимальный размер загружаемого файла (5MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
+
+DOCS_DIR = os.path.join(BASE_DIR, 'docs/build')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'docs/build'),
+]
