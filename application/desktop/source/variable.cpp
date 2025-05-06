@@ -1,4 +1,4 @@
-﻿#include <vector>
+﻿﻿#include <vector>
 #include <string>
 #include <exception>
 #include <iostream>
@@ -50,9 +50,9 @@ public:
     int value;
 
     Integer(const std::string& name, int value, int min = INT_MIN, int max = INT_MAX)
-        : BaseVariable<int, int>(name, value, min, max) 
+        : BaseVariable<int, int>(name, value, min, max)
     {
-        if (!validate()) 
+        if (!validate())
         {
             throw std::invalid_argument("Значение должно быть в рамках минимума и максимума");
         }

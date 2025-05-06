@@ -30,6 +30,7 @@
     <ClCompile Include="vendor\imgui-docking\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\variable.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_dx12.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_win32.h" />
     <ClInclude Include="vendor\imgui-docking\imconfig.h" />
