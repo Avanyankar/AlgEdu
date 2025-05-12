@@ -4,23 +4,32 @@
 #include <string>
 #include <iostream>
 #include <unordered_map>
+#include <regex>
 
 const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     // Special characters
-    {"\n",  TokenType::NEWLINE},
-    {"\0",  TokenType::ENDOFFILE},
-    // операторы
-    {"+",   TokenType::PLUS},
-    {"-",   TokenType::MINUS},
-    {"*",   TokenType::ASTERISK},
-    {"/",   TokenType::SLASH},
-    {"==",  TokenType::EQEQ},
-    {"=",   TokenType::EQ},
-    {">=",  TokenType::GTEQ},
-    {">",   TokenType::GT},
-    {"<=",  TokenType::LTEQ},
-    {"<",   TokenType::LT},
-    {"!=",  TokenType::NOTEQ},
+    {"\n", TokenType::NEWLINE},
+    {"\0", TokenType::ENDOFFILE},
+    // Variables
+    {"\"RED\" | \"GREEN\" | \"BLUE\" | \"YELLOW\" | \"WHITE\" | \"BLACK\"", TokenType::COLOR},
+    {"[0-9]+", TokenType::NUMBER},
+    {"[a-zA-Z_][a-zA-Z0-9_]*", TokenType::IDENTIFIER},
+    {"\"[^\"]*\"", TokenType::STRING},
+    // Operators
+    {"+", TokenType::PLUS},
+    {"-", TokenType::MINUS},
+    {"*", TokenType::ASTERISK},
+    {"/", TokenType::SLASH},
+    {"==", TokenType::EQEQ},
+    {"=", TokenType::EQ},
+    {">=", TokenType::GTEQ},
+    {">", TokenType::GT},
+    {"<=", TokenType::LTEQ},
+    {"<", TokenType::LT},
+    {"!=", TokenType::NOTEQ},
+    {"NOT", TokenType::NOT},
+    {"AND", TokenType::AND},
+    {"OR", TokenType::OR},
     // Executor commands
     {"GO", TokenType::GO},
     {"GET", TokenType::GET},
@@ -28,6 +37,7 @@ const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     {"FILL", TokenType::FILL},
     // Keywords
     {"PRINT", TokenType::PRINT},
+    {"INPUT", TokenType::PRINT},
     {"LET", TokenType::LET},
     // If
     {"IF", TokenType::IF},
@@ -93,9 +103,62 @@ void Lexer::defineToken(Token& token)
         auto pos = tokenMap.find(tokenSource);
         if (pos != tokenMap.end())
         {
-
+            TokenType type = pos->second;
+            if (type == TokenType::COLOR || type == TokenType::IDENTIFIER || type == TokenType::NUMBER || type == TokenType::STRING)
+            {
+                abort("Expected token, received regex.");
+            }
+            token.setType(type);
+            break;
         }
         this->nextChar();
+        if (this->curChar == ' ' || this->curChar == '#' || this->curChar == '\r' || this->curChar == '\t' || this->curChar == '\0' || this->curChar == '\n')
+        {
+            std::string colorPattern, numberPattern, identifierPattern, stringPattern;
+            for (const auto& pair : tokenMap) {
+                switch (pair.second) {
+                case TokenType::COLOR:
+                    colorPattern = pair.first;
+                    break;
+                case TokenType::NUMBER:
+                    numberPattern = pair.first;
+                    break;
+                case TokenType::IDENTIFIER:
+                    identifierPattern = pair.first;
+                    break;
+                case TokenType::STRING:
+                    stringPattern = pair.first;
+                    break;
+                default:
+                    break;
+                }
+            }
+            std::regex colorRegex(colorPattern);
+            if (std::regex_match(tokenSource, colorRegex))
+            {
+                token.setType(TokenType::COLOR);
+                break;
+            }
+            std::regex numberRegex(numberPattern);
+            if (std::regex_match(tokenSource, numberRegex))
+            {
+                token.setType(TokenType::NUMBER);
+                break;
+            }
+            std::regex identifierRegex(identifierPattern);
+            if (std::regex_match(tokenSource, identifierRegex))
+            {
+                token.setType(TokenType::IDENTIFIER);
+                break;
+            }
+            std::regex stringRegex(stringPattern);
+            if (std::regex_match(tokenSource, stringRegex))
+            {
+                token.setType(TokenType::STRING);
+                break;
+            }
+            abort("Expected token, received regex.");
+        }
         tokenSource += this->curChar;
     }
     token.setSource(tokenSource);

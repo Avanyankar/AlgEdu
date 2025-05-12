@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\emitter.cpp" />
     <ClCompile Include="source\lexer.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\parser.cpp" />
@@ -32,6 +33,7 @@
     <ClCompile Include="vendor\imgui-docking\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\emitter.h" />
     <ClInclude Include="source\parser.h" />
     <ClInclude Include="source\lexer.h" />
     <ClInclude Include="source\token.h" />
@@ -46,8 +48,10 @@
     <ClInclude Include="vendor\imgui-docking\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="grammat.txt" />
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="grammar.ebnf" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
