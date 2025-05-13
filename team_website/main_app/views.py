@@ -14,10 +14,12 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
-from django.views.generic import View, UpdateView, DetailView, CreateView, TemplateView, ListView
+from django.views.generic import (View, UpdateView, DetailView,
+                                  CreateView, TemplateView, ListView)
 from django_registration.signals import user_registered
 from main_app.forms import RegistrationForm, ProfileUpdateForm, FieldForm, FieldReportForm
-from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, FieldReport, ReportComment
+from main_app.models import (User, Field, Comment, Wall, Cell, ProfileComment,
+                             FieldFile, FieldReport, ReportComment)
 
 
 logger = logging.getLogger(__name__)
@@ -157,7 +159,8 @@ def add_profile_comment(request, username):
 @login_required
 def delete_profile_comment(request, comment_id):
     comment = get_object_or_404(ProfileComment, id=comment_id)
-    if request.user == comment.profile or request.user == comment.author or request.user.is_superuser:
+    if (request.user == comment.profile or request.user == comment.author
+            or request.user.is_superuser):
         comment.delete()
         messages.success(request, 'Комментарий удален')
 
@@ -419,37 +422,12 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
             raise ValidationError('Вы уже отправляли жалобу на это поле.')
 
 
-@require_POST
-@login_required
-def toggle_like(request, pk):
-    field = Field.objects.get(pk=pk)
-    if field.likes.filter(id=request.user.id).exists():
-        field.likes.remove(request.user)
-        is_liked = False
-    else:
-        field.likes.add(request.user)
-        is_liked = True
-    return JsonResponse({'is_liked': is_liked, 'likes_count': field.likes.count()})
-
-
-@require_POST
-@login_required
-def toggle_favorite(request, pk):
-    field = Field.objects.get(pk=pk)
-    if field.favorites.filter(id=request.user.id).exists():
-        field.favorites.remove(request.user)
-        is_favorited = False
-    else:
-        field.favorites.add(request.user)
-        is_favorited = True
-    return JsonResponse({'is_favorited': is_favorited})
-
 def search_fields(request):
     query = request.GET.get('q', '').strip()
     if not query:
         return JsonResponse({'results': []})
-    fields = Field.objects.filter(Q(title__icontains=query)
-                                  | Q(description__icontains=query)).values('id', 'title', 'description', 'created_at')
+    fields = (Field.objects.filter(Q(title__icontains=query) | Q(description__icontains=query))
+              .values('id', 'title', 'description', 'created_at'))
     results = []
     for field in fields:
         field['created_at'] = field['created_at'].strftime('%d.%m.%Y')
@@ -524,22 +502,6 @@ class ResolveFieldReportView(StaffRequiredMixin, View):
         return redirect('moderation_panel')
 
 
-class UnblockContentView(StaffRequiredMixin, View):
-    def post(self, request, content_type, content_id):
-        if content_type == 'field':
-            obj = get_object_or_404(Field, id=content_id)
-            obj.unblock()
-            messages.success(request, 'Карта разблокирована')
-        elif content_type == 'comment':
-            obj = get_object_or_404(Comment, id=content_id)
-            obj.unblock()
-            messages.success(request, 'Комментарий разблокирован')
-        else:
-            messages.error(request, 'Неверный тип контента')
-            return redirect('moderation_panel')
-        return redirect('moderation_panel')
-
-
 class AboutPageView(TemplateView):
     template_name = 'about.html'
 
@@ -552,13 +514,15 @@ class AboutPageView(TemplateView):
             {
                 'name': 'Иван Иванов',
                 'position': 'Основатель и CEO',
-                'bio': 'Иван основал компанию в 2010 с видением создания инновационных решений для бизнеса.',
+                'bio': 'Иван основал компанию в 2010 с видением создания '
+                       'инновационных решений для бизнеса.',
                 'image': 'team-member1.jpg'
             },
             {
                 'name': 'Алексей Петров',
                 'position': 'Технический директор',
-                'bio': 'Алексей присоединился к команде в 2012 и возглавляет техническое развитие компании.',
+                'bio': 'Алексей присоединился к команде в 2012 и '
+                       'возглавляет техническое развитие компании.',
                 'image': 'team-member2.jpg'
             }
         ]
@@ -576,7 +540,8 @@ class GoalsPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['mission'] = "Мы стремимся создавать инновационные решения, которые делают бизнес эффективнее."
+        context['mission'] = ("Мы стремимся создавать инновационные решения, "
+                              "которые делают бизнес эффективнее.")
         context['goals'] = [
             {
                 'title': 'Глобальное присутствие',
