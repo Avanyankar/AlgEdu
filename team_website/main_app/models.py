@@ -1,7 +1,7 @@
-from django.contrib.auth.models import AbstractUser
+import logging
 from django.db import models
 from django.core.files.base import ContentFile
-import logging
+from django.contrib.auth.models import AbstractUser
 
 logger = logging.getLogger(__name__)
 
@@ -15,16 +15,15 @@ class User(AbstractUser):
         try:
             self.is_active = False
             self.save(update_fields=['is_active'])
-            
             Field.objects.filter(user=self).update(is_blocked=True)
             Comment.objects.filter(author=self).update(is_blocked=True)
             return True
         except Exception as e:
-            logger.error(f"Ошибка бана User {self.id}: {str(e)}")
+            logger.error(f"Ошибка бана User %s: %s", self.id, str(e))
             return False
 
     def __str__(self):
-        return self.username
+        return str(self.username)
 
 class ProfileComment(models.Model):
     profile = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
@@ -75,14 +74,12 @@ class Field(models.Model):
                         self.cols = int(self.cols) if str(self.cols).isdigit() else 10
                     except (TypeError, ValueError):
                         self.cols = 10
-                
                 self.is_blocked = True
                 self.save(update_fields=['is_blocked', 'cols'])
-                
                 self.comments.update(is_blocked=True)
                 return True
             except Exception as e:
-                logger.error(f"Ошибка блокировки Field {self.id}: {str(e)}")
+                logger.error("Ошибка блокировки Field %s: %s", self.id, str(e))
                 return False
 
     def safe_unblock(self):
@@ -91,7 +88,7 @@ class Field(models.Model):
             self.save(update_fields=['is_blocked'])
             return True
         except Exception as e:
-            logger.error(f"Ошибка разблокировки Field {self.id}: {str(e)}")
+            logger.error("Ошибка разблокировки Field %s: %s", self.id, str(e))
             return False
 
     def get_absolute_url(self):
@@ -155,7 +152,7 @@ class Comment(models.Model):
             self.save(update_fields=['is_blocked'])
             return True
         except Exception as e:
-            logger.error(f"Ошибка блокировки Comment {self.id}: {str(e)}")
+            logger.error("Ошибка блокировки Comment %s: %s", self.id, str(e))
             return False
 
 
@@ -228,13 +225,11 @@ class FieldReport(models.Model):
         ('illegal', 'Незаконный контент'),
         ('other', 'Другое'),
     ]
-
     STATUS_CHOICES = [
         ('pending', 'На рассмотрении'),
         ('approved', 'Жалоба одобрена'),
         ('rejected', 'Жалоба отклонена'),
     ]
-    
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     field = models.ForeignKey(Field, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -255,4 +250,4 @@ class Post(models.Model):
     favorites = models.ManyToManyField(User, related_name='favorite_posts', blank=True)
 
     def __str__(self):
-        return self.title
+        return str(self.title)

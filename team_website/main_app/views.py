@@ -1,3 +1,9 @@
+"""
+json -
+logging -
+typing -
+django -
+"""
 import json
 import logging
 from typing import Dict, Any
@@ -25,6 +31,10 @@ from main_app.models import (User, Field, Comment, Wall, Cell, ProfileComment,
 logger = logging.getLogger(__name__)
 
 class FieldListView(ListView):
+    """
+    View for getting list of fields.
+    """
+
     model = Field
     template_name = 'fields/list.html'
     context_object_name = 'fields'
@@ -374,7 +384,7 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
             is_resolved=False
         ).first()
         return context
-    
+
     def form_valid(self, form) -> HttpResponse:
         """
         Processes a valid form and creates a report.
@@ -396,7 +406,7 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         report.save()
         messages.success(self.request, 'Жалоба успешно отправлена!')
         return super().form_valid(form)
-    
+
     def validate_report(self, cleaned_data: Dict[str, Any]) -> None:
         """
         Validates the report data.
@@ -638,7 +648,8 @@ def add_comment(request, pk):
             'comment_id': comment.id,
             'author': comment.author.username,
             'text': comment.text,
-            'created_at': comment.created_at.strftime("%Y-%m-%d %H:%M") if comment.created_at else None
+            'created_at': (comment.created_at.strftime("%Y-%m-%d %H:%M")
+                           if comment.created_at else None)
         })
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
