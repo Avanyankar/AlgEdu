@@ -20,7 +20,7 @@ class FieldReportAdmin(admin.ModelAdmin):
     search_fields = ('field__title', 'user__username', 'description')
     actions = ['approve_selected_reports', 'reject_selected_reports']
     ordering = ('-created_at',)
-    
+
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -36,14 +36,13 @@ class FieldReportAdmin(admin.ModelAdmin):
             ),
         ]
         return custom_urls + urls
-    
+
     def moderate_reports(self, request):
         if request.method == 'POST':
             report_id = request.POST.get('report_id')
             action = request.POST.get('action')
             if report_id and action:
                 return self.change_report_status(request, report_id, action)
-        
         reports = FieldReport.objects.filter(status='pending').select_related('field', 'user')
         context = {
             'reports': reports,
@@ -52,11 +51,10 @@ class FieldReportAdmin(admin.ModelAdmin):
             'title': 'Панель модерации жалоб',
         }
         return render(request, 'moderation/moderation_panel.html', context)
-    
+
     def change_report_status(self, request, report_id, action=None):
         if not action:
             action = request.GET.get('action')
-        
         try:
             report = FieldReport.objects.get(id=report_id)
             if action == 'approve':
@@ -70,17 +68,18 @@ class FieldReportAdmin(admin.ModelAdmin):
             report.save()
         except FieldReport.DoesNotExist:
             messages.error(request, f'Жалоба #{report_id} не найдена')
-        
         return redirect('moderation:fieldreport_moderation_panel')
-    
+
     def approve_selected_reports(self, request, queryset):
         updated = queryset.update(status='approved', is_resolved=True)
         self.message_user(request, f'{updated} жалоб одобрено', messages.SUCCESS)
+
     approve_selected_reports.short_description = "Одобрить выбранные жалобы"
-    
+
     def reject_selected_reports(self, request, queryset):
         updated = queryset.update(status='rejected', is_resolved=True)
         self.message_user(request, f'{updated} жалоб отклонено', messages.SUCCESS)
+
     reject_selected_reports.short_description = "Отклонить выбранные жалобы"
 
 admin.site.register(FieldReport, FieldReportAdmin)

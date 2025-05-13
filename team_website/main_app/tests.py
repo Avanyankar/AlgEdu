@@ -2,7 +2,6 @@ from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-
 from .models import Field, FieldFile
 from .forms import FieldForm, DBFileField
 from .views import FieldCreateView, download_file
@@ -10,7 +9,7 @@ from .views import FieldCreateView, download_file
 
 class FieldModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.user = User.objects.create_user(username='tester', password='12345')
         self.field_file = FieldFile.objects.create(
             name='test.txt',
             content_type='text/plain',
@@ -32,7 +31,7 @@ class FieldModelTest(TestCase):
         self.assertEqual(self.field.cols, 10)
         self.assertEqual(self.field.rows, 10)
         self.assertEqual(self.field.file.name, 'test.txt')
-        self.assertEqual(self.field.user.username, 'testuser')
+        self.assertEqual(self.field.user.username, 'tester')
 
     def test_field_file_creation(self):
         self.assertEqual(self.field_file.name, 'test.txt')
@@ -78,7 +77,6 @@ class FieldFormTest(TestCase):
         )
         field = DBFileField()
         converted = field.to_python(test_file)
-
         self.assertEqual(converted['name'], 'test.txt')
         self.assertEqual(converted['content_type'], 'text/plain')
         self.assertEqual(converted['data'], b'Test file content')
@@ -89,7 +87,7 @@ class FieldCreateViewTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
-            username='testuser',
+            username='tester',
             password='12345'
         )
         self.url = reverse('create_field')
@@ -111,7 +109,6 @@ class FieldCreateViewTest(TestCase):
         request.user = self.user
         response = FieldCreateView.as_view()(request)
         self.assertEqual(response.status_code, 302)
-
         field = Field.objects.first()
         self.assertEqual(field.title, 'Test Field')
         self.assertEqual(field.user, self.user)
@@ -125,12 +122,10 @@ class FieldCreateViewTest(TestCase):
         )
         form_data = self.form_data.copy()
         form_data['file'] = test_file
-
         request = self.factory.post(self.url, form_data)
         request.user = self.user
         response = FieldCreateView.as_view()(request)
         self.assertEqual(response.status_code, 302)
-
         field = Field.objects.first()
         self.assertEqual(field.file.name, 'test.txt')
         self.assertEqual(field.file.data, b'Test file content')
@@ -140,7 +135,7 @@ class DownloadFileViewTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
-            username='testuser',
+            username='tester',
             password='12345'
         )
         self.field_file = FieldFile.objects.create(
@@ -154,7 +149,6 @@ class DownloadFileViewTest(TestCase):
     def test_download_file(self):
         request = self.factory.get(self.url)
         response = download_file(request, self.field_file.pk)
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'text/plain')
         self.assertEqual(

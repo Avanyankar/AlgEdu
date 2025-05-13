@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy
 from main_app.models import User, Comment, Field, FieldReport
 
 
@@ -11,51 +11,51 @@ class RegistrationForm(UserCreationForm):
     Inherits from the UserCreationForm and adds an email field with validation.
     """
     email = forms.EmailField(
-        label=_('Email'),
+        label=gettext_lazy('Email'),
         max_length=254,
         widget=forms.EmailInput(attrs={'autocomplete': 'email'})
     )
     password1 = forms.CharField(
-        label=_('Пароль'),
+        label=gettext_lazy('Пароль'),
         strip=False,
-        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}), 
-        help_text=_('Пароль должен содержать минимум 8 символов.'),
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        help_text=gettext_lazy('Пароль должен содержать минимум 8 символов.'),
     )
     password2 = forms.CharField(
-        label=_('Подтверждение пароля'),
+        label=gettext_lazy('Подтверждение пароля'),
         widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
         strip=False,
-        help_text=_('Введите тот же пароль, что и выше, для проверки.'),
+        help_text=gettext_lazy('Введите тот же пароль, что и выше, для проверки.'),
     )
 
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
         labels = {
-            'username': _('Логин'),
-            'password1': _('Пароль'),
-            'password2': _('Подтверждение пароля'),
+            'username': gettext_lazy('Логин'),
+            'password1': gettext_lazy('Пароль'),
+            'password2': gettext_lazy('Подтверждение пароля'),
         }
         help_texts = {
-            'username': _('Только буквы, цифры и @/./+/-/_'),
+            'username': gettext_lazy('Только буквы, цифры и @/./+/-/_'),
         }
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': _('Логин')
+                'placeholder': gettext_lazy('Логин')
             }),
         }
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
-            raise ValidationError(_('Пользователь с таким email уже существует.'))
+            raise ValidationError(gettext_lazy('Пользователь с таким email уже существует.'))
         return email
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if User.objects.filter(username=username).exists():
-            raise ValidationError(_('Пользователь с таким именем уже существует.'))
+            raise ValidationError(gettext_lazy('Пользователь с таким именем уже существует.'))
         return username
 
     def save(self, commit=True):
@@ -76,24 +76,24 @@ class ProfileUpdateForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'autocomplete': 'email'}),
         }
         labels = {
-            'first_name': _('Имя'),
-            'last_name': _('Фамилия'),
-            'email': _('Email'),
-            'location': _('Местоположение'),
-            'birth_date': _('Дата рождения'),
-            'bio': _('О себе'),
+            'first_name': gettext_lazy('Имя'),
+            'last_name': gettext_lazy('Фамилия'),
+            'email': gettext_lazy('Email'),
+            'location': gettext_lazy('Местоположение'),
+            'birth_date': gettext_lazy('Дата рождения'),
+            'bio': gettext_lazy('О себе'),
         }
 
     def clean_email(self):
         email = self.cleaned_data['email']
         if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-            raise ValidationError(_('Этот email уже используется'))
+            raise ValidationError(gettext_lazy('Этот email уже используется'))
         return email
 
     def clean_birth_date(self):
         birth_date = self.cleaned_data.get('birth_date')
         if birth_date and birth_date.year < 1900:
-            raise ValidationError(_('Некорректная дата рождения'))
+            raise ValidationError(gettext_lazy('Некорректная дата рождения'))
         return birth_date
 
 class CommentForm(forms.ModelForm):

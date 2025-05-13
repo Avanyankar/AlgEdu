@@ -30,11 +30,11 @@ from main_app.models import (User, Field, Comment, Wall, Cell, ProfileComment,
 
 logger = logging.getLogger(__name__)
 
+
 class FieldListView(ListView):
     """
     View for getting list of fields.
     """
-
     model = Field
     template_name = 'fields/list.html'
     context_object_name = 'fields'
@@ -50,7 +50,6 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     Processes the fields name, mail, agent, checks them for validity
     and saves the changes to the user's model.
     """
-
     model: User = User
     form_class = ProfileUpdateForm
     template_name: str = 'editing.html'
@@ -93,7 +92,6 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         except ValidationError as e:
             form.add_error(None, e.message)
             return self.form_invalid(form)
-
         response: HttpResponse = super().form_valid(form)
         messages.success(self.request, 'Профиль успешно обновлён!')
         return response
@@ -111,7 +109,6 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         name = cleaned_data.get('first_name')
         email = cleaned_data.get('email')
         age = cleaned_data.get('age')
-
         if not name:
             raise ValidationError('Имя не может быть пустым.')
         if not email or '@' not in email:
@@ -141,12 +138,9 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['is_profile_page'] = True
         context['is_own_profile'] = self.object == self.request.user
-
-
         context['profile_comments'] = ProfileComment.objects.filter(
             profile=self.object
         ).select_related('author').order_by('-created_at')
-
         return context
 
 
@@ -165,7 +159,6 @@ def add_profile_comment(request, username):
     return redirect('profile_view', username=username)
 
 
-
 @login_required
 def delete_profile_comment(request, comment_id):
     comment = get_object_or_404(ProfileComment, id=comment_id)
@@ -173,19 +166,18 @@ def delete_profile_comment(request, comment_id):
             or request.user.is_superuser):
         comment.delete()
         messages.success(request, 'Комментарий удален')
-
     return redirect('profile')
+
 
 class IndexView(DetailView):
     """
     View for displaying the index page.
     """
-
     model = Field
     template_name = 'index.html'
     context_object_name = 'user'
 
-    def get_object(self, **kwargs) -> User:
+    def get_object(self) -> User:
         """
         Returns the user object associated with the current request.
 
@@ -205,6 +197,7 @@ class IndexView(DetailView):
         context['fields'] = Field.objects.all()
         return context
 
+
 class UserRegisterView(CreateView):
     """
     View for user registration.
@@ -218,7 +211,6 @@ class UserRegisterView(CreateView):
         template_name (str): The path to the template used for rendering the registration page.
         success_url (str): The URL to redirect to after a successful registration.
     """
-
     model: User = User
     form_class = RegistrationForm
     template_name: str = 'register.html'
@@ -227,7 +219,6 @@ class UserRegisterView(CreateView):
     def form_valid(self, form):
         """Processing a valid registration form"""
         user = form.save()
-
         user_registered.send(
             sender=self.__class__,
             user=user,
@@ -236,6 +227,7 @@ class UserRegisterView(CreateView):
         login(self.request, user)
         messages.success(self.request, 'Регистрация успешно завершена!')
         return super().form_valid(form)
+
     def register(self, form):
         user = form.save()
         user_registered.send(
@@ -260,7 +252,6 @@ class UserLoginView(LoginView):
                                             to the success URL.
         success_url (str): The URL to redirect to after a successful login.
     """
-
     template_name: str = 'login.html'
     form_class: type[AuthenticationForm] = AuthenticationForm
     redirect_authenticated_user: bool = True
@@ -298,7 +289,6 @@ class NotFoundView(TemplateView):
     """
     View for displaying the 404 error page.
     """
-
     template_name: str = '404.html'
 
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
@@ -320,11 +310,8 @@ class FieldDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         field = self.get_object()
-
-
         if not field.cells.exists():
             self.create_cells(field)
-
         context.update({
             'is_liked': field.likes.filter(
                 id=self.request.user.id).exists() if self.request.user.is_authenticated else False,
@@ -359,6 +346,7 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
     model: FieldReport = FieldReport
     form_class = FieldReportForm
     template_name: str = 'report_field.html'
+
     def get_success_url(self) -> str:
         """
         Returns the URL to redirect to after successful report.
@@ -448,6 +436,7 @@ def search_fields(request):
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = reverse_lazy('login')
     raise_exception = True
+
     def test_func(self):
         return self.request.user.is_staff
 
@@ -593,6 +582,7 @@ class GoalsPageView(TemplateView):
         ]
         return context
 
+
 @require_POST
 @login_required
 def toggle_like(request, pk):
@@ -630,19 +620,16 @@ def add_comment(request, pk):
     try:
         data = json.loads(request.body)
         text = data.get('text', '').strip()
-
         if not text:
             return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
         if len(text) > 1000:
             return JsonResponse({'error': 'Comment is too long (max 1000 chars)'}, status=400)
-
         field = get_object_or_404(Field, id=pk)
         comment = Comment.objects.create(
             field=field,
             author=request.user,
             text=text
         )
-
         return JsonResponse({
             'success': True,
             'comment_id': comment.id,
@@ -662,7 +649,6 @@ def field_detail(request, pk):
     field = Field.objects.get(id=pk)
     is_liked = request.user.is_authenticated and request.user in field.likes.all()
     is_favorited = request.user.is_authenticated and request.user in field.favorites.all()
-
     return render(request, 'your_app/field_detail.html', {
         'field': field,
         'is_liked': is_liked,
@@ -680,7 +666,7 @@ def moderation_panel(request):
 @staff_member_required
 def block_content(request, content_type, content_id):
     """Универсальная функция блокировки контента"""
-    CONTENT_TYPES = {
+    content_types = {
         'field': {
             'model': Field,
             'block_method': 'safe_block',
@@ -700,11 +686,10 @@ def block_content(request, content_type, content_id):
             'name': 'пользователь'
         }
     }
-
     try:
-        if content_type not in CONTENT_TYPES:
+        if content_type not in content_types:
             raise Http404("Тип контента не поддерживается")
-        config = CONTENT_TYPES[content_type]
+        config = content_types[content_type]
         model = config['model']
         item = get_object_or_404(model, pk=content_id)
         action = request.POST.get('action', 'block')
@@ -725,17 +710,16 @@ def block_content(request, content_type, content_id):
             logger.info("%s %s %s", log_action.capitalize(), config['name'], content_id)
         else:
             messages.error(request, "Не удалось выполнить действие для %s", config['name'])
-
     except Exception as e:
         logger.error("Ошибка в block_content: %s", str(e), exc_info=True)
         messages.error(request, f"Произошла ошибка: {str(e)}")
-
     return redirect(reverse_lazy('admin-panel'))
+
 
 class BlockContentView(View):
     """Класс для блокировки контента"""
     def post(self, request, content_type, content_id):
-        CONTENT_TYPES = {
+        content_types = {
             'field': {
                 'model': Field,
                 'block_method': 'safe_block',
@@ -756,9 +740,9 @@ class BlockContentView(View):
             }
         }
         try:
-            if content_type not in CONTENT_TYPES:
+            if content_type not in content_types:
                 raise ValueError("Неизвестный тип контента")
-            config = CONTENT_TYPES[content_type]
+            config = content_types[content_type]
             item = config['model'].objects.get(pk=content_id)
             if hasattr(item, config['block_method']):
                 getattr(item, config['block_method'])()
@@ -775,7 +759,7 @@ class BlockContentView(View):
 class UnblockContentView(View):
     """Класс для разблокировки контента"""
     def post(self, request, content_type, content_id):
-        CONTENT_TYPES = {
+        content_types = {
             'field': {
                 'model': Field,
                 'unblock_method': 'safe_unblock',
@@ -790,9 +774,9 @@ class UnblockContentView(View):
             }
         }
         try:
-            if content_type not in CONTENT_TYPES:
+            if content_type not in content_types:
                 raise ValueError("Неизвестный тип контента")
-            config = CONTENT_TYPES[content_type]
+            config = content_types[content_type]
             item = config['model'].objects.get(pk=content_id)
             if hasattr(item, config['unblock_method']):
                 getattr(item, config['unblock_method'])()
@@ -840,7 +824,6 @@ def toggle_comment_like(request, pk):
         else:
             comment.likes.add(request.user)
             is_liked = True
-
         return JsonResponse({
             'success': True,
             'is_liked': is_liked,
@@ -857,7 +840,6 @@ def report_comment(request, pk):
         comment = Comment.objects.get(id=pk)
         if request.user not in comment.reports.all():
             comment.reports.add(request.user)
-
         return JsonResponse({
             'success': True,
             'reports_count': comment.reports.count()
@@ -877,13 +859,9 @@ def add_wall(request):
         y = int(data.get('y'))
         width = int(data.get('width', 1))
         height = int(data.get('height', 1))
-
         field = Field.objects.get(id=field_id)
-
-
         if x + width > field.cols or y + height > field.rows:
             return JsonResponse({'error': 'Wall exceeds field boundaries'}, status=400)
-
         wall = Wall.objects.create(
             field=field,
             x=x,
@@ -892,7 +870,6 @@ def add_wall(request):
             height=height,
             created_by=request.user
         )
-
         return JsonResponse({
             'success': True,
             'wall': {
@@ -903,7 +880,6 @@ def add_wall(request):
                 'height': wall.height
             }
         })
-
     except Field.DoesNotExist:
         return JsonResponse({'error': 'Field not found'}, status=404)
     except Exception as e:
@@ -913,21 +889,23 @@ def add_wall(request):
 @require_POST
 @login_required
 def remove_wall(request, pk):
-    """Удаление стены"""
+    """
+    Удаление стены
+    """
     try:
         wall = Wall.objects.get(id=pk)
         if wall.created_by != request.user and not request.user.is_staff:
             return JsonResponse({'error': 'Permission denied'}, status=403)
-
         wall.delete()
         return JsonResponse({'success': True})
-
     except Wall.DoesNotExist:
         return JsonResponse({'error': 'Wall not found'}, status=404)
 
 
 def get_field_state(request, pk):
-    """Получение текущего состояния поля"""
+    """
+    Получение текущего состояния поля
+    """
     try:
         field = Field.objects.get(id=pk)
         walls = Wall.objects.filter(field=field).values('id', 'x', 'y', 'width', 'height')
@@ -954,7 +932,6 @@ class FieldCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         field = form.save(commit=False)
         field.user = self.request.user
-
         file_data = form.cleaned_data.get('file')
         if file_data:
             field_file = FieldFile.objects.create(
@@ -964,9 +941,10 @@ class FieldCreateView(LoginRequiredMixin, CreateView):
                 size=file_data['size']
             )
             field.file = field_file
-
         field.save()
         return super().form_valid(form)
+
+
 def download_file(request, pk):
     field_file = get_object_or_404(FieldFile, pk=pk)
     response = HttpResponse(field_file.data, content_type=field_file.content_type)

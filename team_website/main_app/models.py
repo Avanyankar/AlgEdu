@@ -3,7 +3,9 @@ from django.db import models
 from django.core.files.base import ContentFile
 from django.contrib.auth.models import AbstractUser
 
+
 logger = logging.getLogger(__name__)
+
 
 class User(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
@@ -19,7 +21,7 @@ class User(AbstractUser):
             Comment.objects.filter(author=self).update(is_blocked=True)
             return True
         except Exception as e:
-            logger.error(f"Ошибка бана User %s: %s", self.id, str(e))
+            logger.error("Ошибка бана User %s: %s", self.id, str(e))
             return False
 
     def __str__(self):
@@ -67,21 +69,6 @@ class Field(models.Model):
         self.is_blocked = False
         self.save()
 
-        def safe_block(self):
-            try:
-                if not isinstance(self.cols, int):
-                    try:
-                        self.cols = int(self.cols) if str(self.cols).isdigit() else 10
-                    except (TypeError, ValueError):
-                        self.cols = 10
-                self.is_blocked = True
-                self.save(update_fields=['is_blocked', 'cols'])
-                self.comments.update(is_blocked=True)
-                return True
-            except Exception as e:
-                logger.error("Ошибка блокировки Field %s: %s", self.id, str(e))
-                return False
-
     def safe_unblock(self):
         try:
             self.is_blocked = False
@@ -103,7 +90,7 @@ class Field(models.Model):
         ]
 
     def __str__(self):
-        return self.title
+        return str(self.title)
 
 
 class Cell(models.Model):
