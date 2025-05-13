@@ -4,7 +4,6 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <gtest/gtest.h>
 
 /**
  * @file variable.h
@@ -20,6 +19,11 @@
 template <typename T, typename B>
 class BaseVariable {
 public:
+    std::string name; ///< Name of the variable (must be valid identifier)
+    B min;           ///< Minimum allowed value
+    B max;           ///< Maximum allowed value
+    T value;         ///< Current value of the variable
+
     /**
      * @brief Constructs a new BaseVariable.
      * @param name Variable name (must be valid identifier)
@@ -33,11 +37,6 @@ public:
      *   - name contains invalid characters
      */
     BaseVariable(const std::string& name, T value, B min, B max);
-
-    std::string name;
-    B min;
-    B max;
-    T value;
 };
 
 /**
@@ -59,85 +58,30 @@ public:
 
     /**
      * @brief Validates current value is within bounds.
-     * @return true if min < value < max
+     * @return true if min <= value <= max
      */
     bool validate() const;
 
-    /**
-     * @brief Validates addition operation won't overflow.
-     * @param other The other operand
-     * @return true if operation is safe
-     */
+    // Validation methods for arithmetic operations
     bool validate_addition(const Integer& other) const;
-
-    /**
-     * @brief Validates subtraction operation won't overflow.
-     * @param other The other operand
-     * @return true if operation is safe
-     */
     bool validate_subtraction(const Integer& other) const;
-
-    /**
-     * @brief Validates multiplication operation won't overflow.
-     * @param other The other operand
-     * @return true if operation is safe
-     */
     bool validate_multiplication(const Integer& other) const;
-
-    /**
-     * @brief Validates division operation is safe.
-     * @param other The divisor
-     * @return true if not division by zero and no overflow
-     */
     bool validate_division(const Integer& other) const;
-
-    /**
-     * @brief Validates modulo operation is safe.
-     * @param other The divisor
-     * @return true if not division by zero
-     */
     bool validate_modulo_division(const Integer& other) const;
 
-    /**
-     * @brief Addition operator with overflow checking.
-     * @param other The other operand
-     * @return Reference to modified object
-     * @throws std::overflow_error On overflow
-     */
-    Integer operator+(const Integer& other);
+    // Compound assignment operators
+    Integer& operator+=(const Integer& other);
+    Integer& operator-=(const Integer& other);
+    Integer& operator*=(const Integer& other);
+    Integer& operator/=(const Integer& other);
+    Integer& operator%=(const Integer& other);
 
-    /**
-     * @brief Subtraction operator with overflow checking.
-     * @param other The other operand
-     * @return Reference to modified object
-     * @throws std::overflow_error On overflow
-     */
-    Integer operator-(const Integer& other);
-
-    /**
-     * @brief Multiplication operator with overflow checking.
-     * @param other The other operand
-     * @return Reference to modified object
-     * @throws std::overflow_error On overflow
-     */
-    Integer operator*(const Integer& other);
-
-    /**
-     * @brief Division operator with checking.
-     * @param other The divisor
-     * @return Reference to modified object
-     * @throws std::runtime_error On division by zero
-     * @throws std::overflow_error On overflow
-     */
-    Integer operator/(const Integer& other);
-
-    /**
-     * @brief Modulo operator with checking.
-     * @param other The divisor
-     * @return Reference to modified object
-     * @throws std::runtime_error On division by zero
-     */
-    Integer operator%(const Integer& other);
+    // Arithmetic operators
+    Integer operator+(const Integer& other) const;
+    Integer operator-(const Integer& other) const;
+    Integer operator*(const Integer& other) const;
+    Integer operator/(const Integer& other) const;
+    Integer operator%(const Integer& other) const;
 };
 
 /**
@@ -156,14 +100,22 @@ public:
      *   - min > max
      *   - length is out of bounds
      */
-    String(const std::string& name, const std::string& value, size_t min = 0,
-        size_t max = std::numeric_limits<size_t>::max());
+    String(const std::string& name, const std::string& value,
+        size_t min = 0, size_t max = std::numeric_limits<size_t>::max());
 
     /**
      * @brief Validates current length is within bounds.
      * @return true if min <= length <= max
      */
     bool validate() const;
+
+    /**
+     * @brief Compound concatenation operator with length checking.
+     * @param other The other string
+     * @return Reference to modified object
+     * @throws std::overflow_error If resulting length exceeds max
+     */
+    String& operator+=(const String& other);
 
     /**
      * @brief Concatenation operator with length checking.
