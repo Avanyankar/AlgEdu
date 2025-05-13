@@ -24,10 +24,11 @@ stages:
 variables:
   PYTHON_VERSION: "3.11"
   DOCKER_HOST: "tcp://docker:2375"
-  PROJECT_DIR: "/opt/final-project"
+  PROJECT_DIR: "/home/alg_edu/WDev/team_website"
+  SERVER_IP: "87.228.77.37"
 
 # ----------------------------
-# Правила для WDev (Python проекты)
+# Правила для веток
 # ----------------------------
 .wdev-rules: &wdev-rules
   rules:
@@ -36,14 +37,16 @@ variables:
         - team_website/**/*
         - application_website/**/*
 
-# ----------------------------
-# Правила для DDev (C++ проект)
-# ----------------------------
 .ddev-rules: &ddev-rules
   rules:
     - if: '$CI_COMMIT_REF_NAME == "DDev"'
       changes:
         - application/**/*
+
+.main-rules: &main-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+      when: manual
 
 # ----------------------------
 # Python проверки (WDev)
@@ -96,8 +99,8 @@ deploy-python:
   <<: *wdev-rules
   stage: deploy
   environment:
-    name: production
-    url: http://${SERVER_IP}
+    name: staging
+    url: http://${SERVER_IP}/staging
   script:
     - |
       for project in team_website application_website; do
@@ -112,6 +115,63 @@ deploy-python:
           "
         fi
       done
+
+# ----------------------------
+# Безопасный деплой main (Production)
+# ----------------------------
+deploy-prod:
+  <<: *main-rules
+  stage: deploy
+  environment:
+    name: production
+    url: http://algedu.ru
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan ${SERVER_IP} >> ~/.ssh/known_hosts
+  script:
+    - |
+      echo "=== Безопасный деплой в Production ==="
+      
+      ssh alg_edu@${SERVER_IP} "
+        set -e
+        
+        for project in team_website application_website; do
+          if [ -d '${PROJECT_DIR}/\$project' ]; then
+            echo 'Обновление \$project...'
+            
+            sudo cp /etc/nginx/sites-available/alg_edu /etc/nginx/sites-available/alg_edu.backup
+            sudo sed -i 's/proxy_pass http:\/\/127.0.0.1:8000;/return 503 maintenance;/g' /etc/nginx/sites-available/alg_edu
+            sudo systemctl reload nginx
+            
+            cd ${PROJECT_DIR}/\$project
+            git fetch origin
+            git reset --hard origin/main
+            
+            if [ ! -d venv ]; then
+              python -m venv venv
+            fi
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+            
+            sudo cp /etc/nginx/sites-available/alg_edu.backup /etc/nginx/sites-available/alg_edu
+            sudo systemctl reload nginx
+            sudo systemctl restart gunicorn
+            
+            echo 'Проект \$project успешно обновлен'
+          fi
+        done
+      "
+  after_script:
+    - rm -f ~/.ssh/id_rsa
+  tags:
+    - deploy
 
 # ----------------------------
 # Сборка C++ проекта (DDev)
