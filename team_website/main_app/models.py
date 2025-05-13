@@ -1,7 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 import logging
 
@@ -141,7 +139,6 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='liked_comments', blank=True)
     reports = models.ManyToManyField(User, related_name='reported_comments', blank=True)
-    is_blocked = models.BooleanField(default=False)
     is_blocked = models.BooleanField(default=False, verbose_name="Заблокировано")
 
     def block(self):

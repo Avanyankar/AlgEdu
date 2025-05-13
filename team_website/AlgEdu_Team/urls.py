@@ -46,7 +46,6 @@ urlpatterns = [
     path('api/walls/add/', views.add_wall, name='add_wall'),
     path('api/walls/<int:pk>/remove/', views.remove_wall, name='remove_wall'),
     path('api/search/', views.search_fields, name='search_fields'),
-    path('spinning/', views.spinning_image_view, name='spinning_image'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('logout/', views.custom_logout, name='logout'),
     path('about/', views.AboutPageView.as_view(), name='about'),

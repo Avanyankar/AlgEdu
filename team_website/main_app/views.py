@@ -1,27 +1,24 @@
+import json
+import logging
 from typing import Dict, Any
-from django.contrib.auth.views import LoginView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import View, UpdateView, DetailView, CreateView, TemplateView, ListView
-from django.http import HttpResponse, Http404
-from django.core.exceptions import ValidationError
 from django.contrib import messages
-from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, Post, LikeField, FavoriteField, FieldReport, ReportComment
-from django.urls import reverse_lazy, reverse
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib.auth.views import LoginView
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.http import HttpResponse, Http404, JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse_lazy, reverse
+from django.views.decorators.http import require_POST
+from django.views.generic import View, UpdateView, DetailView, CreateView, TemplateView, ListView
 from django_registration.signals import user_registered
 from main_app.forms import RegistrationForm, ProfileUpdateForm, FieldForm, FieldReportForm
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
-from django.shortcuts import get_object_or_404, redirect, render
-from django.db.models import Count, Q
-from django.views.decorators.http import require_POST
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-import logging
-import json
+from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, FieldReport, ReportComment
+
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +128,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['is_profile_page'] = True
-        context['is_own_profile'] = (self.object == self.request.user)
+        context['is_own_profile'] = self.object == self.request.user
 
 
         context['profile_comments'] = ProfileComment.objects.filter(
@@ -160,9 +157,6 @@ def add_profile_comment(request, username):
 @login_required
 def delete_profile_comment(request, comment_id):
     comment = get_object_or_404(ProfileComment, id=comment_id)
-
-
-
     if request.user == comment.profile or request.user == comment.author or request.user.is_superuser:
         comment.delete()
         messages.success(request, 'Комментарий удален')
@@ -178,7 +172,7 @@ class IndexView(DetailView):
     template_name = 'index.html'
     context_object_name = 'user'
 
-    def get_object(self) -> User:
+    def get_object(self, **kwargs) -> User:
         """
         Returns the user object associated with the current request.
 
@@ -226,24 +220,17 @@ class UserRegisterView(CreateView):
             user=user,
             request=self.request
         )
-        
         login(self.request, user)
-        
         messages.success(self.request, 'Регистрация успешно завершена!')
-        
         return super().form_valid(form)
-    
     def register(self, form):
         user = form.save()
-        
         user_registered.send(
             sender=self.__class__,
             user=user,
             request=self.request
         )
-        
         return user
-
 
 
 class UserLoginView(LoginView):
@@ -258,7 +245,7 @@ class UserLoginView(LoginView):
         form_class (type[AuthenticationForm]): The form class used for authentication.
         redirect_authenticated_user (bool): If True, authenticated users will be redirected
                                             to the success URL.
-        success_url (str): The URL to redirect to after a   successful loginsddssd.
+        success_url (str): The URL to redirect to after a successful login.
     """
 
     template_name: str = 'login.html'
@@ -356,11 +343,9 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
     Processes the report reason and description,
     validates them and creates a new FieldReport instance.
     """
-    
     model: FieldReport = FieldReport
     form_class = FieldReportForm
     template_name: str = 'report_field.html'
-    
     def get_success_url(self) -> str:
         """
         Returns the URL to redirect to after successful report.
@@ -369,7 +354,7 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
             str: URL of the reported field.
         """
         return reverse_lazy('index')
-    
+
     def get_context_data(self, **kwargs) -> Dict[str, Any]:
         """
         Adds the field object to the template context.
@@ -380,13 +365,11 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         context: Dict[str, Any] = super().get_context_data(**kwargs)
         field = get_object_or_404(Field, id=self.kwargs['field_id'])
         context['field'] = field
-        
         context['existing_report'] = FieldReport.objects.filter(
             field_id=field.id,
             user=self.request.user,
             is_resolved=False
         ).first()
-        
         return context
     
     def form_valid(self, form) -> HttpResponse:
@@ -404,12 +387,10 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         except ValidationError as e:
             form.add_error(None, e.message)
             return self.form_invalid(form)
-        
         report = form.save(commit=False)
         report.field = get_object_or_404(Field, id=self.kwargs['field_id'])
         report.user = self.request.user
         report.save()
-        
         messages.success(self.request, 'Жалоба успешно отправлена!')
         return super().form_valid(form)
     
@@ -425,19 +406,15 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         """
         reason = cleaned_data.get('reason')
         description = cleaned_data.get('description')
-        
         if not reason:
             raise ValidationError('Укажите причину жалобы.')
-        
         if reason == 'other' and not description:
             raise ValidationError('Для причины "Другое" необходимо описание.')
-        
         existing_report = FieldReport.objects.filter(
             field_id=self.kwargs['field_id'],
             user=self.request.user,
             is_resolved=False
         ).exists()
-        
         if existing_report:
             raise ValidationError('Вы уже отправляли жалобу на это поле.')
 
@@ -469,27 +446,20 @@ def toggle_favorite(request, pk):
 
 def search_fields(request):
     query = request.GET.get('q', '').strip()
-    
     if not query:
         return JsonResponse({'results': []})
-    
-    fields = Field.objects.filter(
-        Q(title__icontains=query) | 
-        Q(description__icontains=query)
-    ).values('id', 'title', 'description', 'created_at')
-    
+    fields = Field.objects.filter(Q(title__icontains=query)
+                                  | Q(description__icontains=query)).values('id', 'title', 'description', 'created_at')
     results = []
     for field in fields:
         field['created_at'] = field['created_at'].strftime('%d.%m.%Y')
         results.append(field)
-    
     return JsonResponse({'results': results})
 
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = reverse_lazy('login')
     raise_exception = True
-
     def test_func(self):
         return self.request.user.is_staff
 
@@ -499,25 +469,19 @@ class ModerationPanelView(StaffRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context['field_reports'] = FieldReport.objects.filter(
             is_resolved=False
         ).select_related('field', 'user')
-
-
         context['blocked_fields'] = Field.objects.filter(
             is_blocked=True
         ).order_by('-updated_at')[:10]
-
         context['blocked_comments'] = Comment.objects.filter(
             is_blocked=True
         ).order_by('-created_at')[:10]
-
         return context
 
 
 class ResolveCommentReportView(StaffRequiredMixin, View):
-
     def get(self, request, report_id):
         report = get_object_or_404(ReportComment, id=report_id)
         return render(request, 'moderation/resolve_comment.html', {
@@ -527,7 +491,6 @@ class ResolveCommentReportView(StaffRequiredMixin, View):
     def post(self, request, report_id):
         report = get_object_or_404(ReportComment, id=report_id)
         action = request.POST.get('action')
-
         if action == 'block':
             report.comment.block()
             report.status = 'approved'
@@ -535,13 +498,11 @@ class ResolveCommentReportView(StaffRequiredMixin, View):
         elif action == 'ignore':
             report.status = 'rejected'
             messages.info(request, 'Жалоба отклонена')
-
         report.is_resolved = True
         report.save()
         return redirect('moderation_panel')
 
 class ResolveFieldReportView(StaffRequiredMixin, View):
-
     def get(self, request, report_id):
         report = get_object_or_404(FieldReport, id=report_id)
         return render(request, 'moderation/resolve_field.html', {
@@ -551,7 +512,6 @@ class ResolveFieldReportView(StaffRequiredMixin, View):
     def post(self, request, report_id):
         report = get_object_or_404(FieldReport, id=report_id)
         action = request.POST.get('action')
-
         if action == 'block':
             report.field.block()
             report.status = 'approved'
@@ -559,14 +519,12 @@ class ResolveFieldReportView(StaffRequiredMixin, View):
         elif action == 'ignore':
             report.status = 'rejected'
             messages.info(request, 'Жалоба отклонена')
-
         report.is_resolved = True
         report.save()
         return redirect('moderation_panel')
 
 
 class UnblockContentView(StaffRequiredMixin, View):
-
     def post(self, request, content_type, content_id):
         if content_type == 'field':
             obj = get_object_or_404(Field, id=content_id)
@@ -579,7 +537,6 @@ class UnblockContentView(StaffRequiredMixin, View):
         else:
             messages.error(request, 'Неверный тип контента')
             return redirect('moderation_panel')
-
         return redirect('moderation_panel')
 
 
@@ -588,7 +545,6 @@ class AboutPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context['company_name'] = "Моя Компания"
         context['foundation_year'] = "2010"
         context['team_size'] = "50"
@@ -620,7 +576,6 @@ class GoalsPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context['mission'] = "Мы стремимся создавать инновационные решения, которые делают бизнес эффективнее."
         context['goals'] = [
             {
@@ -703,7 +658,6 @@ def add_comment(request, pk):
 
         if not text:
             return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
-        
         if len(text) > 1000:
             return JsonResponse({'error': 'Comment is too long (max 1000 chars)'}, status=400)
 
@@ -721,7 +675,6 @@ def add_comment(request, pk):
             'text': comment.text,
             'created_at': comment.created_at.strftime("%Y-%m-%d %H:%M") if comment.created_at else None
         })
-
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
@@ -775,13 +728,10 @@ def block_content(request, content_type, content_id):
     try:
         if content_type not in CONTENT_TYPES:
             raise Http404("Тип контента не поддерживается")
-        
         config = CONTENT_TYPES[content_type]
         model = config['model']
         item = get_object_or_404(model, pk=content_id)
-        
         action = request.POST.get('action', 'block')
-        
         if action == 'block' and config['block_method']:
             method = getattr(item, config['block_method'])
             success_msg = f"{config['name'].capitalize()} успешно заблокирован"
@@ -796,19 +746,18 @@ def block_content(request, content_type, content_id):
 
         if method():
             messages.success(request, success_msg)
-            logger.info(f"{log_action.capitalize()} {config['name']} {content_id}")
+            logger.info("%s %s %s", log_action.capitalize(), config['name'], content_id)
         else:
-            messages.error(request, f"Не удалось выполнить действие для {config['name']}")
+            messages.error(request, "Не удалось выполнить действие для %s", config['name'])
 
     except Exception as e:
-        logger.error(f"Ошибка в block_content: {str(e)}", exc_info=True)
+        logger.error("Ошибка в block_content: %s", str(e), exc_info=True)
         messages.error(request, f"Произошла ошибка: {str(e)}")
 
     return redirect(reverse_lazy('admin-panel'))
 
 class BlockContentView(View):
     """Класс для блокировки контента"""
-    
     def post(self, request, content_type, content_id):
         CONTENT_TYPES = {
             'field': {
@@ -830,34 +779,25 @@ class BlockContentView(View):
                 'detail_url': 'profile_view'
             }
         }
-        
         try:
             if content_type not in CONTENT_TYPES:
                 raise ValueError("Неизвестный тип контента")
-            
             config = CONTENT_TYPES[content_type]
             item = config['model'].objects.get(pk=content_id)
-            
             if hasattr(item, config['block_method']):
                 getattr(item, config['block_method'])()
-                messages.success(
-                    request, 
-                    f"{config['name'].capitalize()} успешно заблокирована"
-                )
-                logger.info(f"Заблокирован {content_type} {content_id}")
+                messages.success(request, f"{config['name'].capitalize()} успешно заблокирована")
+                logger.info("Заблокирован %s %s", content_type, content_id)
             else:
                 messages.error(request, "Не удалось заблокировать")
-                
         except Exception as e:
-            messages.error(request, f"Ошибка: {str(e)}")
-            logger.error(f"Ошибка блокировки: {str(e)}")
-        
+            messages.error(request, "Ошибка: %s", str(e))
+            logger.error("Ошибка блокировки: %s", str(e))
         return redirect(reverse('moderation_panel'))
 
 
 class UnblockContentView(View):
     """Класс для разблокировки контента"""
-    
     def post(self, request, content_type, content_id):
         CONTENT_TYPES = {
             'field': {
@@ -873,35 +813,26 @@ class UnblockContentView(View):
                 'detail_url': None
             }
         }
-        
         try:
             if content_type not in CONTENT_TYPES:
                 raise ValueError("Неизвестный тип контента")
-            
             config = CONTENT_TYPES[content_type]
             item = config['model'].objects.get(pk=content_id)
-            
             if hasattr(item, config['unblock_method']):
                 getattr(item, config['unblock_method'])()
-                messages.success(
-                    request, 
-                    f"{config['name'].capitalize()} успешно разблокирована"
-                )
-                logger.info(f"Разблокирован {content_type} {content_id}")
+                messages.success(request, f"{config['name'].capitalize()} успешно разблокирована")
+                logger.info("Разблокирован %s %s", content_type, content_id)
             else:
                 messages.error(request, "Не удалось разблокировать")
-                
         except Exception as e:
-            messages.error(request, f"Ошибка: {str(e)}")
-            logger.error(f"Ошибка разблокировки: {str(e)}")
-        
+            messages.error(request, "Ошибка: %s", str(e))
+            logger.error("Ошибка разблокировки: %s", str(e))
         return redirect(reverse('moderation_panel'))
 
 
 class ProfileFieldsAPIView(View):
     def get(self, request):
         field_type = request.GET.get('type', 'my')
-        
         if field_type == 'my':
             fields = Field.objects.filter(user=request.user)
         elif field_type == 'liked':
@@ -910,7 +841,6 @@ class ProfileFieldsAPIView(View):
             fields = request.user.favorited_cards.all()
         else:
             fields = Field.objects.none()
-        
         fields_data = []
         for field in fields:
             fields_data.append({
@@ -920,7 +850,6 @@ class ProfileFieldsAPIView(View):
                 'created_at': field.created_at.strftime("%d.%m.%Y"),
                 'url': field.get_absolute_url()
             })
-        
         return JsonResponse({'fields': fields_data})
 
 
@@ -1037,29 +966,6 @@ def get_field_state(request, pk):
         return JsonResponse({'error': 'Field not found'}, status=404)
 
 
-import random
-
-
-def spinning_image_view(request):
-    phrases = ["Goida", "1488", "OGbolshieyayca", "tarZan pidor", "Ave Python", "meow"]
-    phrase_data = []
-    for _ in range(30):
-        phrase_data.append({
-            'text': random.choice(phrases),
-            'x': random.randint(5, 95),
-            'y': random.randint(5, 95),
-            'size': random.randint(16, 32),
-            'color': f"rgb({random.randint(0, 255)}, {random.randint(0, 255)}, {random.randint(0, 255)})",
-            'speed': random.uniform(0.01, 1)
-        })
-
-    context = {
-        'phrases': phrase_data,
-        'image_url': 'meow.jpg'
-    }
-    return render(request, 'spinning_image.html', context)
-from django.contrib.auth import logout
-from django.shortcuts import redirect
 
 def custom_logout(request):
     logout(request)
@@ -1093,4 +999,3 @@ def download_file(request, pk):
     response = HttpResponse(field_file.data, content_type=field_file.content_type)
     response['Content-Disposition'] = f'attachment; filename="{field_file.name}"'
     return response
-
