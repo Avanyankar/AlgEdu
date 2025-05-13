@@ -920,16 +920,13 @@ def get_field_state(request, pk):
     try:
         field = Field.objects.get(id=pk)
         walls = Wall.objects.filter(field=field).values('id', 'x', 'y', 'width', 'height')
-
         return JsonResponse({
             'cols': field.cols,
             'rows': field.rows,
             'walls': list(walls)
         })
-
     except Field.DoesNotExist:
         return JsonResponse({'error': 'Field not found'}, status=404)
-
 
 
 def custom_logout(request):
