@@ -103,11 +103,12 @@ void Lexer::defineToken(Token& token)
         auto pos = tokenMap.find(tokenSource);
         if (pos != tokenMap.end())
         {
-            token.setType(pos->second);
-            if (token.getType() == TokenType::COLOR || token.getType() == TokenType::IDENTIFIER || token.getType() == TokenType::NUMBER || token.getType() == TokenType::STRING)
+            TokenType type = pos->second;
+            if (type == TokenType::COLOR || type == TokenType::IDENTIFIER || type == TokenType::NUMBER || type == TokenType::STRING)
             {
                 abort("Expected token, received regex.");
             }
+            token.setType(type);
             break;
         }
         this->nextChar();
@@ -136,29 +137,33 @@ void Lexer::defineToken(Token& token)
             if (std::regex_match(tokenSource, colorRegex))
             {
                 token.setType(TokenType::COLOR);
+                break;
             }
             std::regex numberRegex(numberPattern);
             if (std::regex_match(tokenSource, numberRegex))
             {
                 token.setType(TokenType::NUMBER);
+                break;
             }
             std::regex identifierRegex(identifierPattern);
             if (std::regex_match(tokenSource, identifierRegex))
             {
                 token.setType(TokenType::IDENTIFIER);
+                break;
             }
             std::regex stringRegex(stringPattern);
             if (std::regex_match(tokenSource, stringRegex))
             {
                 token.setType(TokenType::STRING);
+                break;
             }
-            break;
+            abort("Expected token, received regex.");
         }
         tokenSource += this->curChar;
     }
     token.setSource(tokenSource);
 }
-    
+
 char Lexer::peek()
 {
     if (this->curPos + 1 >= this->source.size())
