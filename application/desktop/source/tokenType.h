@@ -19,6 +19,7 @@ enum class TokenType
     // Keywords
     PRINT,
     LET,
+    INPUT,
     // If
     IF,
     THEN,
@@ -43,5 +44,7 @@ enum class TokenType
     LTEQ,
     GT,
     GTEQ,
-    NOT
+    NOT,
+    AND,
+    OR
 };
