@@ -1,0 +1,172 @@
+# This file is a template, and might need editing before it works on your project.
+# This is a sample GitLab CI/CD configuration file that should run without any modifications.
+# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
+# it uses echo commands to simulate the pipeline execution.
+#
+# A pipeline is composed of independent jobs that run scripts, grouped into stages.
+# Stages run in sequential order, but jobs within stages run in parallel.
+#
+# For more information, see: https://docs.gitlab.com/ee/ci/yaml/#stages
+#
+# You can copy and paste this template into a new `.gitlab-ci.yml` file.
+# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
+#
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
+
+stages:
+  - lint
+  - test
+  - deploy
+
+variables:
+  PYTHON_VERSION: "3.11"
+  DOCKER_HOST: "tcp://docker:2375"
+  PROJECT_DIR: "/opt/final-project"
+  DATABASE_URL: "sqlite:///:memory:" 
+  DJANGO_SETTINGS_MODULE: "AlgEdu_Team.settings"
+
+# ----------------------------
+# Общие правила для веток
+# ----------------------------
+
+# Для Python-проектов (WDev)
+.wdev-rules: &wdev-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - team_website/**/*
+        - application_website/**/*
+
+# Для C++-проекта (DDev)
+.ddev-rules: &ddev-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "DDev"'
+      changes:
+        - application/**/*
+
+# ----------------------------
+# Этап: Линтинг Python (WDev)
+# ----------------------------
+python-lint:
+  <<: *wdev-rules
+  stage: lint
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install pylint flake8 pylint-django 
+    - pip install -r team_website/requirements.txt
+  script:
+    - |
+      echo "Running Python linting..."
+      export PYTHONPATH="$CI_PROJECT_DIR/team_website"
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Linting $project"
+          cd $project
+          pylint --fail-under=5.0 \
+                 --load-plugins=pylint_django \
+                 --disable=missing-docstring,too-few-public-methods \
+                 . || exit 1
+          flake8 --max-line-length=120 .
+          cd ..
+        fi
+      done
+
+# ----------------------------
+# Этап: Тесты Python (WDev)
+# ----------------------------
+python-tests:
+  <<: *wdev-rules
+  stage: test
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install -r team_website/requirements.txt
+    - pip install coverage  
+  script:
+    - |
+      echo "Running Python tests..."
+      set -x  # Для отладки: показывает выполняемые команды
+
+      # Проверяем team_website
+      cd team_website
+      python manage.py test main_app.tests --noinput --verbosity=2
+      coverage run --source='main_app' manage.py test main_app.tests
+      coverage report --fail-under=70 --show-missing
+
+      # Проверяем application_website (если существует)
+      if [ -d "../application_website" ]; then
+        cd ../application_website
+        python manage.py test main_app.tests --noinput --verbosity=2
+        coverage run --source='main_app' manage.py test main_app.tests
+        coverage report --fail-under=70 --show-missing
+      fi
+
+# ----------------------------
+# Этап: Линтинг C++ (DDev)
+# ----------------------------
+cpp-lint:
+  <<: *ddev-rules
+  stage: lint
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y git python3 cpplint
+  script:
+    - |
+      echo "Running C++ linting..."
+      cpplint --filter=-build/include_subdir \
+              --recursive \
+              --repository=application \
+              --verbose=2 \
+              --linelength=120 \
+              application/
+
+# ----------------------------
+# Этап: Деплой Python (WDev)
+# ----------------------------
+deploy-python:
+  <<: *wdev-rules
+  stage: deploy
+  environment:
+    name: production
+    url: http://${SERVER_IP}
+  needs: ["python-tests"]
+  script:
+    - |
+      echo "Deploying Python projects..."
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Deploying $project to ${SERVER_IP}"
+          ssh -o StrictHostKeyChecking=no root@${SERVER_IP} "
+            cd ${PROJECT_DIR}/${project} &&
+            git fetch &&
+            git reset --hard origin/WDev &&
+            docker compose down &&
+            docker compose up -d --build
+          "
+        fi
+      done
+
+# ----------------------------
+# Этап: Сборка C++ (DDev)
+# ----------------------------
+build-cpp:
+  <<: *ddev-rules
+  stage: deploy
+  tags:
+    - cpp
+  script:
+    - |
+      echo "Building C++ project..."
+      cd application
+      mkdir -p build
+      cd build
+      cmake ..
+      make
+  artifacts:
+    paths:
+      - application/build/
+    expire_in: 1 week 
+
