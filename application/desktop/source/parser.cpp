@@ -1,12 +1,7 @@
-#include <iostream>
-#include <string>
-#include <unordered_set>
-#include <cstdlib>
-#include "lexer.h"
-#include "emitter.h"
-#include "token.h"
-#include "tokenType.h"
 #include "parser.h"
+#include <iostream>
+#include <cstdlib>
+#include "stdLib.h"
 
 Parser::Parser(Lexer* lexer, Emitter* emitter)
 {
@@ -14,6 +9,7 @@ Parser::Parser(Lexer* lexer, Emitter* emitter)
     this->emitter = emitter;
     this->curToken;
     this->peekToken;
+    this->libs.push_back(StdLib());
     nextToken();
     nextToken();
  }
@@ -32,7 +28,8 @@ void Parser::match(TokenType type)
 {
     if (!checkToken(type))
     {
-        abort("Expected " + type + ", got " + curToken.getType());
+        // abort("Expected " + type + ", got " + curToken.getType());
+        abort("Expected another token");
     }
     nextToken();
 }
@@ -61,6 +58,9 @@ void Parser::program()
     {
         nextToken();
     }
+    /*
+    Get libs here in future
+    */
     while (!checkToken(TokenType::ENDOFFILE))
     {
         statement();
@@ -69,7 +69,39 @@ void Parser::program()
 
 void Parser::statement()
 {
-    '...';
+    std::vector<Token> new_statement;
+    new_statement.push_back(curToken);
+    for (const auto& lib : libs)
+    {
+        for (const auto& statement : lib.statements)
+        {
+            bool flag = false;
+            for (const auto& expected_types : statement.expected)
+            {
+                flag = false;
+                for (const auto& expected_type : expected_types)
+                {
+                    flag = checkToken(expected_type);
+                    if (flag)
+                    {
+                        break;
+                    }
+                }
+                if (!flag)
+                {
+                    break;
+                }
+                nextToken();
+                new_statement.push_back(curToken);
+            }
+            if (!flag)
+            {
+                break;
+            }
+            statement.instructions(new_statement);
+            break;
+        }
+    }
     nl();
 }
 
@@ -78,13 +110,13 @@ void Parser::comparison()
     expression();
     if (isComparisonOperator())
     {
-        emitter.emit('...');
+        // emitter.emit('...');
         nextToken();
         expression();
     }
     while (isComparisonOperator())
     {
-        emitter.emit('...');
+        // emitter.emit('...');
         nextToken();
         expression();
     }
@@ -95,7 +127,7 @@ void Parser::expression()
     term();
     while (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
     {
-        emitter.emit('...');
+        // emitter.emit('...');
         nextToken();
         term();
     }
@@ -106,7 +138,7 @@ void Parser::term()
     unary();
     while (checkToken(TokenType::ASTERISK) || checkToken(TokenType::SLASH))
     {
-        emitter.emit('...');
+        // emitter.emit('...');
         nextToken();
         unary();
     }
@@ -116,7 +148,7 @@ void Parser::unary()
 {
     if (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
     {
-        emitter.emit('...');
+        // emitter.emit('...');
         nextToken();
     }
     primary();
@@ -126,7 +158,7 @@ void Parser::primary()
 {
     if (checkToken(TokenType::NUMBER))
     {
-        emitter.emit(curToken.getSource());
+        // emitter.emit(curToken.getSource());
         nextToken();
     }
     else if (checkToken(TokenType::IDENTIFIER))
@@ -135,7 +167,7 @@ void Parser::primary()
         {
             abort("Referencing variable before assignment: " + curToken.getSource());
         }
-        emitter.emit('...');
+        // emitter.emit('...');
         nextToken();
     }
     else

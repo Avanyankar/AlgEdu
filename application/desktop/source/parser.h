@@ -5,6 +5,7 @@
 #include "emitter.h"
 #include "token.h"
 #include "tokenType.h"
+#include "lib.h"
 
 class Parser {
 private:
@@ -15,6 +16,7 @@ private:
     std::unordered_set<std::string> labelsGotoed;
     Token curToken;
     Token peekToken;
+    std::vector<Lib> libs;
 public:
     Parser(Lexer* lexer, Emitter* emitter);
     bool checkToken(TokenType kind);

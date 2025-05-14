@@ -1,10 +1,6 @@
 #include "lexer.h"
-#include "token.h"
-#include "tokenType.h"
-#include <string>
-#include <iostream>
-#include <unordered_map>
 #include <regex>
+#include <iostream>
 
 const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     // Special characters
@@ -30,6 +26,7 @@ const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     {"NOT", TokenType::NOT},
     {"AND", TokenType::AND},
     {"OR", TokenType::OR},
+    {",", TokenType::COMMA},
     // Executor commands
     {"GO", TokenType::GO},
     {"GET", TokenType::GET},

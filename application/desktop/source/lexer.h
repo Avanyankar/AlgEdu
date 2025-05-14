@@ -1,4 +1,8 @@
 #pragma once
+#include "token.h"
+#include "tokenType.h"
+#include <string>
+#include <unordered_map>
 
 class Lexer
 {

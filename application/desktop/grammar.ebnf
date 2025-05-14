@@ -31,7 +31,7 @@
 
 <scan> ::= "SCAN" <orientation> <nl>
 
-<get> ::= "GET" <orientation> <nl>
+<get> ::= "GET" <orientation> <identifier> <nl>
 
 <if> ::= 
     "IF" <condition> "THEN" <nl>

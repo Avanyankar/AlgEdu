@@ -25,12 +25,22 @@ TokenType Token::getType()
     return this->type;
 }
 
+TokenType Token::getType() const
+{
+    return this->type;
+}
+
 void Token::setSource(std::string source)
 {
     this->source = source;
 }
 
 std::string Token::getSource()
+{
+    return this->source;
+}
+
+std::string Token::getSource() const
 {
     return this->source;
 }
