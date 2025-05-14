@@ -1,80 +1,99 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">
-                <i class="fas fa-plus-circle"></i> Создание новой карты
-            </h2>
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <!-- Заголовок карточки -->
+        <div class="bg-white border-b border-gray-200 rounded-t-lg shadow-sm">
+            <div class="px-6 py-5">
+                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Создание новой карты
+                </h2>
+            </div>
         </div>
 
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data" id="field-form">
+        <!-- Форма -->
+        <div class="bg-white shadow rounded-b-lg border border-gray-200">
+            <form method="post" enctype="multipart/form-data" id="field-form" class="px-6 py-6">
                 {% csrf_token %}
 
                 <!-- Название карты -->
-                <div class="mb-4">
-                    <label for="{{ form.title.id_for_label }}" class="form-label fs-5">
-                        <i class="fas fa-heading"></i> Название карты
+                <div class="mb-6">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Название карты
                     </label>
-                    <input type="text" class="form-control form-control-lg"
+                    <input type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-4 focus:ring-black focus:border-black"
                            id="{{ form.title.id_for_label }}" name="{{ form.title.html_name }}"
                            value="{{ form.title.value|default:'' }}" required>
                     {% if form.title.errors %}
-                        <div class="alert alert-danger mt-2">
+                        <div class="mt-2 text-sm text-red-600">
                             {% for error in form.title.errors %}
-                                <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                <p>{{ error }}</p>
                             {% endfor %}
                         </div>
                     {% endif %}
                 </div>
 
                 <!-- Описание карты -->
-                <div class="mb-4">
-                    <label for="{{ form.description.id_for_label }}" class="form-label fs-5">
-                        <i class="fas fa-align-left"></i> Описание
+                <div class="mb-6">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Описание
                     </label>
-                    <textarea class="form-control" id="{{ form.description.id_for_label }}"
-                              name="{{ form.description.html_name }}" rows="5"
-                              style="resize: vertical;">{{ form.description.value|default:'' }}</textarea>
+                    <textarea class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-4 focus:ring-black focus:border-black"
+                              id="{{ form.description.id_for_label }}" name="{{ form.description.html_name }}"
+                              rows="5">{{ form.description.value|default:'' }}</textarea>
                     {% if form.description.errors %}
-                        <div class="alert alert-danger mt-2">
+                        <div class="mt-2 text-sm text-red-600">
                             {% for error in form.description.errors %}
-                                <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                <p>{{ error }}</p>
                             {% endfor %}
                         </div>
                     {% endif %}
                 </div>
 
                 <!-- Размеры карты -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="{{ form.cols.id_for_label }}" class="form-label fs-5">
-                            <i class="fas fa-columns"></i> Количество колонок
+                <div class="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-2">
+                    <div>
+                        <label for="{{ form.cols.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            Количество колонок
                         </label>
-                        <input type="number" class="form-control" id="{{ form.cols.id_for_label }}"
-                               name="{{ form.cols.html_name }}" value="{{ form.cols.value|default:'10' }}"
-                               min="1" max="20" required>
+                        <input type="number" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-4 focus:ring-black focus:border-black"
+                               id="{{ form.cols.id_for_label }}" name="{{ form.cols.html_name }}"
+                               value="{{ form.cols.value|default:'10' }}" min="1" max="10" required>
                         {% if form.cols.errors %}
-                            <div class="alert alert-danger mt-2">
+                            <div class="mt-2 text-sm text-red-600">
                                 {% for error in form.cols.errors %}
-                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                    <p>{{ error }}</p>
                                 {% endfor %}
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6">
-                        <label for="{{ form.rows.id_for_label }}" class="form-label fs-5">
-                            <i class="fas fa-bars"></i> Количество строк
+                    <div>
+                        <label for="{{ form.rows.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                            Количество строк
                         </label>
-                        <input type="number" class="form-control" id="{{ form.rows.id_for_label }}"
-                               name="{{ form.rows.html_name }}" value="{{ form.rows.value|default:'10' }}"
-                               min="1" max="20" required>
+                        <input type="number" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-4 focus:ring-black focus:border-black"
+                               id="{{ form.rows.id_for_label }}" name="{{ form.rows.html_name }}"
+                               value="{{ form.rows.value|default:'10' }}" min="1" max="10" required>
                         {% if form.rows.errors %}
-                            <div class="alert alert-danger mt-2">
+                            <div class="mt-2 text-sm text-red-600">
                                 {% for error in form.rows.errors %}
-                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                                    <p>{{ error }}</p>
                                 {% endfor %}
                             </div>
                         {% endif %}
@@ -82,39 +101,54 @@
                 </div>
 
                 <!-- Загрузка файла -->
-                <div class="mb-4">
-                    <label for="file-input" class="form-label fs-5">
-                        <i class="fas fa-paperclip"></i> Прикрепить файл
+                <div class="mb-8">
+                    <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Прикрепить файл
                     </label>
-                    <div class="file-upload-wrapper">
-                        <input type="file" class="form-control" id="file-input" name="file"
-                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt">
-                        <div class="form-text">
-                            Поддерживаемые форматы: PDF, DOC/DOCX, JPG/PNG, XLS/XLSX, TXT. Максимальный размер: 5MB
-                        </div>
-                        {% if form.file.errors %}
-                            <div class="alert alert-danger mt-2">
-                                {% for error in form.file.errors %}
-                                    <i class="fas fa-exclamation-circle"></i> {{ error }}
-                                {% endfor %}
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <div class="flex text-sm text-gray-600">
+                                <label for="file-input" class="relative cursor-pointer bg-white rounded-md font-medium text-black hover:text-gray-500 focus-within:outline-none">
+                                    <span>Загрузить файл</span>
+                                    <input id="file-input" name="file" type="file" class="sr-only"
+                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.txt">
+                                </label>
+                                <p class="pl-1">или перетащите</p>
                             </div>
-                        {% endif %}
+                            <p class="text-xs text-gray-500">
+                                Поддерживаемые форматы: PDF, DOC/DOCX, JPG/PNG, XLS/XLSX, TXT. Максимальный размер: 5MB
+                            </p>
+                        </div>
                     </div>
+                    {% if form.file.errors %}
+                        <div class="mt-2 text-sm text-red-600">
+                            {% for error in form.file.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
 
-                    <!-- Превью файла (будет заполняться через JS) -->
-                    <div id="file-preview" class="mt-3 d-none">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0">
-                                        <i id="file-icon" class="fas fa-file fs-1 text-primary"></i>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h5 id="file-name" class="mb-1"></h5>
-                                        <small id="file-size" class="text-muted"></small>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-danger" id="remove-file">
-                                        <i class="fas fa-times"></i>
+                    <!-- Превью файла -->
+                    <div id="file-preview" class="mt-4 hidden">
+                        <div class="border border-gray-200 rounded-md p-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg id="file-icon" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-4 flex-1 overflow-hidden">
+                                    <div id="file-name" class="text-sm font-medium text-gray-900 truncate"></div>
+                                    <div id="file-size" class="text-sm text-gray-500"></div>
+                                </div>
+                                <div class="ml-4 flex-shrink-0">
+                                    <button type="button" id="remove-file" class="text-gray-400 hover:text-gray-500">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
@@ -123,12 +157,18 @@
                 </div>
 
                 <!-- Кнопки отправки -->
-                <div class="d-flex justify-content-between mt-5">
-                    <a href="{% url 'index'|default:'#' %}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-arrow-left"></i> Отмена
+                <div class="flex justify-between mt-8">
+                    <a href="{% url 'index'|default:'#' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Отмена
                     </a>
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-save"></i> Сохранить карту
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Сохранить карту
                     </button>
                 </div>
             </form>
@@ -153,14 +193,14 @@ document.addEventListener('DOMContentLoaded', function() {
             fileName.textContent = file.name;
             fileSize.textContent = formatFileSize(file.size);
             fileIcon.className = getFileIcon(file.name);
-            filePreview.classList.remove('d-none');
+            filePreview.classList.remove('hidden');
         }
     });
 
     // Удаление выбранного файла
     removeBtn.addEventListener('click', function() {
         fileInput.value = '';
-        filePreview.classList.add('d-none');
+        filePreview.classList.add('hidden');
     });
 
     // Форматирование размера файла
@@ -169,44 +209,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]);
     }
 
     // Получение иконки для типа файла
     function getFileIcon(filename) {
         const ext = filename.split('.').pop().toLowerCase();
         const icons = {
-            pdf: 'fas fa-file-pdf text-danger',
-            doc: 'fas fa-file-word text-primary',
-            docx: 'fas fa-file-word text-primary',
-            jpg: 'fas fa-file-image text-success',
-            jpeg: 'fas fa-file-image text-success',
-            png: 'fas fa-file-image text-success',
-            xls: 'fas fa-file-excel text-success',
-            xlsx: 'fas fa-file-excel text-success',
-            txt: 'fas fa-file-alt text-info'
+            pdf: 'h-10 w-10 text-red-500',
+            doc: 'h-10 w-10 text-blue-500',
+            docx: 'h-10 w-10 text-blue-500',
+            jpg: 'h-10 w-10 text-green-500',
+            jpeg: 'h-10 w-10 text-green-500',
+            png: 'h-10 w-10 text-green-500',
+            xls: 'h-10 w-10 text-green-500',
+            xlsx: 'h-10 w-10 text-green-500',
+            txt: 'h-10 w-10 text-gray-500'
         };
-        return icons[ext] || 'fas fa-file text-secondary';
+        return 'h-10 w-10 ' + (icons[ext] || 'text-gray-400');
     }
 });
 </script>
-
-<style>
-    .file-upload-wrapper {
-        position: relative;
-    }
-    .card {
-        border-radius: 10px;
-    }
-    .card-header {
-        border-radius: 10px 10px 0 0 !important;
-    }
-    #field-form {
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    .form-control-lg {
-        font-size: 1.1rem;
-    }
-</style>
 {% endblock %}

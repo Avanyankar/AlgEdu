@@ -3,143 +3,134 @@
 {% block title %}{{ field.title }}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1>{{ field.title }}</h1>
-    <p>{{ field.description }}</p>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8 relative">
+        <a href="/" class="absolute top-4 right-4 bg-[#566246] text-white px-4 py-2 rounded-full hover:bg-[#454d3a] transition-colors">
+             Домой
+        </a>
 
-    <div class="actions">
-        <button id="like-btn" class="like-btn {% if is_liked %}liked{% endif %}"
-                data-field-id="{{ field.id }}">
-            ❤️ Like (<span id="likes-count">{{ field.likes.count }}</span>)
-        </button>
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">{{ field.title }}</h1>
+        <p class="text-gray-600 mb-8">{{ field.description }}</p>
 
-        <button id="favorite-btn" class="favorite-btn {% if is_favorited %}favorited{% endif %}"
-                data-field-id="{{ field.id }}">
-            ⭐ Favorite
-        </button>
-    </div>
-
-    <!-- Секция комментариев -->
-    <div class="comments-section">
-        <h3>Comments</h3>
-
-        <!-- Форма добавления комментария -->
-        <div class="comment-form">
-            <textarea id="comment-text" class="comment-input" placeholder="Write your comment..."></textarea>
-            <button id="submit-comment" class="submit-comment" data-field-id="{{ field.id }}">Post Comment</button>
+        <!-- Секция с картой -->
+        <div class="bg-[#F1F2EB] rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-semibold text-[#566246] mb-4">Robot Map</h3>
+            <div class="map-controls mb-4">
+                <label class="text-gray-700">
+                    Grid Size:
+                    <input type="number" id="grid-x" value="5" min="3" max="10"
+                           class="w-16 border border-gray-300 rounded px-2 py-1 mx-2">
+                    x
+                    <input type="number" id="grid-y" value="5" min="3" max="10"
+                           class="w-16 border border-gray-300 rounded px-2 py-1 mx-2">
+                    <button id="update-grid"
+                            class="bg-[#566246] text-white px-4 py-2 rounded hover:bg-[#454d3a] transition-colors">
+                        Update Grid
+                    </button>
+                </label>
+            </div>
+            <div class="map-grid bg-gray-300 p-1 rounded-lg" id="map-grid"></div>
         </div>
 
-        <!-- Список комментариев -->
-        <div class="comments-list" id="comments-list">
-            {% for comment in field.comments.all %}
-            <div class="comment" data-comment-id="{{ comment.id }}">
-                <div class="comment-author">{{ comment.author.username }}</div>
-                <div class="comment-text">{{ comment.text }}</div>
-                <div class="comment-date">{{ comment.created_at|date:"Y-m-d H:i" }}</div>
+        <!-- Секция действий -->
+        <div class="flex gap-4 mb-8">
+            <button id="like-btn"
+                    class="like-btn px-6 py-2 rounded-full {% if is_liked %}bg-red-100 text-red-600{% else %}bg-[#F1F2EB] text-[#566246]{% endif %}
+                           hover:bg-[#e0e1da] transition-colors"
+                    data-field-id="{{ field.id }}">
+                ❤️ Like (<span id="likes-count">{{ field.likes.count }}</span>)
+            </button>
 
-                <div class="comment-actions">
-                    <button class="comment-like-btn {% if request.user in comment.likes.all %}liked{% endif %}"
-                            data-comment-id="{{ comment.id }}">
-                        👍 Like (<span class="likes-count">{{ comment.likes.count }}</span>)
-                    </button>
+            <button id="favorite-btn"
+                    class="favorite-btn px-6 py-2 rounded-full {% if is_favorited %}bg-yellow-100 text-yellow-600{% else %}bg-[#F1F2EB] text-[#566246]{% endif %}
+                           hover:bg-[#e0e1da] transition-colors"
+                    data-field-id="{{ field.id }}">
+                ⭐ Favorite
+            </button>
 
-                    <button class="comment-report-btn" data-comment-id="{{ comment.id }}">
-                        ⚠️ Report (<span class="reports-count">{{ comment.reports.count }}</span>)
-                    </button>
-                </div>
+            <a href="{% url 'report_field' field.id %}"
+               class="px-6 py-2 bg-[#F1F2EB] text-[#566246] rounded-full hover:bg-[#e0e1da] transition-colors">
+                Пожаловаться
+            </a>
+        </div>
+
+        <!-- Секция комментариев -->
+        <div class="border-t pt-8">
+            <h3 class="text-xl font-semibold text-[#566246] mb-6">Comments</h3>
+
+            <!-- Форма комментария -->
+            <div class="mb-8">
+                <textarea id="comment-text"
+                          class="w-full p-4 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-[#566246] focus:border-transparent"
+                          placeholder="Write your comment..." rows="4"></textarea>
+                <button id="submit-comment"
+                        class="bg-[#566246] text-white px-6 py-2 rounded-lg hover:bg-[#454d3a] transition-colors"
+                        data-field-id="{{ field.id }}">
+                    Post Comment
+                </button>
             </div>
-            {% endfor %}
+
+            <!-- Список комментариев -->
+            <div class="space-y-6" id="comments-list">
+                {% for comment in field.comments.all %}
+                <div class="bg-[#F1F2EB] rounded-xl p-4" data-comment-id="{{ comment.id }}">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-[#566246]">{{ comment.author.username }}</span>
+                        <span class="text-sm text-gray-500">{{ comment.created_at|date:"Y-m-d H:i" }}</span>
+                    </div>
+                    <p class="text-gray-700 mb-3">{{ comment.text }}</p>
+
+                    <div class="flex gap-3">
+                        <button class="comment-like-btn px-3 py-1 rounded-full text-sm {% if request.user in comment.likes.all %}bg-green-100 text-[#566246]{% else %}bg-white text-gray-600{% endif %}"
+                                data-comment-id="{{ comment.id }}">
+                            👍 Like (<span class="likes-count">{{ comment.likes.count }}</span>)
+                        </button>
+
+                        <button class="comment-report-btn px-3 py-1 rounded-full bg-white text-gray-600 text-sm hover:bg-gray-50"
+                                data-comment-id="{{ comment.id }}">
+                            ⚠️ Report (<span class="reports-count">{{ comment.reports.count }}</span>)
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    .card {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 20px;
-        max-width: 500px;
-        margin: 20px auto;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .map-grid {
+        display: grid;
+        gap: 2px;
+        background-color: #333;
+        padding: 2px;
+        border: 2px solid #333;
+        border-radius: 4px;
     }
-    .actions {
+
+    .cell {
+        background-color: white;
+        aspect-ratio: 1;
         display: flex;
-        gap: 15px;
-        margin-top: 15px;
-    }
-    .like-btn, .favorite-btn {
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 4px;
-        background: #f0f0f0;
+        position: relative;
+        transition: background-color 0.2s;
     }
-    .like-btn.liked {
-        background: #ffcccc;
+
+    .cell.wall {
+        background-color: #555;
     }
-    .favorite-btn.favorited {
-        background: #ffffcc;
+
+    .cell.robot::after {
+        content: "🤖";
+        font-size: 20px;
     }
-    .comments-section {
-        margin-top: 30px;
-        border-top: 1px solid #eee;
-        padding-top: 20px;
-    }
-    .comment-form {
-        margin-bottom: 20px;
-    }
-    .comment-input {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        margin-bottom: 10px;
-    }
-    .submit-comment {
-        padding: 8px 15px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    .comments-list {
-        margin-top: 20px;
-    }
-    .comment {
-        padding: 10px;
-        border-bottom: 1px solid #eee;
-        margin-bottom: 10px;
-    }
-    .comment-author {
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    .comment-text {
-        margin-bottom: 5px;
-    }
-    .comment-date {
-        font-size: 0.8em;
-        color: #777;
-    }
-    .comment-actions {
-        margin-top: 10px;
-        display: flex;
-        gap: 10px;
-    }
-    .comment-like-btn, .comment-report-btn {
-        padding: 3px 8px;
-        border: none;
-        border-radius: 4px;
-        background: #f0f0f0;
-        cursor: pointer;
-        font-size: 0.9em;
-    }
-    .comment-like-btn.liked {
-        background: #ccffcc;
-    }
-    .comment-report-btn {
-        background: #ffe6e6;
+
+    .cell.target::after {
+        content: "⭐";
+        font-size: 20px;
     }
 </style>
 
@@ -150,6 +141,109 @@
         const submitCommentBtn = document.getElementById('submit-comment');
         const commentText = document.getElementById('comment-text');
         const commentsList = document.getElementById('comments-list');
+
+        // Переменные для карты
+        let gridX = {{ field.cols }};
+        let gridY = {{ field.rows }}; // Размер по Y (можно изменить)
+        let robotPosition = {x: 1, y: 1}; // Позиция робота
+        let walls = [{x: 2, y: 1}, {x: 1, y: 3}, {x: 3, y: 3}]; // Координаты стен
+        let targetPosition = {x: 4, y: 4}; // Целевая позиция
+
+        const mapGrid = document.getElementById('map-grid');
+        const gridXInput = document.getElementById('grid-x');
+        const gridYInput = document.getElementById('grid-y');
+        const updateGridBtn = document.getElementById('update-grid');
+
+        // Инициализация карты
+        function initMap() {
+            // Очищаем карту
+            mapGrid.innerHTML = '';
+
+            // Устанавливаем размеры grid
+            mapGrid.style.gridTemplateColumns = `repeat(${gridX}, 1fr)`;
+            mapGrid.style.gridTemplateRows = `repeat(${gridY}, 1fr)`;
+
+            // Создаем клетки
+            for (let y = 0; y < gridY; y++) {
+                for (let x = 0; x < gridX; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+
+                    // Проверяем, является ли клетка стеной
+                    if (walls.some(wall => wall.x === x && wall.y === y)) {
+                        cell.classList.add('wall');
+                    }
+
+                    // Проверяем, находится ли здесь робот
+                    if (x === robotPosition.x && y === robotPosition.y) {
+                        cell.classList.add('robot');
+                    }
+
+                    // Проверяем, является ли клетка целью
+                    if (x === targetPosition.x && y === targetPosition.y) {
+                        cell.classList.add('target');
+                    }
+
+                    // Добавляем обработчик клика для создания/удаления стен
+                    cell.addEventListener('click', function() {
+                        const x = parseInt(this.dataset.x);
+                        const y = parseInt(this.dataset.y);
+
+                        // Нельзя сделать стеной клетку с роботом или целью
+                        if ((x === robotPosition.x && y === robotPosition.y) ||
+                            (x === targetPosition.x && y === targetPosition.y)) {
+                            return;
+                        }
+
+                        // Проверяем, есть ли уже стена здесь
+                        const wallIndex = walls.findIndex(wall => wall.x === x && wall.y === y);
+
+                        if (wallIndex === -1) {
+                            // Добавляем стену
+                            walls.push({x, y});
+                            this.classList.add('wall');
+                        } else {
+                            // Удаляем стену
+                            walls.splice(wallIndex, 1);
+                            this.classList.remove('wall');
+                        }
+                    });
+
+                    mapGrid.appendChild(cell);
+                }
+            }
+        }
+
+        // Обработчик для кнопки обновления сетки
+        if (updateGridBtn) {
+            updateGridBtn.addEventListener('click', function() {
+                const newX = parseInt(gridXInput.value);
+                const newY = parseInt(gridYInput.value);
+
+                if (newX >= 3 && newX <= 10 && newY >= 3 && newY <= 10) {
+                    gridX = newX;
+                    gridY = newY;
+
+                    // Проверяем, чтобы робот и цель оставались в пределах новой сетки
+                    if (robotPosition.x >= gridX) robotPosition.x = gridX - 1;
+                    if (robotPosition.y >= gridY) robotPosition.y = gridY - 1;
+                    if (targetPosition.x >= gridX) targetPosition.x = gridX - 1;
+                    if (targetPosition.y >= gridY) targetPosition.y = gridY - 1;
+
+                    // Фильтруем стены, чтобы они оставались в пределах
+                    walls = walls.filter(wall => wall.x < gridX && wall.y < gridY);
+
+                    initMap();
+                } else {
+                    alert('Grid size must be between 3 and 10');
+                }
+            });
+        }
+
+        // Инициализируем карту при загрузке
+        initMap();
 
         // Обработчики для карточки
         if (likeBtn) {

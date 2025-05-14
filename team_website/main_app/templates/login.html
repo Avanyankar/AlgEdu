@@ -2,20 +2,50 @@
 
 {% block content %}
   <main>
-      <div>
-          <h2>Вход</h2>
-          {% if not user.is_authenticated %}
-              <form method="post" action="{% url 'login' %}">
-                  {% csrf_token %}
-                  {{ form.as_p }}
-                  <button type="submit">Войти</button>
-              </form>
-          {% else %}
-              <p>Вы уже авторизованы! Перейдите на <a href="{% url 'index' %}">главную страницу</a>.</p>
-          {% endif %}
-          {% if not user.is_authenticated %}
-              <p>Нет аккаунта? <a href="{% url 'registration' %}">Зарегистрироваться</a></p>
-          {% endif %}
-      </div>
+    <div class="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 class="text-2xl font-bold mb-6 text-center">Вход</h2>
+
+      {% if not user.is_authenticated %}
+        <form method="post" action="{% url 'login' %}" class="space-y-4">
+          {% csrf_token %}
+          
+          {% for field in form %}
+            <div>
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+              </label>
+              <div class="mt-1">
+                <input 
+                  type="{{ field.type }}" 
+                  name="{{ field.name }}" 
+                  id="{{ field.id_for_label }}" 
+                  value="{{ field.value }}" 
+                  class="border border-gray-300 rounded w-full p-2 focus:outline-none focus:ring-2 focus:ring-black"
+                  {% if field.attrs %}{{ field.attrs|safe }}{% endif %}
+                >
+              </div>
+              {% if field.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          <button type="submit" class="w-full bg-black text-white py-2 px-4 rounded hover:bg-gray-800 transition font-medium">
+            Войти
+          </button>
+        </form>
+
+        <p class="text-center mt-4 text-sm">
+          Нет аккаунта? 
+          <a href="{% url 'registration' %}" class="text-black font-medium hover:underline">Зарегистрироваться</a>
+        </p>
+
+      {% else %}
+        <p class="text-center mb-4">
+          Вы уже авторизованы! Перейдите на 
+          <a href="{% url 'index' %}" class="text-black font-medium hover:underline">главную страницу</a>.
+        </p>
+      {% endif %}
+    </div>
   </main>
 {% endblock %}

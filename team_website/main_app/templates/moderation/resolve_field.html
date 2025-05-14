@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Рассмотрение жалобы #{{ report.id }}</h1>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>Информация о жалобе</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Карта:</strong> 
+               <a href="{{ report.field.get_absolute_url }}">{{ report.field.title }}</a></p>
+            <p><strong>Автор жалобы:</strong> {{ report.user.username }}</p>
+            <p><strong>Причина:</strong> {{ report.get_reason_display }}</p>
+            <p><strong>Описание:</strong> {{ report.description|default:"-" }}</p>
+        </div>
+    </div>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-header">
+                <h2>Действие модератора</h2>
+            </div>
+            <div class="card-body">
+                <button type="submit" name="action" value="block" 
+                        class="btn btn-danger mr-2">
+                    Заблокировать карту
+                </button>
+                <button type="submit" name="action" value="ignore" 
+                        class="btn btn-secondary">
+                    Отклонить жалобу
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

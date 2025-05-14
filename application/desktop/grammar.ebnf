@@ -1,0 +1,90 @@
+﻿<program> ::= <statement>+
+
+<statement> ::= 
+      <assignment>
+    | <declaration>
+    | <print>
+    | <input>
+    | <if>
+    | <for>
+    | <while>
+    | <dowhile>
+    | <go>
+    | <turn>
+    | <fill>
+    | <scan>
+    | <get>
+
+<declaration> ::= "LET" <identifier>("," <identifier>)* <nl>
+
+<assignment> ::= <identifier> "=" <expression> <nl>
+
+<print> ::= "PRINT" (<expression> | <string>)("," <expression> | <string>)* <nl>
+
+<input> ::= "INPUT" <identifier>("," <identifier>)* <nl>
+
+<go> ::= "GO" <nl>
+
+<turn> ::= "TURN" <direction> <nl>
+
+<fill> ::= "FILL" <color>? <nl>
+
+<scan> ::= "SCAN" <orientation> <nl>
+
+<get> ::= "GET" <orientation> <identifier> <nl>
+
+<if> ::= 
+    "IF" <condition> "THEN" <nl>
+        <statement>+
+    ("ELSE" <nl> 
+        <statement>+)?
+    "ENDIF"<nl>
+
+<for> ::= 
+    "FOR" <expression> "REPEAT" <nl>
+        <statement>+
+    "ENDFOR"<nl>
+
+<while> ::= 
+    "WHILE" <condition> "REPEAT" <nl>
+        <statement>+
+    "ENDWHILE"<nl>
+
+<dowhile> ::= 
+    "DOWHILE" <condition> "REPEAT" <nl>
+        <statement>+
+    "ENDDOWHILE"<nl>
+
+<string> ::= '"'[^"]*'"' // на данный момент не поддерживаются строки с двойными кавычками внутри
+
+<condition> ::= <not_condition> ("OR" <not_condition>)*
+
+<not_condition> ::= "NOT"? <and_condition>
+
+<and_condition> ::= <comparison> ("AND" <comparison>)*
+
+<comparison> ::= <expression> ("<" | ">" | "<=" | ">=" | "==" | "!=") <expression> | "(" <condition> ")"
+
+<expression> ::= <term> (("+" | "-") <term>)*
+
+<term> ::= <unary> (("*" | "/") <unary>)*
+
+<unary> ::= ("+" | "-")? <primary>
+
+<primary> ::= <number> | <identifier> | "(" <expression> ")"
+
+<number> ::= <integer> // на данный момент не поддерживаются нецелые числа
+
+<integer> ::= [0-9]+
+
+<identifier> ::= [a-zA-Z_][a-zA-Z0-9_]*
+
+<orientation> ::= "FRONT" | "DOWN"
+
+<direction> ::= "UP" | "RIGHT" | "DOWN" | "LEFT"
+
+<color> ::= "RED" | "GREEN" | "BLUE" | "YELLOW" | "WHITE" | "BLACK" // на данный момент поддерживаются не все rgb цвета
+
+<nl> ::= "\n"+
+
+<comment> ::= "#" [^\n]* nl
