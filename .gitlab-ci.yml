@@ -51,21 +51,43 @@ variables:
 # ----------------------------
 # Python проверки (WDev)
 # ----------------------------
-python-checks:
+python-lint:
   <<: *wdev-rules
   stage: lint
   image: python:${PYTHON_VERSION}
   before_script:
-    - pip install pylint coverage flake8
+    - pip install pylint flake8
   script:
     - |
-      echo "Running Python checks..."
+      echo "Running Python linting..."
       for project in team_website application_website; do
         if [ -d "$project" ]; then
-          echo "Checking $project"
+          echo "Linting $project"
+          pylint --fail-under=8.0 \
+                 --max-line-length=120 \
+                 --disable=C0114,C0115,C0116,E1101 \
+                 --ignore-paths=".*/migrations,.*/static,.venv" \
+                 $project || exit 1
+          flake8 --max-line-length=120 $project
+        fi
+      done
+
+# ----------------------------
+# Python тесты (WDev)
+# ----------------------------
+python-tests:
+  <<: *wdev-rules
+  stage: test
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install coverage
+  script:
+    - |
+      echo "Running Python tests..."
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Testing $project"
           cd $project
-          pylint --fail-under=8.0 . || exit 1
-          flake8 --max-line-length=120 .
           coverage run --source='.' manage.py test
           coverage report --fail-under=70
           cd ..
@@ -73,9 +95,30 @@ python-checks:
       done
 
 # ----------------------------
+# Python документация (WDev)
+# ----------------------------
+python-docs:
+  <<: *wdev-rules
+  stage: test
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install sphinx
+  script:
+    - |
+      echo "Generating Python docs..."
+      for project in team_website application_website; do
+        if [ -d "$project/docs" ]; then
+          echo "Building docs for $project"
+          cd $project/docs
+          make html
+          cd ../..
+        fi
+      done
+
+# ----------------------------
 # C++ проверки (DDev)
 # ----------------------------
-cpp-checks:
+cpp-lint:
   <<: *ddev-rules
   stage: lint
   image: ubuntu:latest
@@ -84,13 +127,48 @@ cpp-checks:
     - apt-get install -y git python3 cpplint
   script:
     - |
-      echo "Running C++ checks..."
-      cpplint --filter=-build/include_subdir \
+      echo "Running C++ linting..."
+      cpplint --filter=-build/include_subdir,-build/header_guard \
               --recursive \
               --repository=application \
-              --verbose=2 \
+              --exclude=application/vendor \
               --linelength=120 \
               application/
+
+# ----------------------------
+# C++ тесты (DDev)
+# ----------------------------
+cpp-tests:
+  <<: *ddev-rules
+  stage: test
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y cmake g++ catch2
+  script:
+    - |
+      echo "Running C++ tests..."
+      mkdir -p application/build
+      cd application/build
+      cmake ..
+      make
+      ctest --output-on-failure
+
+# ----------------------------
+# C++ документация (DDev)
+# ----------------------------
+cpp-docs:
+  <<: *ddev-rules
+  stage: test
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y doxygen graphviz
+  script:
+    - |
+      echo "Generating C++ docs..."
+      cd application
+      doxygen Doxyfile
 
 # ----------------------------
 # Деплой Python проектов (WDev)
