@@ -57,6 +57,7 @@ python-lint:
   before_script:
     - pip install pylint flake8 pylint-django 
     - pip install -r team_website/requirements.txt
+    - pip install pylint coverage flake8
   script:
     - |
       echo "Running Python linting..."
@@ -65,11 +66,13 @@ python-lint:
         if [ -d "$project" ]; then
           echo "Linting $project"
           cd $project
-          pylint --fail-under=5.0 \
+          pylint --fail-under=8.0 \
                  --load-plugins=pylint_django \
                  --disable=missing-docstring,too-few-public-methods \
                  . || exit 1
           flake8 --max-line-length=120 .
+          coverage run --source='.' manage.py test
+          coverage report --fail-under=70
           cd ..
         fi
       done
