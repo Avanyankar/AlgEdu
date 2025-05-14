@@ -5,42 +5,40 @@
 
 Token::Token()
 {
-    this->source = "";
-    this->type = TokenType::NONE;
+    source = "";
+    type = TokenType::NONE;
 }
 
-Token::Token(std::string source, TokenType type)
+Token::Token(std::string _source, TokenType _type) : source(_source), type(_type)
 {
-    this->source = source;
-    this->type = type;
 }
 
 void Token::setType(TokenType type)
 {
-    this->type = type;
+    type = type;
 }
 
 TokenType Token::getType()
 {
-    return this->type;
+    return type;
 }
 
 TokenType Token::getType() const
 {
-    return this->type;
+    return type;
 }
 
 void Token::setSource(std::string source)
 {
-    this->source = source;
+    source = source;
 }
 
 std::string Token::getSource()
 {
-    return this->source;
+    return source;
 }
 
 std::string Token::getSource() const
 {
-    return this->source;
+    return source;
 }

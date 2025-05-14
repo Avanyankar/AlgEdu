@@ -2,16 +2,31 @@
 #include <iostream>
 #include <cstdlib>
 #include "stdLib.h"
+#include "statement.h"
 
-Parser::Parser(Lexer* lexer, Emitter* emitter)
+Parser::Parser(std::string source)
 {
-    this->lexer = lexer;
-    this->emitter = emitter;
-    this->curToken;
-    this->peekToken;
-    this->libs.push_back(StdLib());
+    lexer = Lexer::getInstance(source);
+    curToken;
+    peekToken;
     nextToken();
     nextToken();
+    // Временная реализация библиотеки
+    std::vector<Statement> statements;
+    Statement let = Statement({
+        { {TokenType::LET}, false },
+        { {TokenType::IDENTIFIER}, true },
+        { {TokenType::NEWLINE}, false }
+    });
+    statements.push_back(let);
+    Statement print = Statement({
+        { {TokenType::PRINT}, false },
+        { {TokenType::IDENTIFIER, TokenType::STRING}, true },
+        { {TokenType::NEWLINE}, false }
+        });
+    statements.push_back(print);
+    Lib stdLib;
+    libs.push_back(stdLib);
  }
 
 bool Parser::checkToken(TokenType type)
@@ -79,7 +94,7 @@ void Parser::statement()
             for (const auto& expected_types : statement.expected)
             {
                 flag = false;
-                for (const auto& expected_type : expected_types)
+                for (const auto& expected_type : expected_types.first)
                 {
                     flag = checkToken(expected_type);
                     if (flag)

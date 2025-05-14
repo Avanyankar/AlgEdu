@@ -52,49 +52,58 @@ const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
 
 void Lexer::nextChar()
 {
-    this->curPos += 1;
-    if (this->curPos >= this->source.size())
+    curPos += 1;
+    if (curPos >= source.size())
     {
-        this->curChar = '\0';
-        this->curPos = EOF;
+        curChar = '\0';
+        curPos = EOF;
     }
     else 
     {
-        this->curChar = this->source[this->curPos];
+        curChar = source[curPos];
     }
 }
 
 void Lexer::skipWhitespace()
 {
-    while (this->curChar == ' ' || this->curChar == '\t' || this->curChar == '\r')
+    while (curChar == ' ' || curChar == '\t' || curChar == '\r')
     {
-        this->nextChar();
+        nextChar();
     }
 }
 
 void Lexer::skipComment()
 {
-    if (this->curChar == '#')
+    if (curChar == '#')
     {
-        while (this->curChar != '\n' && this->curChar != '\0')
+        while (curChar != '\n' && curChar != '\0')
         {
-            this->nextChar();
+            nextChar();
         }
     }
 }
 
 Token Lexer::getToken()
 {
-    this->skipWhitespace();
-    this->skipComment();
+    skipWhitespace();
+    skipComment();
     Token token;
-    this->defineToken(token);
+    defineToken(token);
     return token;
+}
+
+Lexer* Lexer::getInstance(std::string source)
+{
+    if (instance == nullptr)
+    {
+        instance = new Lexer(source);
+    }
+    return instance;
 }
 
 void Lexer::defineToken(Token& token)
 {
-    std::string tokenSource(&this->curChar);
+    std::string tokenSource(&curChar);
     while (true)
     {
         auto pos = tokenMap.find(tokenSource);
@@ -108,12 +117,14 @@ void Lexer::defineToken(Token& token)
             token.setType(type);
             break;
         }
-        this->nextChar();
-        if (this->curChar == ' ' || this->curChar == '#' || this->curChar == '\r' || this->curChar == '\t' || this->curChar == '\0' || this->curChar == '\n')
+        nextChar();
+        if (curChar == ' ' || curChar == '#' || curChar == '\r' || curChar == '\t' || curChar == '\0' || curChar == '\n')
         {
             std::string colorPattern, numberPattern, identifierPattern, stringPattern;
-            for (const auto& pair : tokenMap) {
-                switch (pair.second) {
+            for (const auto& pair : tokenMap)
+            {
+                switch (pair.second)
+                {
                 case TokenType::COLOR:
                     colorPattern = pair.first;
                     break;
@@ -156,18 +167,18 @@ void Lexer::defineToken(Token& token)
             }
             abort("Expected token, received regex.");
         }
-        tokenSource += this->curChar;
+        tokenSource += curChar;
     }
     token.setSource(tokenSource);
 }
 
 char Lexer::peek()
 {
-    if (this->curPos + 1 >= this->source.size())
+    if (curPos + 1 >= source.size())
     {
         return '\0';
     }
-    return this->source[this->curPos + 1];
+    return source[curPos + 1];
 }
 
 void Lexer::abort(const std::string& message)
@@ -175,10 +186,10 @@ void Lexer::abort(const std::string& message)
     std::cerr << "Lexing error. " << message << std::endl;
 }
 
-Lexer::Lexer(std::string source)
+Lexer::Lexer(std::string _source)
 {
-    this->source = source + '\n';
-    this->curChar = '\0';
-    this->curPos = EOF;
-    this->nextChar();
+    source = _source + '\n';
+    curChar = '\0';
+    curPos = EOF;
+    nextChar();
 }
