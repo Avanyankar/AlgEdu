@@ -204,8 +204,6 @@ deploy-prod:
     name: production
     url: http://algedu.ru
   before_script:
-    - apt-get update -qq
-    - apt-get install -y openssh-client
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
