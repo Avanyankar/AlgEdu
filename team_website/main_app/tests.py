@@ -1,163 +1,165 @@
-from django.test import TestCase, RequestFactory
-from django.contrib.auth.models import User
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
-from .models import Field, FieldFile
-from .forms import FieldForm, DBFileField
-from .views import FieldCreateView, download_file
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from main_app.models import Field, Comment, ProfileComment, FieldReport
+
+User = get_user_model()
+
+
+class UserModelTest(TestCase):
+    def test_user_creation(self):
+        user = User.objects.create_user(username='testuser', password='12345')
+        self.assertEqual(user.username, 'testuser')
+        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_staff)
 
 
 class FieldModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='tester', password='12345')
-        self.field_file = FieldFile.objects.create(
-            name='test.txt',
-            content_type='text/plain',
-            data=b'Test content',
-            size=12
+        self.user = User.objects.create_user(username='testuser', password='12345')
+
+    def test_field_creation(self):
+        field = Field.objects.create(
+            user=self.user,
+            title='Test Field',
+            description='Test Description'
         )
+        self.assertEqual(field.title, 'Test Field')
+        self.assertEqual(field.user.username, 'testuser')
+        self.assertFalse(field.is_blocked)
+
+
+class CommentModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
         self.field = Field.objects.create(
             user=self.user,
             title='Test Field',
-            description='Test Description',
-            cols=10,
-            rows=10,
-            file=self.field_file
+            description='Test Description'
         )
 
-    def test_field_creation(self):
-        self.assertEqual(self.field.title, 'Test Field')
-        self.assertEqual(self.field.description, 'Test Description')
-        self.assertEqual(self.field.cols, 10)
-        self.assertEqual(self.field.rows, 10)
-        self.assertEqual(self.field.file.name, 'test.txt')
-        self.assertEqual(self.field.user.username, 'tester')
+    def test_comment_creation(self):
+        comment = Comment.objects.create(
+            field=self.field,
+            author=self.user,
+            text='Test comment'
+        )
+        self.assertEqual(comment.text, 'Test comment')
+        self.assertEqual(comment.author.username, 'testuser')
+        self.assertFalse(comment.is_blocked)
 
-    def test_field_file_creation(self):
-        self.assertEqual(self.field_file.name, 'test.txt')
-        self.assertEqual(self.field_file.content_type, 'text/plain')
-        self.assertEqual(self.field_file.data, b'Test content')
-        self.assertEqual(self.field_file.size, 12)
 
-    def test_field_str(self):
-        self.assertEqual(str(self.field), 'Test Field')
+class ProfileCommentModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
 
-    def test_field_file_to_file(self):
-        content_file = self.field_file.to_file()
-        self.assertEqual(content_file.name, 'test.txt')
-        self.assertEqual(content_file.read(), b'Test content')
+    def test_profile_comment_creation(self):
+        comment = ProfileComment.objects.create(
+            profile=self.user,
+            author=self.user,
+            text='Test profile comment'
+        )
+        self.assertEqual(comment.text, 'Test profile comment')
+        self.assertEqual(comment.author.username, 'testuser')
 
+
+class FieldReportModelTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.field = Field.objects.create(
+            user=self.user,
+            title='Test Field',
+            description='Test Description'
+        )
+
+    def test_field_report_creation(self):
+        report = FieldReport.objects.create(
+            field=self.field,
+            user=self.user,
+            reason='spam'
+        )
+        self.assertEqual(report.reason, 'spam')
+        self.assertEqual(report.status, 'pending')
+        self.assertFalse(report.is_resolved)
+from django.test import TestCase
+from main_app.forms import RegistrationForm, ProfileUpdateForm, FieldForm
+
+class RegistrationFormTest(TestCase):
+    def test_valid_registration_form(self):
+        form_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password1': 'complexpassword123',
+            'password2': 'complexpassword123'
+        }
+        form = RegistrationForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_invalid_email(self):
+        form_data = {
+            'username': 'testuser',
+            'email': 'invalid-email',
+            'password1': 'complexpassword123',
+            'password2': 'complexpassword123'
+        }
+        form = RegistrationForm(data=form_data)
+        self.assertFalse(form.is_valid())
+
+class ProfileUpdateFormTest(TestCase):
+    def test_valid_profile_update_form(self):
+        form_data = {
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'email': 'john@example.com'
+        }
+        form = ProfileUpdateForm(data=form_data)
+        self.assertTrue(form.is_valid())
 
 class FieldFormTest(TestCase):
-    def test_valid_form(self):
+    def test_valid_field_form(self):
         form_data = {
             'title': 'Test Field',
             'description': 'Test Description',
-            'cols': 5,
-            'rows': 5
+            'cols': 10,
+            'rows': 10
         }
         form = FieldForm(data=form_data)
         self.assertTrue(form.is_valid())
 
-    def test_invalid_form_missing_title(self):
-        form_data = {
-            'description': 'Test Description',
-            'cols': 5,
-            'rows': 5
-        }
-        form = FieldForm(data=form_data)
-        self.assertFalse(form.is_valid())
-        self.assertIn('title', form.errors)
 
-    def test_file_field_conversion(self):
-        test_file = SimpleUploadedFile(
-            "test.txt",
-            b"Test file content",
-            content_type="text/plain"
-        )
-        field = DBFileField()
-        converted = field.to_python(test_file)
-        self.assertEqual(converted['name'], 'test.txt')
-        self.assertEqual(converted['content_type'], 'text/plain')
-        self.assertEqual(converted['data'], b'Test file content')
-        self.assertEqual(converted['size'], 16)
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
-class FieldCreateViewTest(TestCase):
+class ViewTests(TestCase):
     def setUp(self):
-        self.factory = RequestFactory()
-        self.user = User.objects.create_user(
-            username='tester',
-            password='12345'
-        )
-        self.url = reverse('create_field')
-        self.form_data = {
-            'title': 'Test Field',
-            'description': 'Test Description',
-            'cols': 5,
-            'rows': 5
-        }
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='12345')
 
-    def test_get_create_view(self):
-        request = self.factory.get(self.url)
-        request.user = self.user
-        response = FieldCreateView.as_view()(request)
+    def test_index_view(self):
+        response = self.client.get(reverse('index'))
         self.assertEqual(response.status_code, 200)
 
-    def test_post_create_view_without_file(self):
-        request = self.factory.post(self.url, self.form_data)
-        request.user = self.user
-        response = FieldCreateView.as_view()(request)
-        self.assertEqual(response.status_code, 302)
-        field = Field.objects.first()
-        self.assertEqual(field.title, 'Test Field')
-        self.assertEqual(field.user, self.user)
-        self.assertIsNone(field.file)
-
-    def test_post_create_view_with_file(self):
-        test_file = SimpleUploadedFile(
-            "test.txt",
-            b"Test file content",
-            content_type="text/plain"
-        )
-        form_data = self.form_data.copy()
-        form_data['file'] = test_file
-        request = self.factory.post(self.url, form_data)
-        request.user = self.user
-        response = FieldCreateView.as_view()(request)
-        self.assertEqual(response.status_code, 302)
-        field = Field.objects.first()
-        self.assertEqual(field.file.name, 'test.txt')
-        self.assertEqual(field.file.data, b'Test file content')
-
-
-class DownloadFileViewTest(TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-        self.user = User.objects.create_user(
-            username='tester',
-            password='12345'
-        )
-        self.field_file = FieldFile.objects.create(
-            name='test.txt',
-            content_type='text/plain',
-            data=b'Test content',
-            size=12
-        )
-        self.url = reverse('download_file', args=[self.field_file.pk])
-
-    def test_download_file(self):
-        request = self.factory.get(self.url)
-        response = download_file(request, self.field_file.pk)
+    def test_login_view(self):
+        response = self.client.get(reverse('login'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'text/plain')
-        self.assertEqual(
-            response['Content-Disposition'],
-            'attachment; filename="test.txt"'
-        )
-        self.assertEqual(response.content, b'Test content')
 
-    def test_download_nonexistent_file(self):
-        request = self.factory.get(self.url + '999')
-        response = download_file(request, 999)
-        self.assertEqual(response.status_code, 404)
+    def test_profile_view_authenticated(self):
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+
+
+class AuthTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='12345')
+
+    def test_successful_login(self):
+        response = self.client.post(reverse('login'), {
+            'username': 'testuser',
+            'password': '12345'
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect
