@@ -5,35 +5,17 @@
 #include <dxgi1_4.h>
 #include <tchar.h>
 #include <windows.h>
-#include <string>
-#include <vector>
-#include <sstream>
-#include <algorithm>
-#include <map>
 
-struct FrameContext {
+class FrameContext {
+public:
     ID3D12CommandAllocator* CommandAllocator;
     UINT64 FenceValue;
+
+    FrameContext() : CommandAllocator(nullptr), FenceValue(0) {}
 };
 
-
-static int const NUM_FRAMES_IN_FLIGHT = 3;
-static FrameContext g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
-static UINT g_frameIndex = 0;
-static ID3D12Device* g_pd3dDevice = NULL;
-static ID3D12DescriptorHeap* g_pd3dRtvDescHeap = NULL;
-static ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
-static ID3D12CommandQueue* g_pd3dCommandQueue = NULL;
-static ID3D12GraphicsCommandList* g_pd3dCommandList = NULL;
-static ID3D12Fence* g_fence = NULL;
-static HANDLE g_fenceEvent = NULL;
-static UINT64 g_fenceLastSignaledValue = 0;
-static IDXGISwapChain3* g_pSwapChain = NULL;
-static HANDLE g_hSwapChainWaitableObject = NULL;
-static ID3D12Resource* g_mainRenderTargetResource[NUM_FRAMES_IN_FLIGHT] = {};
-static D3D12_CPU_DESCRIPTOR_HANDLE g_mainRenderTargetDescriptor[NUM_FRAMES_IN_FLIGHT] = {};
-
-struct Cell {
+class Cell {
+public:
     bool isWall;
     bool isStart;
     bool isEnd;
@@ -41,7 +23,8 @@ struct Cell {
     Cell() : isWall(false), isStart(false), isEnd(false) {}
 };
 
-struct CellCoord {
+class CellCoord {
+public:
     int x, y;
 
     CellCoord() : x(0), y(0) {}
@@ -62,11 +45,10 @@ enum CommandType {
     CMD_MOVE_RIGHT,
     CMD_MOVE_UP,
     CMD_MOVE_DOWN,
-    CMD_JUMP_TO,
-    CMD_WAIT
 };
 
-struct GridCommand {
+class GridCommand {
+public:
     CommandType type;
     int x;
     int y;
@@ -77,10 +59,31 @@ struct GridCommand {
     GridCommand(CommandType t, int _x, int _y) : type(t), x(_x), y(_y), steps(1) {}
 };
 
-
+const int NUM_FRAMES_IN_FLIGHT = 3;
 const int DEFAULT_GRID_SIZE = 10;
 const float CELL_PADDING = 2.0f;
 const float ANIMATION_SPEED = 5.0f;
+
+FrameContext g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
+UINT g_frameIndex = 0;
+ID3D12Device* g_pd3dDevice = NULL;
+ID3D12DescriptorHeap* g_pd3dRtvDescHeap = NULL;
+ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
+ID3D12CommandQueue* g_pd3dCommandQueue = NULL;
+ID3D12GraphicsCommandList* g_pd3dCommandList = NULL;
+ID3D12Fence* g_fence = NULL;
+HANDLE g_fenceEvent = NULL;
+UINT64 g_fenceLastSignaledValue = 0;
+IDXGISwapChain3* g_pSwapChain = NULL;
+HANDLE g_hSwapChainWaitableObject = NULL;
+ID3D12Resource* g_mainRenderTargetResource[NUM_FRAMES_IN_FLIGHT] = {};
+D3D12_CPU_DESCRIPTOR_HANDLE g_mainRenderTargetDescriptor[NUM_FRAMES_IN_FLIGHT] = {};
+
+Cell g_grid[DEFAULT_GRID_SIZE * 2][DEFAULT_GRID_SIZE * 2]; 
+int g_gridSize = DEFAULT_GRID_SIZE;
+GridCommand g_commands[100];  // Массив команд
+int g_commandCount = 0;
+char g_commandBuffer[4096] = "RIGHT 1\nDOWN 1\nLEFT 1\nUP 1\n";
 
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -89,9 +92,10 @@ void CleanupRenderTarget();
 void WaitForLastSubmittedFrame();
 FrameContext* WaitForNextFrameResources();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-std::vector<GridCommand> ParseGridCommands(const char* commandText);
-void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, const std::vector<std::vector<Cell>>& grid, bool& completed);
-void InitializeDefaultGrid(std::vector<std::vector<Cell>>& grid, int size);
+void ParseGridCommands();
+void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed);
+void InitializeDefaultGrid(int size);
+char* IntToStr(int value, char* buffer);
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -125,9 +129,7 @@ int main(int, char**)
         g_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         g_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart());
 
-    std::vector<std::vector<Cell>> grid;
-    int gridSize = DEFAULT_GRID_SIZE;
-    InitializeDefaultGrid(grid, gridSize);
+    InitializeDefaultGrid(DEFAULT_GRID_SIZE);
 
     float cellSize = 40.0f;
     // позиция
@@ -140,15 +142,7 @@ int main(int, char**)
 
     float squareColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 
-    static char commandBuffer[4096] =
-
-        "RIGHT 1\n"
-        "DOWN 1\n"
-        "LEFT 1\n"
-        "UP 1\n"
-        ;
-
-    std::vector<GridCommand> commands;  // список команд
+    ParseGridCommands();
     bool runningCommands = false;
     int currentCommand = 0;
     float totalTime = 0.0f;
@@ -158,7 +152,7 @@ int main(int, char**)
     bool editMode = false;  // режим редактирования карты
     bool setWalls = true;   // установка стен (иначе - удаление)
     CellCoord startCell(0, 0);
-    CellCoord endCell(gridSize - 1, gridSize - 1);
+    CellCoord endCell(g_gridSize - 1, g_gridSize - 1);
 
     // основной цикл
     bool done = false;
@@ -183,7 +177,6 @@ int main(int, char**)
         totalTime += deltaTime;
 
         // обработка анимации
-
         if (isAnimating) {
             animProgress += ANIMATION_SPEED * deltaTime;
 
@@ -193,64 +186,38 @@ int main(int, char**)
                 isAnimating = false;
 
                 // проверка на баг
-                if (runningCommands && currentCommand < commands.size()) {
-
+                if (runningCommands && currentCommand < g_commandCount) {
                     currentCommand++;
-                    if (currentCommand >= commands.size()) {
+                    if (currentCommand >= g_commandCount) {
                         runningCommands = false;
                     }
                 }
             }
             else {
-
                 animX = static_cast<float>(squarePos.x) * (1.0f - animProgress) +
                     static_cast<float>(targetPos.x) * animProgress;
                 animY = static_cast<float>(squarePos.y) * (1.0f - animProgress) +
                     static_cast<float>(targetPos.y) * animProgress;
             }
         }
-        else if (runningCommands && currentCommand < commands.size()) {
+        else if (runningCommands && currentCommand < g_commandCount) {
             bool commandCompleted = false;
 
             // обновление позиции
-            ExecuteGridCommand(commands[currentCommand], squarePos, grid, commandCompleted);
+            ExecuteGridCommand(g_commands[currentCommand], squarePos, commandCompleted);
 
-            if (commands[currentCommand].type != CMD_WAIT) {
-
-                targetPos = squarePos;
-                isAnimating = true;
-                animProgress = 0.0f;
-            }
-            else {
-
-                if (commandCompleted) {
-                    currentCommand++;
-                    if (currentCommand >= commands.size()) {
-                        runningCommands = false;
-                    }
-                }
-            }
+            targetPos = squarePos;
+            isAnimating = true;
+            animProgress = 0.0f;
         }
         // если не анимируем, но выполняем команды, выполняем следующую команду
         else if (runningCommands) {
             bool commandCompleted = false;
-            ExecuteGridCommand(commands[currentCommand], squarePos, grid, commandCompleted);
+            ExecuteGridCommand(g_commands[currentCommand], squarePos, commandCompleted);
 
-            if (commands[currentCommand].type != CMD_WAIT) {
-                // для всех команд, кроме WAIT, устанавливаем целевую позицию и запускаем анимацию
-                targetPos = squarePos;
-                isAnimating = true;
-                animProgress = 0.0f;
-            }
-            else {
-                // для команды WAIT проверяем завершение
-                if (commandCompleted) {
-                    currentCommand++;
-                    if (currentCommand >= commands.size()) {
-                        runningCommands = false;
-                    }
-                }
-            }
+            targetPos = squarePos;
+            isAnimating = true;
+            animProgress = 0.0f;
         }
 
         FrameContext* frameCtx = WaitForNextFrameResources();
@@ -283,28 +250,28 @@ int main(int, char**)
 
             // рассчёт карты
             ImVec2 contentSize = ImGui::GetContentRegionAvail();
-            float gridTotalSize = gridSize * (cellSize + CELL_PADDING);
+            float gridTotalSize = g_gridSize * (cellSize + CELL_PADDING);
             ImVec2 gridStartPos = ImGui::GetCursorScreenPos();
 
             // карта
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
             // отрисовка карты
-            for (int y = 0; y < gridSize; y++) {
-                for (int x = 0; x < gridSize; x++) {
+            for (int y = 0; y < g_gridSize; y++) {
+                for (int x = 0; x < g_gridSize; x++) {
                     // координаты ячейки
                     float cellX = gridStartPos.x + x * (cellSize + CELL_PADDING);
                     float cellY = gridStartPos.y + y * (cellSize + CELL_PADDING);
 
                     // цвет ячейки
                     ImU32 cellColor;
-                    if (grid[y][x].isWall) {
+                    if (g_grid[y][x].isWall) {
                         cellColor = IM_COL32(100, 100, 100, 255);  // стена - серый
                     }
-                    else if (grid[y][x].isStart) {
+                    else if (g_grid[y][x].isStart) {
                         cellColor = IM_COL32(0, 255, 0, 255);      // начало - зелёный
                     }
-                    else if (grid[y][x].isEnd) {
+                    else if (g_grid[y][x].isEnd) {
                         cellColor = IM_COL32(0, 0, 255, 255);      // конец - синий
                     }
                     else {
@@ -318,47 +285,68 @@ int main(int, char**)
                         cellColor
                     );
 
-
                     if (editMode) {
                         ImGui::SetCursorScreenPos(ImVec2(cellX, cellY));
-                        ImGui::InvisibleButton(
-                            ("cell_" + std::to_string(x) + "_" + std::to_string(y)).c_str(),
-                            ImVec2(cellSize, cellSize)
-                        );
+
+                        char btnId[32];
+                        char* p = btnId;
+                        *p++ = 'c';
+                        *p++ = 'e';
+                        *p++ = 'l';
+                        *p++ = 'l';
+                        *p++ = '_';
+                        p = IntToStr(x, p);
+                        *p++ = '_';
+                        p = IntToStr(y, p);
+                        *p = '\0';
+
+                        ImGui::InvisibleButton(btnId, ImVec2(cellSize, cellSize));
 
                         // клик по ячейке
                         if (ImGui::IsItemClicked()) {
                             if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
                                 // shift+клик стартпоз
                                 CellCoord newStart(x, y);
-                                if (!(grid[y][x].isWall || grid[y][x].isEnd)) {
-                                    grid[startCell.y][startCell.x].isStart = false;
-                                    grid[y][x].isStart = true;
+                                if (!(g_grid[y][x].isWall || g_grid[y][x].isEnd)) {
+                                    g_grid[startCell.y][startCell.x].isStart = false;
+                                    g_grid[y][x].isStart = true;
                                     startCell = newStart;
                                     squarePos = newStart;
                                 }
                             }
                             else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
-
                                 CellCoord newEnd(x, y);
-                                if (!(grid[y][x].isWall || grid[y][x].isStart)) {
-                                    grid[endCell.y][endCell.x].isEnd = false;
-                                    grid[y][x].isEnd = true;
+                                if (!(g_grid[y][x].isWall || g_grid[y][x].isStart)) {
+                                    g_grid[endCell.y][endCell.x].isEnd = false;
+                                    g_grid[y][x].isEnd = true;
                                     endCell = newEnd;
                                 }
                             }
                             else {
-
-                                if (!(grid[y][x].isStart || grid[y][x].isEnd)) {
-                                    grid[y][x].isWall = setWalls;
+                                if (!(g_grid[y][x].isStart || g_grid[y][x].isEnd)) {
+                                    g_grid[y][x].isWall = setWalls;
                                 }
                             }
                         }
 
-
                         if (ImGui::IsItemHovered()) {
                             ImGui::BeginTooltip();
-                            ImGui::Text("Cell (%d, %d)", x, y);
+                            char posBuffer[32];
+                            char* p = posBuffer;
+                            *p++ = 'C';
+                            *p++ = 'e';
+                            *p++ = 'l';
+                            *p++ = 'l';
+                            *p++ = ' ';
+                            *p++ = '(';
+                            p = IntToStr(x, p);
+                            *p++ = ',';
+                            *p++ = ' ';
+                            p = IntToStr(y, p);
+                            *p++ = ')';
+                            *p = '\0';
+                            ImGui::Text("%s", posBuffer);
+
                             ImGui::Text("Click: %s wall", setWalls ? "Add" : "Remove");
                             ImGui::Text("Shift+Click: Set start point");
                             ImGui::Text("Ctrl+Click: Set end point");
@@ -395,11 +383,10 @@ int main(int, char**)
             // управление размером сетки и ячеек
             ImGui::SetCursorScreenPos(ImVec2(gridStartPos.x, gridStartPos.y + gridTotalSize + 20));
 
-            if (ImGui::SliderInt("Grid Size", &gridSize, 5, 20)) {
-
-                InitializeDefaultGrid(grid, gridSize);
+            if (ImGui::SliderInt("Grid Size", &g_gridSize, 5, 20)) {
+                InitializeDefaultGrid(g_gridSize);
                 startCell = CellCoord(0, 0);
-                endCell = CellCoord(gridSize - 1, gridSize - 1);
+                endCell = CellCoord(g_gridSize - 1, g_gridSize - 1);
                 squarePos = startCell;
             }
 
@@ -411,19 +398,70 @@ int main(int, char**)
                 ImGui::Checkbox("Set Walls", &setWalls);
             }
 
-            ImGui::Text("Square Position: (%d, %d)", squarePos.x, squarePos.y);
+            char posText[64];
+            char* p = posText;
+            *p++ = 'S';
+            *p++ = 'q';
+            *p++ = 'u';
+            *p++ = 'a';
+            *p++ = 'r';
+            *p++ = 'e';
+            *p++ = ' ';
+            *p++ = 'P';
+            *p++ = 'o';
+            *p++ = 's';
+            *p++ = 'i';
+            *p++ = 't';
+            *p++ = 'i';
+            *p++ = 'o';
+            *p++ = 'n';
+            *p++ = ':';
+            *p++ = ' ';
+            *p++ = '(';
+            p = IntToStr(squarePos.x, p);
+            *p++ = ',';
+            *p++ = ' ';
+            p = IntToStr(squarePos.y, p);
+            *p++ = ')';
+            *p = '\0';
+
+            ImGui::Text("%s", posText);
 
             if (runningCommands) {
-                ImGui::Text("Running command %d/%zu", currentCommand + 1, commands.size());
+                char cmdText[64];
+                char* p = cmdText;
+                *p++ = 'R';
+                *p++ = 'u';
+                *p++ = 'n';
+                *p++ = 'n';
+                *p++ = 'i';
+                *p++ = 'n';
+                *p++ = 'g';
+                *p++ = ' ';
+                *p++ = 'c';
+                *p++ = 'o';
+                *p++ = 'm';
+                *p++ = 'm';
+                *p++ = 'a';
+                *p++ = 'n';
+                *p++ = 'd';
+                *p++ = ' ';
+                p = IntToStr(currentCommand + 1, p);
+                *p++ = '/';
+                p = IntToStr(g_commandCount, p);
+                *p = '\0';
+
+                ImGui::Text("%s", cmdText);
+
                 if (ImGui::Button("Stop Commands")) {
                     runningCommands = false;
                 }
             }
             else {
                 if (ImGui::Button("Run Commands")) {
-                    commands = ParseGridCommands(commandBuffer);
+                    ParseGridCommands();
 
-                    if (!commands.empty()) {
+                    if (g_commandCount > 0) {
                         runningCommands = true;
                         currentCommand = 0;
                         squarePos = startCell;
@@ -431,28 +469,28 @@ int main(int, char**)
                 }
 
                 ImGui::SameLine();
-                if (ImGui::Button("Move Left") && squarePos.x > 0 && !grid[squarePos.y][squarePos.x - 1].isWall) {
+                if (ImGui::Button("Move Left") && squarePos.x > 0 && !g_grid[squarePos.y][squarePos.x - 1].isWall) {
                     targetPos = CellCoord(squarePos.x - 1, squarePos.y);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
 
                 ImGui::SameLine();
-                if (ImGui::Button("Move Right") && squarePos.x < gridSize - 1 && !grid[squarePos.y][squarePos.x + 1].isWall) {
+                if (ImGui::Button("Move Right") && squarePos.x < g_gridSize - 1 && !g_grid[squarePos.y][squarePos.x + 1].isWall) {
                     targetPos = CellCoord(squarePos.x + 1, squarePos.y);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
 
                 ImGui::SameLine();
-                if (ImGui::Button("Move Up") && squarePos.y > 0 && !grid[squarePos.y - 1][squarePos.x].isWall) {
+                if (ImGui::Button("Move Up") && squarePos.y > 0 && !g_grid[squarePos.y - 1][squarePos.x].isWall) {
                     targetPos = CellCoord(squarePos.x, squarePos.y - 1);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
 
                 ImGui::SameLine();
-                if (ImGui::Button("Move Down") && squarePos.y < gridSize - 1 && !grid[squarePos.y + 1][squarePos.x].isWall) {
+                if (ImGui::Button("Move Down") && squarePos.y < g_gridSize - 1 && !g_grid[squarePos.y + 1][squarePos.x].isWall) {
                     targetPos = CellCoord(squarePos.x, squarePos.y + 1);
                     isAnimating = true;
                     animProgress = 0.0f;
@@ -473,45 +511,86 @@ int main(int, char**)
                 ImGui::BulletText("LEFT [steps] - move left by [steps] cells");
                 ImGui::BulletText("UP [steps] - move up by [steps] cells");
                 ImGui::BulletText("DOWN [steps] - move down by [steps] cells");
-                ImGui::BulletText("WAIT [steps] - wait for [steps] cycles");
-
             }
 
             ImGui::Separator();
 
             // редактор
             ImGui::Text("Command Editor:");
-            ImGui::InputTextMultiline("##commands", commandBuffer, IM_ARRAYSIZE(commandBuffer),
+            ImGui::InputTextMultiline("##commands", g_commandBuffer, IM_ARRAYSIZE(g_commandBuffer),
                 ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 10),
                 ImGuiInputTextFlags_AllowTabInput);
 
             ImGui::Separator();
 
             if (ImGui::Button("Parse Commands")) {
+                ParseGridCommands();
 
-                commands = ParseGridCommands(commandBuffer);
+                ImGui::Text("Parsed %d commands:", g_commandCount);
+                for (int i = 0; i < g_commandCount && i < 10; i++) {
+                    const GridCommand& cmd = g_commands[i];
+                    char cmdText[64];
+                    char* p = cmdText;
+                    p = IntToStr(i + 1, p);
+                    *p++ = ':';
+                    *p++ = ' ';
 
-                ImGui::Text("Parsed %zu commands:", commands.size());
-                for (size_t i = 0; i < commands.size() && i < 10; i++) {
-                    const GridCommand& cmd = commands[i];
                     switch (cmd.type) {
                     case CMD_MOVE_LEFT:
-                        ImGui::Text("%zu: LEFT %d", i + 1, cmd.steps);
+                        *p++ = 'L';
+                        *p++ = 'E';
+                        *p++ = 'F';
+                        *p++ = 'T';
+                        *p++ = ' ';
+                        p = IntToStr(cmd.steps, p);
                         break;
                     case CMD_MOVE_RIGHT:
-                        ImGui::Text("%zu: RIGHT %d", i + 1, cmd.steps);
+                        *p++ = 'R';
+                        *p++ = 'I';
+                        *p++ = 'G';
+                        *p++ = 'H';
+                        *p++ = 'T';
+                        *p++ = ' ';
+                        p = IntToStr(cmd.steps, p);
                         break;
                     case CMD_MOVE_UP:
-                        ImGui::Text("%zu: UP %d", i + 1, cmd.steps);
+                        *p++ = 'U';
+                        *p++ = 'P';
+                        *p++ = ' ';
+                        p = IntToStr(cmd.steps, p);
                         break;
                     case CMD_MOVE_DOWN:
-                        ImGui::Text("%zu: DOWN %d", i + 1, cmd.steps);
+                        *p++ = 'D';
+                        *p++ = 'O';
+                        *p++ = 'W';
+                        *p++ = 'N';
+                        *p++ = ' ';
+                        p = IntToStr(cmd.steps, p);
                         break;
                     }
+                    *p = '\0';
+                    ImGui::Text("%s", cmdText);
                 }
 
-                if (commands.size() > 10) {
-                    ImGui::Text("... and %zu more", commands.size() - 10);
+                if (g_commandCount > 10) {
+                    char moreText[32];
+                    char* p = moreText;
+                    *p++ = '.';
+                    *p++ = '.';
+                    *p++ = '.';
+                    *p++ = ' ';
+                    *p++ = 'a';
+                    *p++ = 'n';
+                    *p++ = 'd';
+                    *p++ = ' ';
+                    p = IntToStr(g_commandCount - 10, p);
+                    *p++ = ' ';
+                    *p++ = 'm';
+                    *p++ = 'o';
+                    *p++ = 'r';
+                    *p++ = 'e';
+                    *p = '\0';
+                    ImGui::Text("%s", moreText);
                 }
             }
 
@@ -523,9 +602,7 @@ int main(int, char**)
         const float clear_color_with_alpha[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
         g_pd3dCommandList->ClearRenderTargetView(g_mainRenderTargetDescriptor[backBufferIdx], clear_color_with_alpha, 0, NULL);
 
-
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), g_pd3dCommandList);
-
 
         {
             D3D12_RESOURCE_BARRIER barrier = {};
@@ -562,197 +639,229 @@ int main(int, char**)
     return 0;
 }
 
-// инициализация карты
-void InitializeDefaultGrid(std::vector<std::vector<Cell>>& grid, int size) {
+char* IntToStr(int value, char* buffer) {
+    if (value == 0) {
+        *buffer++ = '0';
+        return buffer;
+    }
 
+    char temp[16];
+    int tempIdx = 0;
+    bool negative = false;
+
+    if (value < 0) {
+        negative = true;
+        value = -value;
+    }
+
+    while (value > 0) {
+        temp[tempIdx++] = '0' + (value % 10);
+        value /= 10;
+    }
+
+    if (negative) {
+        *buffer++ = '-';
+    }
+
+    while (tempIdx > 0) {
+        *buffer++ = temp[--tempIdx];
+    }
+
+    return buffer;
+}
+
+// инициализация карты
+void InitializeDefaultGrid(int size) {
     if (size < 5) size = 5;
 
-    grid.clear();
-    grid.resize(size);
-    for (int i = 0; i < size; i++) {
-        grid[i].resize(size);
-    }
-    grid[0][0].isStart = true;
-    grid[size - 1][size - 1].isEnd = true;
-
-    if (size >= 10) {
-        for (int i = 2; i < 8 && i < size; i++) {
-            grid[3][i].isWall = true;
-        }
-
-        for (int i = 3; i < 7 && i < size; i++) {
-            grid[i][7].isWall = true;
-        }
-
-        for (int i = 2; i < 6 && i < size; i++) {
-            grid[6][i].isWall = true;
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            g_grid[y][x].isWall = false;
+            g_grid[y][x].isStart = false;
+            g_grid[y][x].isEnd = false;
         }
     }
+
+    g_grid[0][0].isStart = true;
+    g_grid[size - 1][size - 1].isEnd = true;
+    g_gridSize = size;
+}
+
+bool StrEquals(const char* str1, const char* str2) {
+    while (*str1 && *str2) {
+        if (*str1 != *str2) return false;
+        str1++;
+        str2++;
+    }
+    return *str1 == *str2;
+}
+
+void GetNextWord(const char** ptr, char* word) {
+
+    while (**ptr && (**ptr == ' ' || **ptr == '\t')) {
+        (*ptr)++;
+    }
+
+    char* dest = word;
+    while (**ptr && **ptr != ' ' && **ptr != '\t' && **ptr != '\n' && **ptr != '\r') {
+        *dest++ = **ptr;
+        (*ptr)++;
+    }
+    *dest = '\0';
+}
+
+int StrToInt(const char* str) {
+    int result = 0;
+    bool negative = false;
+
+    if (*str == '-') {
+        negative = true;
+        str++;
+    }
+
+    while (*str >= '0' && *str <= '9') {
+        result = result * 10 + (*str - '0');
+        str++;
+    }
+
+    return negative ? -result : result;
 }
 
 // парсинг 
-std::vector<GridCommand> ParseGridCommands(const char* commandText) {
-    std::vector<GridCommand> result;
-    std::istringstream stream(commandText);
-    std::string line;
+void ParseGridCommands() {
+    g_commandCount = 0;
+    const char* ptr = g_commandBuffer;
 
-    while (std::getline(stream, line)) {
+    char line[256];
+    char word[32];
 
-        if (line.empty() || line[0] == '#')
+    while (*ptr && g_commandCount < 100) {
+
+        char* linePtr = line;
+        while (*ptr && *ptr != '\n' && *ptr != '\r') {
+            *linePtr++ = *ptr++;
+        }
+        *linePtr = '\0';
+
+        while (*ptr == '\n' || *ptr == '\r') {
+            ptr++;
+        }
+
+        if (line[0] == '\0' || line[0] == '#') {
             continue;
+        }
 
-        // разбор строки на слова
-        std::istringstream lineStream(line);
-        std::string command;
-        lineStream >> command;
 
-        if (command == "RIGHT") {
-            int steps = 1;
-            if (lineStream >> steps)
-                result.push_back(GridCommand(CMD_MOVE_RIGHT, steps));
-            else
-                result.push_back(GridCommand(CMD_MOVE_RIGHT));
+        const char* lineReader = line;
+        GetNextWord(&lineReader, word);
+
+        if (StrEquals(word, "RIGHT")) {
+            GetNextWord(&lineReader, word);
+            int steps = word[0] ? StrToInt(word) : 1;
+            g_commands[g_commandCount++] = GridCommand(CMD_MOVE_RIGHT, steps);
         }
-        else if (command == "LEFT") {
-            int steps = 1;
-            if (lineStream >> steps)
-                result.push_back(GridCommand(CMD_MOVE_LEFT, steps));
-            else
-                result.push_back(GridCommand(CMD_MOVE_LEFT));
+        else if (StrEquals(word, "LEFT")) {
+            GetNextWord(&lineReader, word);
+            int steps = word[0] ? StrToInt(word) : 1;
+            g_commands[g_commandCount++] = GridCommand(CMD_MOVE_LEFT, steps);
         }
-        else if (command == "UP") {
-            int steps = 1;
-            if (lineStream >> steps)
-                result.push_back(GridCommand(CMD_MOVE_UP, steps));
-            else
-                result.push_back(GridCommand(CMD_MOVE_UP));
+        else if (StrEquals(word, "UP")) {
+            GetNextWord(&lineReader, word);
+            int steps = word[0] ? StrToInt(word) : 1;
+            g_commands[g_commandCount++] = GridCommand(CMD_MOVE_UP, steps);
         }
-        else if (command == "DOWN") {
-            int steps = 1;
-            if (lineStream >> steps)
-                result.push_back(GridCommand(CMD_MOVE_DOWN, steps));
-            else
-                result.push_back(GridCommand(CMD_MOVE_DOWN));
-        }
-        else if (command == "WAIT") {
-            int steps = 1;
-            if (lineStream >> steps)
-                result.push_back(GridCommand(CMD_WAIT, steps));
-            else
-                result.push_back(GridCommand(CMD_WAIT));
+        else if (StrEquals(word, "DOWN")) {
+            GetNextWord(&lineReader, word);
+            int steps = word[0] ? StrToInt(word) : 1;
+            g_commands[g_commandCount++] = GridCommand(CMD_MOVE_DOWN, steps);
         }
     }
-
-    return result;
 }
 
-void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, const std::vector<std::vector<Cell>>& grid, bool& completed) {
-    int gridSize = static_cast<int>(grid.size());
-    
-    auto isCellWall = [&grid](int y, int x) -> bool {
+void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) {
+    auto isCellWall = [](int y, int x) -> bool {
+        if (y < 0 || y >= g_gridSize) return true;
+        if (x < 0 || x >= g_gridSize) return true;
+        return g_grid[y][x].isWall;
+        };
 
-        if (y < 0 || y >= static_cast<int>(grid.size())) return true;
-        if (x < 0 || x >= static_cast<int>(grid[y].size())) return true; 
-        return grid[y][x].isWall;
-    };
-    
     completed = false;
-    static int waitCounter = 0;   
-    
+
     switch (cmd.type) {
-        case CMD_MOVE_LEFT:
-            {
-                int targetX = position.x;
-                for (int step = 0; step < cmd.steps && targetX > 0; step++) {
-                    if (!isCellWall(position.y, targetX - 1)) {
-                        targetX--;
-                    } else {
-                        break;  
-                    }
-                }
-                position.x = targetX;
-                completed = true;
+    case CMD_MOVE_LEFT:
+    {
+        int targetX = position.x;
+        for (int step = 0; step < cmd.steps && targetX > 0; step++) {
+            if (!isCellWall(position.y, targetX - 1)) {
+                targetX--;
             }
-            break;
-            
-        case CMD_MOVE_RIGHT:
-
-            {
-                int targetX = position.x;
-                for (int step = 0; step < cmd.steps && targetX < gridSize - 1; step++) {
-                    if (!isCellWall(position.y, targetX + 1)) {
-                        targetX++;
-                    } else {
-                        break;  
-                    }
-                }
-                position.x = targetX;
-                completed = true;
+            else {
+                break;
             }
-            break;
-            
-        case CMD_MOVE_UP:
-
-            {
-                int targetY = position.y;
-                for (int step = 0; step < cmd.steps && targetY > 0; step++) {
-                    if (!isCellWall(targetY - 1, position.x)) {
-                        targetY--;
-                    } else {
-                        break;  
-                    }
-                }
-                position.y = targetY;
-                completed = true;
-            }
-            break;
-            
-        case CMD_MOVE_DOWN:
-
-            {
-                int targetY = position.y;
-                for (int step = 0; step < cmd.steps && targetY < gridSize - 1; step++) {
-                    if (!isCellWall(targetY + 1, position.x)) {
-                        targetY++;
-                    } else {
-                        break; 
-                    }
-                }
-                position.y = targetY;
-                completed = true;
-            }
-            break;
-            
-        case CMD_JUMP_TO:
- 
-            if (cmd.x >= 0 && cmd.x < gridSize && cmd.y >= 0 && cmd.y < gridSize && !isCellWall(cmd.y, cmd.x)) {
-                position.x = cmd.x;
-                position.y = cmd.y;
-            }
-            completed = true;
-            break;
-            
-        case CMD_WAIT:
-    
-            if (waitCounter == 0) waitCounter = 1;
-            else waitCounter++;
-            
-            if (waitCounter >= cmd.steps) {
-                completed = true;
-                waitCounter = 0;
-            }
-            break;
-            
-        case CMD_NONE:
-        default:
-            completed = true;
-            break;
+        }
+        position.x = targetX;
+        completed = true;
     }
-    
+    break;
+
+    case CMD_MOVE_RIGHT:
+    {
+        int targetX = position.x;
+        for (int step = 0; step < cmd.steps && targetX < g_gridSize - 1; step++) {
+            if (!isCellWall(position.y, targetX + 1)) {
+                targetX++;
+            }
+            else {
+                break;
+            }
+        }
+        position.x = targetX;
+        completed = true;
+    }
+    break;
+
+    case CMD_MOVE_UP:
+    {
+        int targetY = position.y;
+        for (int step = 0; step < cmd.steps && targetY > 0; step++) {
+            if (!isCellWall(targetY - 1, position.x)) {
+                targetY--;
+            }
+            else {
+                break;
+            }
+        }
+        position.y = targetY;
+        completed = true;
+    }
+    break;
+
+    case CMD_MOVE_DOWN:
+    {
+        int targetY = position.y;
+        for (int step = 0; step < cmd.steps && targetY < g_gridSize - 1; step++) {
+            if (!isCellWall(targetY + 1, position.x)) {
+                targetY++;
+            }
+            else {
+                break;
+            }
+        }
+        position.y = targetY;
+        completed = true;
+    }
+    break;
+
+    case CMD_NONE:
+    default:
+        completed = true;
+        break;
+    }
+
     if (position.x < 0) position.x = 0;
-    if (position.x >= gridSize) position.x = gridSize - 1;
+    if (position.x >= g_gridSize) position.x = g_gridSize - 1;
     if (position.y < 0) position.y = 0;
-    if (position.y >= gridSize) position.y = gridSize - 1;
+    if (position.y >= g_gridSize) position.y = g_gridSize - 1;
 }
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -784,7 +893,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 bool CreateDeviceD3D(HWND hWnd)
 {
-
     D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
     if (D3D12CreateDevice(NULL, featureLevel, IID_PPV_ARGS(&g_pd3dDevice)) != S_OK)
         return false;
@@ -830,9 +938,7 @@ bool CreateDeviceD3D(HWND hWnd)
         swapChain1->Release();
     }
 
-
     {
-
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         desc.NumDescriptors = NUM_FRAMES_IN_FLIGHT;
@@ -843,12 +949,14 @@ bool CreateDeviceD3D(HWND hWnd)
 
         SIZE_T rtvDescriptorSize = g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = g_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
-        {
+        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
             g_mainRenderTargetDescriptor[i] = rtvHandle;
             rtvHandle.ptr += rtvDescriptorSize;
         }
+    }
 
+    {
+        D3D12_DESCRIPTOR_HEAP_DESC desc = {};
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         desc.NumDescriptors = 1;
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -856,19 +964,15 @@ bool CreateDeviceD3D(HWND hWnd)
             return false;
     }
 
-
     {
-        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
+        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
             if (g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_frameContext[i].CommandAllocator)) != S_OK)
                 return false;
-
+        }
         if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
             g_pd3dCommandList->Close() != S_OK)
             return false;
-    }
 
-    // синхронизация
-    {
         if (g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)) != S_OK)
             return false;
 
@@ -876,13 +980,9 @@ bool CreateDeviceD3D(HWND hWnd)
         if (g_fenceEvent == NULL)
             return false;
 
-        WaitForLastSubmittedFrame();
+        CreateRenderTarget();
+        return true;
     }
-
-    // рендер
-    CreateRenderTarget();
-
-    return true;
 }
 
 void CleanupDeviceD3D()
@@ -955,4 +1055,4 @@ FrameContext* WaitForNextFrameResources()
 
     WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
     return frameCtx;
-}  
+}
