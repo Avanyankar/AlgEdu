@@ -111,7 +111,7 @@ void Parser::statement()
             }
             if (!flag)
             {
-                break;
+                continue;
             }
             statement.instructions(new_statement);
             break;

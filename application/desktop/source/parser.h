@@ -10,8 +10,6 @@ class Parser {
 private:
     Lexer* lexer;
     std::unordered_set<std::string> symbols;
-    std::unordered_set<std::string> labelsDeclared;
-    std::unordered_set<std::string> labelsGotoed;
     Token curToken;
     Token peekToken;
     std::vector<Lib> libs;
