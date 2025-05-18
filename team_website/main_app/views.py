@@ -40,7 +40,13 @@ class FieldListView(ListView):
     context_object_name = 'fields'
 
     def get_queryset(self):
-        return Field.objects.filter(is_blocked=False).order_by('-created_at')
+        try:
+            fields = Field.objects.filter(is_blocked=False).order_by('-created_at')
+            logger.debug(f"A list of fields has been received. {fields.count()} records found")
+            return fields
+        except Exception as e:
+            logger.error(f"Error when getting the list of fields: {str(e)}", exc_info=True)
+            raise
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -87,14 +93,20 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         Returns:
             HttpResponse: The result of processing the form.
         """
-        try:
-            self.validate_data(form.cleaned_data)
-        except ValidationError as e:
-            form.add_error(None, e.message)
-            return self.form_invalid(form)
-        response: HttpResponse = super().form_valid(form)
-        messages.success(self.request, 'Профиль успешно обновлён!')
-        return response
+
+        def form_valid(self, form):
+            try:
+                self.validate_data(form.cleaned_data)
+                response = super().form_valid(form)
+                logger.info(f"User profile {self.request.user.username} updated successfully")
+                return response
+            except ValidationError as e:
+                logger.warning(f"User profile validation error {self.request.user.username}: {e.message}")
+                form.add_error(None, e.message)
+                return self.form_invalid(form)
+            except Exception as e:
+                logger.error(f"Error updating profile {self.request.user.username}: {str(e)}", exc_info=True)
+                raise
 
     def validate_data(self, cleaned_data: Dict[str, Any]) -> None:
         """
@@ -217,16 +229,15 @@ class UserRegisterView(CreateView):
     success_url: str = reverse_lazy('login')
 
     def form_valid(self, form):
-        """Processing a valid registration form"""
-        user = form.save()
-        user_registered.send(
-            sender=self.__class__,
-            user=user,
-            request=self.request
-        )
-        login(self.request, user)
-        messages.success(self.request, 'Регистрация успешно завершена!')
-        return super().form_valid(form)
+        try:
+            user = form.save()
+            user_registered.send(sender=self.__class__, user=user, request=self.request)
+            login(self.request, user)
+            logger.info(f"Successful registration of a new user: {user.username}")
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Error during user registration: {str(e)}", exc_info=True)
+            raise
 
     def register(self, form):
         user = form.save()
@@ -267,9 +278,14 @@ class UserLoginView(LoginView):
         Returns:
             HttpResponse: The response after successful form processing.
         """
-        response: HttpResponse = super().form_valid(form)
-        messages.success(self.request, 'Вы успешно вошли в систему!')
-        return response
+        try:
+            response: HttpResponse = super().form_valid(form)
+            messages.success(self.request, 'Вы успешно вошли в систему!')
+            logger.info(f"Successful user login: {form.get_user().username}")
+            return response
+        except Exception as e:
+            logger.error(f"User login error: {str(e)}", exc_info=True)
+            raise
 
     def form_invalid(self, form: AuthenticationForm) -> HttpResponse:
         """
@@ -281,8 +297,11 @@ class UserLoginView(LoginView):
         Returns:
             HttpResponse: The response after handling the invalid form.
         """
+        username = form.cleaned_data.get('username', 'unknown')
         messages.error(self.request, 'Неверное имя пользователя или пароль.')
+        logger.warning(f"Failed login attempt for the user: {username}")
         return super().form_invalid(form)
+
 
 
 class NotFoundView(TemplateView):
@@ -323,10 +342,17 @@ class FieldDetailView(DetailView):
         return context
 
     def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        if obj.is_blocked:
-            raise Http404("Карта заблокирована и недоступна для просмотра")
-        return obj
+        try:
+            obj = super().get_object(queryset)
+            if obj.is_blocked:
+                logger.warning(f"Attempt to access the blocked ID field: {obj.id}")
+                raise Http404("Карта заблокирована и недоступна для просмотра")
+            logger.debug(f"Displaying the ID field: {obj.id}")
+            return obj
+        except Exception as e:
+            logger.error(f"Error when receiving the field: {str(e)}", exc_info=True)
+            raise
+
 
     def create_cells(self, field):
         """Создает клетки для поля при первом обращении"""
@@ -376,24 +402,25 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
     def form_valid(self, form) -> HttpResponse:
         """
         Processes a valid form and creates a report.
-        
+
         Args:
             form: The filled report form.
-            
+
         Returns:
             HttpResponse: Redirect to success URL.
         """
         try:
             self.validate_report(form.cleaned_data)
-        except ValidationError as e:
-            form.add_error(None, e.message)
-            return self.form_invalid(form)
-        report = form.save(commit=False)
-        report.field = get_object_or_404(Field, id=self.kwargs['field_id'])
-        report.user = self.request.user
-        report.save()
-        messages.success(self.request, 'Жалоба успешно отправлена!')
-        return super().form_valid(form)
+            report = form.save(commit=False)
+            report.field = get_object_or_404(Field, id=self.kwargs['field_id'])
+            report.user = self.request.user
+            report.save()
+            logger.info(f"A complaint has been created for the ID field: {report.field.id } from the user {report.user.username}")
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Error when creating a complaint: {str(e)}", exc_info=True)
+            raise
+
 
     def validate_report(self, cleaned_data: Dict[str, Any]) -> None:
         """
@@ -586,17 +613,21 @@ class GoalsPageView(TemplateView):
 @require_POST
 @login_required
 def toggle_like(request, pk):
-    field = Field.objects.get(id=pk)
-    if request.user in field.likes.all():
-        field.likes.remove(request.user)
-        is_liked = False
-    else:
-        field.likes.add(request.user)
-        is_liked = True
-    return JsonResponse({
-        'is_liked': is_liked,
-        'likes_count': field.likes.count()
-    })
+    try:
+        field = Field.objects.get(id=pk)
+        if request.user in field.likes.all():
+            field.likes.remove(request.user)
+            logger.debug(f"User {request.user.username} removed the like from the field {field.id}")
+        else:
+            field.likes.add(request.user)
+            logger.debug(f"User {request.user.username} liked the field {field.id}")
+        return JsonResponse({
+            'is_liked': request.user in field.likes.all(),
+            'likes_count': field.likes.count()
+        })
+    except Exception as e:
+        logger.error(f"Error when processing a like: {str(e)}", exc_info=True)
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @require_POST
@@ -621,27 +652,25 @@ def add_comment(request, pk):
         data = json.loads(request.body)
         text = data.get('text', '').strip()
         if not text:
+            logger.warning(f"An empty comment from a user {request.user.username}")
             return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
-        if len(text) > 1000:
-            return JsonResponse({'error': 'Comment is too long (max 1000 chars)'}, status=400)
+
         field = get_object_or_404(Field, id=pk)
         comment = Comment.objects.create(
             field=field,
             author=request.user,
             text=text
         )
+        logger.info(f"Added comment ID {comment.id } to the field {field.id } from {request.user.username}")
         return JsonResponse({
             'success': True,
             'comment_id': comment.id,
             'author': comment.author.username,
             'text': comment.text,
-            'created_at': (comment.created_at.strftime("%Y-%m-%d %H:%M")
-                           if comment.created_at else None)
+            'created_at': comment.created_at.strftime("%Y-%m-%d %H:%M")
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
-        print(f"Error in add_comment: {str(e)}", exc_info=True)
+        logger.error(f"Error when adding a comment: {str(e)}", exc_info=True)
         return JsonResponse({'error': 'Internal server error'}, status=500)
 
 
@@ -676,7 +705,7 @@ def block_content(request, content_type, content_id):
         'comment': {
             'model': Comment,
             'block_method': 'safe_block',
-            'unblock_method': 'safe_unblock', 
+            'unblock_method': 'safe_unblock',
             'name': 'комментарий'
         },
         'user': {
@@ -706,12 +735,13 @@ def block_content(request, content_type, content_id):
             return redirect('admin-panel')
 
         if method():
+            logger.info(f"Content {content_type} ID {content_id} {log_action} moderated by {request.user.username}")
             messages.success(request, success_msg)
-            logger.info("%s %s %s", log_action.capitalize(), config['name'], content_id)
         else:
+            logger.warning(f"Failed to perform {log_action} for {content_type} ID {content_id}")
             messages.error(request, "Не удалось выполнить действие для %s", config['name'])
     except Exception as e:
-        logger.error("Ошибка в block_content: %s", str(e), exc_info=True)
+        logger.error(f"Error when blocking content: {str(e)}", exc_info=True)
         messages.error(request, f"Произошла ошибка: {str(e)}")
     return redirect(reverse_lazy('admin-panel'))
 
@@ -747,12 +777,10 @@ class BlockContentView(View):
             if hasattr(item, config['block_method']):
                 getattr(item, config['block_method'])()
                 messages.success(request, f"{config['name'].capitalize()} успешно заблокирована")
-                logger.info("Заблокирован %s %s", content_type, content_id)
             else:
                 messages.error(request, "Не удалось заблокировать")
         except Exception as e:
             messages.error(request, "Ошибка: %s", str(e))
-            logger.error("Ошибка блокировки: %s", str(e))
         return redirect(reverse('moderation_panel'))
 
 
@@ -781,12 +809,10 @@ class UnblockContentView(View):
             if hasattr(item, config['unblock_method']):
                 getattr(item, config['unblock_method'])()
                 messages.success(request, f"{config['name'].capitalize()} успешно разблокирована")
-                logger.info("Разблокирован %s %s", content_type, content_id)
             else:
                 messages.error(request, "Не удалось разблокировать")
         except Exception as e:
             messages.error(request, "Ошибка: %s", str(e))
-            logger.error("Ошибка разблокировки: %s", str(e))
         return redirect(reverse('moderation_panel'))
 
 
@@ -930,19 +956,24 @@ class FieldCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('index')
 
     def form_valid(self, form):
-        field = form.save(commit=False)
-        field.user = self.request.user
-        file_data = form.cleaned_data.get('file')
-        if file_data:
-            field_file = FieldFile.objects.create(
-                name=file_data['name'],
-                content_type=file_data['content_type'],
-                data=file_data['data'],
-                size=file_data['size']
-            )
-            field.file = field_file
-        field.save()
-        return super().form_valid(form)
+        try:
+            field = form.save(commit=False)
+            field.user = self.request.user
+            file_data = form.cleaned_data.get('file')
+            if file_data:
+                field_file = FieldFile.objects.create(
+                    name=file_data['name'],
+                    content_type=file_data['content_type'],
+                    data=file_data['data'],
+                    size=file_data['size']
+                )
+                field.file = field_file
+            field.save()
+            logger.info(f"A new ID field has been created {field.id } by the user {self.request.user.username}")
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Ошибка при создании поля: {str(e)}", exc_info=True)
+            raise
 
 
 def download_file(request, pk):
