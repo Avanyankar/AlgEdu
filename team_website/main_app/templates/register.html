@@ -3,7 +3,6 @@
 {% block content %}
   <main class="min-h-screen flex items-center justify-center bg-gray-50">
       <div class="max-w-md w-full mx-auto p-8 bg-white rounded-xl shadow-sm border border-gray-200">
-          <!-- Заголовок с иерархией -->
           <h1 class="text-3xl font-bold mb-2 text-center text-gray-900">Регистрация</h1>
           <p class="text-sm text-gray-500 text-center mb-8">Создайте новый аккаунт</p>
 
@@ -11,7 +10,6 @@
               <form method="post" action="{% url 'registration' %}" class="space-y-5">
                   {% csrf_token %}
 
-                  <!-- Стилизация стандартного вывода формы Django -->
                   <div class="space-y-4">
                       {% for field in form %}
                       <div>
@@ -19,7 +17,15 @@
                               {{ field.label }}
                               {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
                           </label>
-                          {{ field }}
+                          {% if field.name == 'username' %}
+                              <input type="text"
+                                     name="{{ field.name }}"
+                                     id="{{ field.id_for_label }}"
+                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black"
+                                     placeholder="">
+                          {% else %}
+                              {{ field }}
+                          {% endif %}
                           {% if field.help_text %}
                               <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
                           {% endif %}
@@ -49,12 +55,10 @@
       </div>
   </main>
 
-  <!-- Стилизация полей ввода (без изменения логики) -->
   <style>
-      /* Стили для стандартных полей Django */
-      input[type="text"],
       input[type="email"],
-      input[type="password"] {
+      input[type="password"],
+      input[type="text"]:not([name="username"]) {
           width: 100%;
           padding: 0.625rem 1rem;
           border: 1px solid #d1d5db;

@@ -4,43 +4,66 @@
 {% block title %}AlgEdu Team{% endblock %}
 
 {% block content %}
-<div class="flex h-screen bg-white">
-
-
+<div class="flex h-screen bg-gray-50">
     <!-- Основной контент -->
     <div class="flex-1 overflow-auto p-8">
-        <!-- Поисковая строка -->
-        <div class="flex mb-8 max-w-2xl">
-            <input type="text" id="search-input" placeholder="Поиск карт..."
-                   class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-black">
-            <button id="search-button" class="bg-black text-white px-6 py-2 rounded-r-lg hover:bg-gray-800 transition">
-                Найти
-            </button>
+        <!-- Заголовок и поиск -->
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">База знаний AlgEdu</h1>
+
+            <!-- Поисковая строка -->
+            <div class="flex mb-8 max-w-2xl shadow-sm">
+                <input type="text" id="search-input" placeholder="Поиск карт..."
+                       class="flex-grow px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent transition">
+                <button id="search-button" class="bg-[#566246] text-white px-6 py-3 rounded-r-lg hover:bg-[#47523d] transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Найти
+                </button>
+            </div>
         </div>
 
-
-        <!-- Список полей -->
+        <!-- Список полейq -->
         <div id="search-results">
-            <ul id="fields-list" class="space-y-4">
+            <ul id="fields-list" class="space-y-5">
                 {% for field in fields %}
                     {% if not field.is_blocked or user.is_staff %}
-                        <li class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h2 class="text-lg font-semibold">
-                                        <a href="{% url 'card-detail' field.id %}" class="hover:underline">{{ field.title }}</a>
-                                    </h2>
-                                    <p class="text-gray-600 mt-1">{{ field.description }}</p>
-                                    <p class="text-sm text-gray-500 mt-2">Создано: {{ field.created_at|date:"d.m.Y H:i" }}</p>
+                        <li class="group p-5 bg-white rounded-xl shadow-sm hover:shadow-md transition-all border-l-4 border-transparent hover:border-[#566246]">
+                            <a href="{% url 'card-detail' field.id %}" class="block">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <h2 class="text-xl font-semibold text-gray-800 group-hover:text-[#566246] transition">
+                                                {{ field.title }}
+                                            </h2>
+                                            {% if field.is_blocked %}
+                                                <span class="ml-3 bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">Заблокировано</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-gray-600 mb-3">{{ field.description }}</p>
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>Создано: {{ field.created_at|date:"d.m.Y H:i" }}</span>
+                                        </div>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-[#566246] transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
                                 </div>
-                                {% if field.is_blocked %}
-                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Заблокировано</span>
-                                {% endif %}
-                            </div>
+                            </a>
                         </li>
                     {% endif %}
                 {% empty %}
-                    <p class="text-gray-500">Поля не найдены.</p>
+                    <div class="text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-700 mb-1">Карты не найдены</h3>
+                        <p class="text-gray-500">Попробуйте изменить параметры поиска</p>
+                    </div>
                 {% endfor %}
             </ul>
         </div>

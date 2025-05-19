@@ -32,6 +32,46 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
+        .code-block {
+            background-color: #1e293b;
+            color: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .output-block {
+            background-color: #334155;
+            color: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+        .command-card {
+            border-left: 4px solid #000;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .command-card:hover {
+            background-color: #f3f4f6;
+        }
+        .command-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .command-content.expanded {
+            max-height: 1000px;
+            transition: max-height 0.5s ease-in;
+        }
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -50,23 +90,148 @@
             <!-- Title with Icon -->
             <div class="flex flex-col items-center mb-12">
                 <h2 class="text-3xl font-bold text-center jaini-font">AlgEdu Documentation</h2>
+                <p class="text-gray-600 mt-4">Complete guide to AlgEdu commands and functionality</p>
             </div>
 
-            <!-- documentation-text -->
-            <div class="prose mx-auto text-center mb-12">
-                <p class="mb-6 text-lg">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula.</p>
+            <!-- Documentation Content -->
+            <div class="space-y-6">
+                <!-- Command 1 -->
+                <div class="command-card" onclick="toggleCommand(this)">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold">1. Solve Linear Equation</h3>
+                        <i class="toggle-icon fas fa-chevron-down"></i>
+                    </div>
+                    <div class="command-content">
+                        <p class="mt-3 mb-4">Solves a linear equation of the form ax + b = 0.</p>
 
-                <p class="mb-6 text-lg">Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">Example Code:</h4>
+                            <div class="code-block">
+                                <pre>solve_linear(2, -4)  # 2x - 4 = 0</pre>
+                            </div>
+                        </div>
 
-                <p class="mb-6 text-lg">Suspendisse eu ligula. Nulla facilisi. Donec id justo. Praesent porttitor, nulla vitae posuere iaculis, arcu nisl dignissim dolor, a pretium mi sem ut ipsum.</p>
+                        <div>
+                            <h4 class="font-semibold mb-2">Output:</h4>
+                            <div class="output-block">
+                                <pre>Solution: x = 2.0</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <p class="mb-6 text-lg">Curabitur suscipit suscipit tellus. Phasellus consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc.</p>
+                <!-- Command 2 -->
+                <div class="command-card" onclick="toggleCommand(this)">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold">2. Quadratic Equation Solver</h3>
+                        <i class="toggle-icon fas fa-chevron-down"></i>
+                    </div>
+                    <div class="command-content">
+                        <p class="mt-3 mb-4">Finds roots of quadratic equation ax² + bx + c = 0.</p>
 
-                <p class="mb-6 text-lg">Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praesent turpis. Aenean posuere, tortor sed cursus feugiat, nunc augue blandit nunc.</p>
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">Example Code:</h4>
+                            <div class="code-block">
+                                <pre>solve_quadratic(1, -5, 6)  # x² -5x + 6 = 0</pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Output:</h4>
+                            <div class="output-block">
+                                <pre>Roots: x₁ = 3.0, x₂ = 2.0</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Command 3 -->
+                <div class="command-card" onclick="toggleCommand(this)">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold">3. Matrix Multiplication</h3>
+                        <i class="toggle-icon fas fa-chevron-down"></i>
+                    </div>
+                    <div class="command-content">
+                        <p class="mt-3 mb-4">Multiplies two matrices and returns the result.</p>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">Example Code:</h4>
+                            <div class="code-block">
+                                <pre>A = [[1, 2], [3, 4]]
+B = [[5, 6], [7, 8]]
+matrix_multiply(A, B)</pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Output:</h4>
+                            <div class="output-block">
+                                <pre>Result: [[19, 22], [43, 50]]</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Command 4 -->
+                <div class="command-card" onclick="toggleCommand(this)">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold">4. Derivative Calculator</h3>
+                        <i class="toggle-icon fas fa-chevron-down"></i>
+                    </div>
+                    <div class="command-content">
+                        <p class="mt-3 mb-4">Calculates the derivative of a given function.</p>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">Example Code:</h4>
+                            <div class="code-block">
+                                <pre>f = "x^3 + 2x^2 - 5x + 1"
+derivative(f)</pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Output:</h4>
+                            <div class="output-block">
+                                <pre>Derivative: 3x^2 + 4x - 5</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Command 5 -->
+                <div class="command-card" onclick="toggleCommand(this)">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold">5. System of Equations Solver</h3>
+                        <i class="toggle-icon fas fa-chevron-down"></i>
+                    </div>
+                    <div class="command-content">
+                        <p class="mt-3 mb-4">Solves a system of linear equations.</p>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">Example Code:</h4>
+                            <div class="code-block">
+                                <pre># 2x + y = 5
+# x - y = 1
+equations = [
+    [2, 1, 5],
+    [1, -1, 1]
+]
+solve_system(equations)</pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Output:</h4>
+                            <div class="output-block">
+                                <pre>Solution: x = 2.0, y = 1.0</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Downl doc-->
-            <div class="text-center mt-8">
+            <!-- Download Button -->
+            <div class="text-center mt-12">
                 <button class="download-btn bg-black text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-800">
                     <i class="fas fa-download mr-2"></i> Скачать документацию
                 </button>
@@ -77,8 +242,18 @@
     <!-- Footer -->
     <footer class="bg-black text-white py-8 mt-12">
         <div class="container mx-auto px-4 text-center">
-            <p class="text-gray-400"></p>
+            <p class="text-gray-400">алгеду, братья. Все права защищены!</p>
         </div>
     </footer>
+
+    <script>
+        function toggleCommand(element) {
+            const content = element.querySelector('.command-content');
+            const icon = element.querySelector('.toggle-icon');
+
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+    </script>
 </body>
 </html>

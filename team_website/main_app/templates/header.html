@@ -2,33 +2,41 @@
   <div class="container mx-auto px-6 py-5 relative">
     <div class="flex items-center justify-between">
       <div class="flex items-center">
-      
-        <span class="text-3xl mr-4 text-gray-600 animate-bounce">∑</span>
-        <a href="/"><h1  class="jaini-font text-4xl text-gray-800">AlgEdu</h1></a>
-
-        <!-- Навигационное меню -->
-        <div class="hidden md:flex items-center space-x-6 ml-8" id="main-menu">
-          <a href="/accounts/login/" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
-             data-path="/account/login">
-            Профиль
-          </a>
-          <a href="/about" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
-             data-path="/about">
-            О нас
-          </a>
-          <a href="/" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
-             data-path="/">
-            Карты
-          </a>
-          <a href="/goals" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
-             data-path="/goals">
-            AlgEdu
-          </a>
-        </div>
+        <a href="/" class="flex items-center">
+          <span class="text-3xl mr-4 text-gray-600 animate-bounce">∑</span>
+          <h1 class="jaini-font text-4xl text-gray-800">AlgEdu</h1>
+        </a>
       </div>
 
-      <!-- Иконка входа справа -->
-      <a href="/accounts/login" class="p-2 rounded-full hover:bg-gray-100 transition-colors duration-300"
+      <!-- Бургер-меню для мобильных -->
+      <button id="mobile-menu-button" class="md:hidden p-2 rounded-full hover:bg-gray-100 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <!-- Навигационное меню для десктопов -->
+      <div class="hidden md:flex items-center space-x-6 ml-8" id="desktop-menu">
+        <a href="/accounts/login/" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
+           data-path="/account/login">
+          Профиль
+        </a>
+        <a href="/about" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
+           data-path="/about">
+          О нас
+        </a>
+        <a href="/" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
+           data-path="/">
+          Карты
+        </a>
+        <a href="/goals" class="menu-link font-medium px-3 py-1 border-b-2 transition-all"
+           data-path="/goals">
+          AlgEdu
+        </a>
+      </div>
+
+      <!-- Иконка входа справа (скрыта на мобильных) -->
+      <a href="/accounts/login" class="hidden md:block p-2 rounded-full hover:bg-gray-100 transition-colors duration-300"
          aria-label="Войти">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none"
              viewBox="0 0 24 24" stroke="currentColor">
@@ -37,13 +45,23 @@
         </svg>
       </a>
     </div>
+
+    <!-- Мобильное меню (скрыто по умолчанию) -->
+    <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4">
+      <a href="/accounts/login/" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</a>
+      <a href="/about" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">О нас</a>
+      <a href="/" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Карты</a>
+      <a href="/goals" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">AlgEdu</a>
+      <a href="/accounts/login" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Войти</a>
+    </div>
   </div>
 </header>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Подсветка активного пункта меню
     const currentPath = window.location.pathname;
-    const menuLinks = document.querySelectorAll('#main-menu .menu-link');
+    const menuLinks = document.querySelectorAll('#desktop-menu .menu-link');
 
     menuLinks.forEach(link => {
       if (link.getAttribute('data-path') === currentPath) {
@@ -52,6 +70,14 @@
         link.classList.add('border-transparent', 'text-gray-700');
         link.classList.add('hover:text-black', 'hover:border-black');
       }
+    });
+
+    // Открытие/закрытие мобильного меню
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    mobileMenuButton.addEventListener('click', function() {
+      mobileMenu.classList.toggle('hidden');
     });
   });
 </script>
