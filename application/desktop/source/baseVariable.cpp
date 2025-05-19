@@ -12,7 +12,7 @@ inline BaseVariable<T, B>::BaseVariable(const std::string& name, B min, B max) :
     {
         throw std::invalid_argument("��� �� ����� ���� ������");
     }
-    if (isdigit(name[0]) || name[0] == '_')
+    if (isdigit(name[0]))
     {
         throw std::invalid_argument("��� �� ����� ���������� � ����� ��� '_'");
     }

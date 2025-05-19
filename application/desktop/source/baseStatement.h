@@ -9,9 +9,9 @@
 class BaseStatement
 {
  public:
-     static std::unordered_map<std::string, Integer> variables;
+     static std::unordered_map<std::string, Integer> integers;
      virtual void instructions(std::vector<Token>& statement) = 0;
      virtual void instructions(std::vector<Token>& statement) const = 0;
-     virtual bool match(std::vector<Token>& statement) const = 0;
+     virtual bool match(const std::vector<Token>& statement) const = 0;
      virtual ~BaseStatement() = default;
 };

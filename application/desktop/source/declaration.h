@@ -4,7 +4,5 @@
 class Declaration :
     public BaseStatement
 {
-    /* FIX BEFORE 20.05
-    bool match(std::vector<Token> statement) override;
-    */
+    bool match(const std::vector<Token>& statement) const override;
 };
