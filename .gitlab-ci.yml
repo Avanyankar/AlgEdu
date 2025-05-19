@@ -1,0 +1,269 @@
+# This file is a template, and might need editing before it works on your project.
+# This is a sample GitLab CI/CD configuration file that should run without any modifications.
+# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
+# it uses echo commands to simulate the pipeline execution.
+#
+# A pipeline is composed of independent jobs that run scripts, grouped into stages.
+# Stages run in sequential order, but jobs within stages run in parallel.
+#
+# For more information, see: https://docs.gitlab.com/ee/ci/yaml/#stages
+#
+# You can copy and paste this template into a new `.gitlab-ci.yml` file.
+# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
+#
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
+
+stages:
+  - lint
+  - test
+  - deploy
+
+variables:
+  PYTHON_VERSION: "3.11"
+  DOCKER_HOST: "tcp://docker:2375"
+  PROJECT_DIR: "/home/alg_edu/WDev/team_website"
+  SERVER_IP: "87.228.77.37"
+
+# ----------------------------
+# Правила для веток
+# ----------------------------
+.wdev-rules: &wdev-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "WDev"'
+      changes:
+        - team_website/**/*
+        - application_website/**/*
+
+.ddev-rules: &ddev-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "DDev"'
+      changes:
+        - application/**/*
+
+.main-rules: &main-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+      when: manual
+
+# ----------------------------
+# Python проверки (WDev)
+# ----------------------------
+python-lint:
+  <<: *wdev-rules
+  stage: lint
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install pylint flake8
+  script:
+    - |
+      echo "Running Python linting..."
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Linting $project"
+          pylint --fail-under=8.0 \
+                 --max-line-length=120 \
+                 --disable=C0114,C0115,C0116,E1101 \
+                 --ignore-paths=".*/migrations,.*/static,.venv" \
+                 $project || exit 1
+          flake8 --max-line-length=120 $project
+        fi
+      done
+
+# ----------------------------
+# Python тесты (WDev)
+# ----------------------------
+python-tests:
+  <<: *wdev-rules
+  stage: test
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install coverage
+  script:
+    - |
+      echo "Running Python tests..."
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Testing $project"
+          cd $project
+          coverage run --source='.' manage.py test
+          coverage report --fail-under=70
+          cd ..
+        fi
+      done
+
+# ----------------------------
+# Python документация (WDev)
+# ----------------------------
+python-docs:
+  <<: *wdev-rules
+  stage: test
+  image: python:${PYTHON_VERSION}
+  before_script:
+    - pip install sphinx
+  script:
+    - |
+      echo "Generating Python docs..."
+      for project in team_website application_website; do
+        if [ -d "$project/docs" ]; then
+          echo "Building docs for $project"
+          cd $project/docs
+          make html
+          cd ../..
+        fi
+      done
+
+# ----------------------------
+# C++ проверки (DDev)
+# ----------------------------
+cpp-lint:
+  <<: *ddev-rules
+  stage: lint
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y git python3 cpplint
+  script:
+    - |
+      echo "Running C++ linting..."
+      cpplint --filter=-build/include_subdir,-build/header_guard \
+              --recursive \
+              --repository=application \
+              --exclude=application/vendor \
+              --linelength=120 \
+              application/
+
+# ----------------------------
+# C++ тесты (DDev)
+# ----------------------------
+cpp-tests:
+  <<: *ddev-rules
+  stage: test
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y cmake g++ catch2
+  script:
+    - |
+      echo "Running C++ tests..."
+      mkdir -p application/build
+      cd application/build
+      cmake ..
+      make
+      ctest --output-on-failure
+
+# ----------------------------
+# C++ документация (DDev)
+# ----------------------------
+cpp-docs:
+  <<: *ddev-rules
+  stage: test
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y doxygen graphviz
+  script:
+    - |
+      echo "Generating C++ docs..."
+      cd application
+      doxygen Doxyfile
+
+# ----------------------------
+# Деплой Python проектов (WDev)
+# ----------------------------
+deploy-python:
+  <<: *wdev-rules
+  stage: deploy
+  environment:
+    name: staging
+    url: http://${SERVER_IP}/staging
+  script:
+    - |
+      for project in team_website application_website; do
+        if [ -d "$project" ]; then
+          echo "Deploying $project..."
+          ssh -o StrictHostKeyChecking=no root@${SERVER_IP} "
+            cd ${PROJECT_DIR}/${project} &&
+            git fetch &&
+            git reset --hard origin/WDev &&
+            docker compose down &&
+            docker compose up -d --build
+          "
+        fi
+      done
+
+# ----------------------------
+# Безопасный деплой main (Production)
+# ----------------------------
+deploy-prod:
+  <<: *main-rules
+  stage: deploy
+  environment:
+    name: production
+    url: http://algedu.ru
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan ${SERVER_IP} >> ~/.ssh/known_hosts
+  script:
+    - |
+      echo "=== Безопасный деплой в Production ==="
+      
+      ssh alg_edu@${SERVER_IP} "
+        set -e
+        
+        for project in team_website application_website; do
+          if [ -d '${PROJECT_DIR}/\$project' ]; then
+            echo 'Обновление \$project...'
+            
+            sudo cp /etc/nginx/sites-available/alg_edu /etc/nginx/sites-available/alg_edu.backup
+            sudo sed -i 's/proxy_pass http:\/\/127.0.0.1:8000;/return 503 maintenance;/g' /etc/nginx/sites-available/alg_edu
+            sudo systemctl reload nginx
+            
+            cd ${PROJECT_DIR}/\$project
+            git fetch origin
+            git reset --hard origin/main
+            
+            if [ ! -d venv ]; then
+              python -m venv venv
+            fi
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+            
+            sudo cp /etc/nginx/sites-available/alg_edu.backup /etc/nginx/sites-available/alg_edu
+            sudo systemctl reload nginx
+            sudo systemctl restart gunicorn
+            
+            echo 'Проект \$project успешно обновлен'
+          fi
+        done
+      "
+  after_script:
+    - rm -f ~/.ssh/id_rsa
+  tags:
+    - deploy
+
+# ----------------------------
+# Сборка C++ проекта (DDev)
+# ----------------------------
+build-cpp:
+  <<: *ddev-rules
+  stage: deploy
+  tags:
+    - cpp
+  script:
+    - echo "Building C++ project..."
+    - cd application
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make
+  artifacts:
+    paths:
+      - application/build/

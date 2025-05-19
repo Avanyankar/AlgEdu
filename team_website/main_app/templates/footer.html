@@ -1,3 +1,27 @@
-<footer>
-    ...
+<footer class="border-t border-gray-200 py-6 bg-white">
+    <div class="flex justify-center space-x-12"> <!-- Увеличил space-x-8 до space-x-12 -->
+        <!-- Вертик-->
+        <button class="focus:outline-none" onclick="location.href='#'">
+            <div class="relative">
+                <div class="w-10 h-10 bg-black rounded-lg hover:bg-[#566246] transition-colors duration-300"></div>
+                <span class="absolute inset-0 flex items-center justify-center text-white text-xs pointer-events-none">↑↓</span>
+            </div>
+        </button>
+
+        <!-- Горизонт-->
+        <button class="focus:outline-none" onclick="location.href='#'">
+            <div class="relative">
+                <div class="w-10 h-10 bg-black rounded-lg hover:bg-[#566246] transition-colors duration-300"></div>
+                <span class="absolute inset-0 flex items-center justify-center text-white text-xs pointer-events-none">←→</span>
+            </div>
+        </button>
+
+        <!-- Вращение-->
+        <button class="focus:outline-none" onclick="location.href='#'">
+            <div class="relative">
+                <div class="w-10 h-10 bg-black rounded-lg hover:bg-[#566246] transition-colors duration-300"></div>
+                <span class="absolute inset-0 flex items-center justify-center text-white text-xs pointer-events-none">↻</span>
+            </div>
+        </button>
+    </div>
 </footer>
