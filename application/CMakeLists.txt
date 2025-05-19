@@ -16,23 +16,31 @@ else()
 endif()
 
 set(SOURCES
-    desktop/source/main.cpp
+    desktop/source/assignment.cpp
+    desktop/source/baseStatement.cpp
+    desktop/source/baseVariable.cpp
+    desktop/source/declaration.cpp
+    desktop/source/integer.cpp
     desktop/source/lexer.cpp
+    desktop/source/main.cpp
     desktop/source/parser.cpp
-    desktop/source/variable.cpp
+    desktop/source/string.cpp
     desktop/source/token.cpp
-    desktop/source/statement.cpp
-    desktop/source/lib.cpp
 )
 
 set(HEADERS
+    desktop/source/assignment.h
+    desktop/source/baseStatement.h
+    desktop/source/baseVariable.h
+    desktop/source/declaration.h
+    desktop/source/integer.h
     desktop/source/lexer.h
+    desktop/source/main.h
     desktop/source/parser.h
-    desktop/source/variable.h
+    desktop/source/string.h
     desktop/source/token.h
     desktop/source/tokenType.h
-    desktop/source/statement.h
-    desktop/source/lib.h
+    desktop/source/standardStatements.h
 )
 
 add_executable(AlgEdu ${SOURCES})
