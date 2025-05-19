@@ -7,9 +7,9 @@
 :mod:`main_app.forms`
 """
 
+from typing import Optional, Any
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from typing import Optional, Any
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy
 from main_app.models import User, Comment, Field, FieldReport
