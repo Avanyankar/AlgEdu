@@ -1,7 +1,10 @@
 # Приложение "AlgEdu"
 
 ## Технологический стек:
-- C++
+- [C++ стандарт ISO 14](https://github.com/google/googletest.git)
+- [Imgui v1.91.9](https://github.com/ocornut/imgui/tree/v1.91.9-docking)
+- [Googletest](https://github.com/google/googletest.git)
+- [doxygen](https://www.doxygen.nl/index.html)
 
 ## Инструкция по настройке проекта:
 1. Склонировать проект.
