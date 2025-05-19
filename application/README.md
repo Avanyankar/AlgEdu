@@ -18,29 +18,29 @@
 
 ## Инструкция по настройке проекта:
 1. Склонировать репозиторий проекта:
-    ``` bash
-    git clone https://gitlab.informatics.ru/2024-2025/hse/s105/final-project.git AlgEdu
-    ```
+ ``` bash
+ git clone https://gitlab.informatics.ru/2024-2025/hse/s105/final-project.git AlgEdu
+ ```
 2. Открыть папку проекта и перейти в папку с файлами данного приложения:
-   ```bash
-   cd "application"
-   ```
+```bash
+cd "application"
+```
 3. Создать виртуальное окружение:
-   ```bash
-   python -m venv .venv
-   ```
+```bash
+python -m venv .venv
+```
 4. Открыть терминал и активировать виртуальное окружение:
-   ```bash
-   venv\Scripts\activate
-   ```
+```bash
+venv\Scripts\activate
+```
 5. Обновить pip:
-   ```bash
-   pip install --upgrade pip
-   ```
+```bash
+pip install --upgrade pip
+```
 6. Установить в виртуальное окружение необходимые пакеты: 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
 7. Открыть файл application.sln в Visual Studio 2022.
 
 ## Запуск проекта:
@@ -49,13 +49,11 @@
 ## Тестирование проекта:
 1. 
 
+## Создание документации проекта:
+1.
+
 ## Запуск cpplint:
 1. 
-   ```bash
-   cpplint --recursive \
-        --filter=-build/include_subdir,-build/header_guard \
-        --repository=. \
-        --linelength=120 \
-        --exclude="vendor/*" \
-        .
-   ```
+```bash
+cpplint --recursive --filter=-legal/copyright,-build/include_subdir,-build/header_guard,-whitespace/braces --repository=. --linelength=120 --exclude="*\vendor\*" .
+```

@@ -17,22 +17,22 @@
 
 ## Как запустить проект:
 1. Склонировать репозиторий проекта:
-    ``` bash
-    git clone https://gitlab.informatics.ru/2024-2025/hse/s105/final-project.git AlgEdu
-    ```
+ ``` bash
+ git clone https://gitlab.informatics.ru/2024-2025/hse/s105/final-project.git AlgEdu
+ ```
 2. Перейти в папку приложения:
-   ```bash
-   cd "application"
-   ```
+```bash
+cd "application"
+```
 3. Создать папку build:
-   ```bash
-   
-   ```
+```bash
+
+```
 4. Скомпилировать файлы приложения:
-   ```bash
-   
-   ```
+```bash
+
+```
 5. Открыть AlgEdu.exe:
-   ```bash
-   
-   ```
+```bash
+
+```

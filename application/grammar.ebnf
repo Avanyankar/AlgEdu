@@ -15,13 +15,13 @@
     | <scan>
     | <get>
 
-<declaration> ::= "LET" <identifier>("," <identifier>)* <nl>
+<declaration> ::= "LET" <identifier>(" " <identifier>)* <nl>
 
 <assignment> ::= <identifier> "=" <expression> <nl>
 
-<print> ::= "PRINT" (<expression> | <string>)("," <expression> | <string>)* <nl>
+<print> ::= "PRINT" (<expression> | <string>)(" " <expression> | <string>)* <nl>
 
-<input> ::= "INPUT" <identifier>("," <identifier>)* <nl>
+<input> ::= "INPUT" <identifier>(" " <identifier>)* <nl>
 
 <go> ::= "GO" <nl>
 
