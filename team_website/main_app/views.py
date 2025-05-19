@@ -30,7 +30,9 @@ from django_registration.signals import user_registered
 from main_app.forms import RegistrationForm, ProfileUpdateForm, FieldForm, FieldReportForm
 from main_app.models import User, Field, Comment, Wall, Cell, ProfileComment, FieldFile, FieldReport, ReportComment
 
+
 logger: logging.Logger = logging.getLogger(__name__)
+
 
 class FieldListView(ListView):
     """
@@ -54,7 +56,14 @@ class FieldListView(ListView):
         :returns: Набор данных с полями.
         :rtype: :class:`django.db.models.QuerySet`[:class:`main_app.models.Field`]
         """
-        return Field.objects.filter(is_blocked=False).order_by('-created_at')
+        try:
+            fields = Field.objects.filter(is_blocked=False).order_by('-created_at')
+            logger.debug(f"A list of fields has been received. {fields.count()} records found")
+            return fields
+        except Exception as e:
+            logger.error(f"Error when getting the list of fields: {str(e)}", exc_info=True)
+            raise
+
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """
@@ -112,12 +121,16 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         """
         try:
             self.validate_data(form.cleaned_data)
+            response = super().form_valid(form)
+            logger.info(f"User profile {self.request.user.username} updated successfully")
+            return response
         except ValidationError as e:
+            logger.warning(f"User profile validation error {self.request.user.username}: {e.message}")
             form.add_error(None, e.message)
             return self.form_invalid(form)
-        response: HttpResponse = super().form_valid(form)
-        messages.success(self.request, 'Профиль успешно обновлён!')
-        return response
+        except Exception as e:
+            logger.error(f"Error updating profile {self.request.user.username}: {str(e)}", exc_info=True)
+            raise
 
     def validate_data(self, cleaned_data: Dict[str, Any]) -> None:
         """
@@ -136,6 +149,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
             raise ValidationError('Введите корректный email.')
         if age and (age < 0 or age > 120):
             raise ValidationError('Возраст должен быть от 0 до 120 лет.')
+
 
 class ProfileView(LoginRequiredMixin, DetailView):
     """
@@ -183,6 +197,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
         ).select_related('author').order_by('-created_at')
         return context
 
+
 @login_required
 def add_profile_comment(request: HttpRequest, username: str) -> HttpResponse:
     """
@@ -207,6 +222,7 @@ def add_profile_comment(request: HttpRequest, username: str) -> HttpResponse:
             messages.success(request, 'Комментарий добавлен')
     return redirect('profile_view', username=username)
 
+
 @login_required
 def delete_profile_comment(request: HttpRequest, comment_id: int) -> HttpResponse:
     """
@@ -225,6 +241,7 @@ def delete_profile_comment(request: HttpRequest, comment_id: int) -> HttpRespons
         comment.delete()
         messages.success(request, 'Комментарий удален')
     return redirect('profile')
+
 
 class IndexView(DetailView):
     """
@@ -263,6 +280,7 @@ class IndexView(DetailView):
         context['fields'] = Field.objects.all()
         return context
 
+
 class UserRegisterView(CreateView):
     """
     Представление для регистрации пользователя.
@@ -284,7 +302,7 @@ class UserRegisterView(CreateView):
     template_name: str = 'register.html'
     success_url: str = reverse_lazy('login')
 
-    def form_valid(self, form: RegistrationForm) -> HttpResponse:
+    def form_valid(self, form):
         """
         Обрабатывает валидную форму регистрации.
 
@@ -293,15 +311,19 @@ class UserRegisterView(CreateView):
         :returns: Результат обработки формы.
         :rtype: :class:`django.http.HttpResponse`
         """
-        user: User = form.save()
-        user_registered.send(
-            sender=self.__class__,
-            user=user,
-            request=self.request
-        )
-        login(self.request, user)
-        messages.success(self.request, 'Регистрация успешно завершена!')
-        return super().form_valid(form)
+        try:
+            user: User = form.save()
+            user_registered.send(
+                sender=self.__class__,
+                user=user,
+                request=self.request
+            )
+            login(self.request, user)
+            logger.info(f"Successful registration of a new user: {user.username}")
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Error during user registration: {str(e)}", exc_info=True)
+            raise
 
     def register(self, form: RegistrationForm) -> User:
         """
@@ -319,6 +341,7 @@ class UserRegisterView(CreateView):
             request=self.request
         )
         return user
+
 
 class UserLoginView(LoginView):
     """
@@ -350,9 +373,14 @@ class UserLoginView(LoginView):
         :returns: Результат обработки формы.
         :rtype: :class:`django.http.HttpResponse`
         """
-        response: HttpResponse = super().form_valid(form)
-        messages.success(self.request, 'Вы успешно вошли в систему!')
-        return response
+        try:
+            response: HttpResponse = super().form_valid(form)
+            messages.success(self.request, 'Вы успешно вошли в систему!')
+            logger.info(f"Successful user login: {form.get_user().username}")
+            return response
+        except Exception as e:
+            logger.error(f"User login error: {str(e)}", exc_info=True)
+            raise
 
     def form_invalid(self, form: AuthenticationForm) -> HttpResponse:
         """
@@ -363,8 +391,11 @@ class UserLoginView(LoginView):
         :returns: Результат обработки невалидной формы.
         :rtype: :class:`django.http.HttpResponse`
         """
+        username = form.cleaned_data.get('username', 'unknown')
         messages.error(self.request, 'Неверное имя пользователя или пароль.')
+        logger.warning(f"Failed login attempt for the user: {username}")
         return super().form_invalid(form)
+
 
 class NotFoundView(TemplateView):
     """
@@ -386,6 +417,7 @@ class NotFoundView(TemplateView):
         """
         context: Dict[str, Any] = super().get_context_data(**kwargs)
         return context
+
 
 class FieldDetailView(DetailView):
     """
@@ -435,10 +467,16 @@ class FieldDetailView(DetailView):
         :rtype: :class:`main_app.models.Field`
         :raises Http404: Если поле заблокировано.
         """
-        obj: Field = super().get_object(queryset)
-        if obj.is_blocked:
-            raise Http404("Карта заблокирована и недоступна для просмотра")
-        return obj
+        try:
+            obj = super().get_object(queryset)
+            if obj.is_blocked:
+                logger.warning(f"Attempt to access the blocked ID field: {obj.id}")
+                raise Http404("Карта заблокирована и недоступна для просмотра")
+            logger.debug(f"Displaying the ID field: {obj.id}")
+            return obj
+        except Exception as e:
+            logger.error(f"Error when receiving the field: {str(e)}", exc_info=True)
+            raise
 
     def create_cells(self, field: Field) -> None:
         """
@@ -511,15 +549,16 @@ class ReportFieldView(LoginRequiredMixin, CreateView):
         """
         try:
             self.validate_report(form.cleaned_data)
-        except ValidationError as e:
-            form.add_error(None, e.message)
-            return self.form_invalid(form)
-        report: FieldReport = form.save(commit=False)
-        report.field = get_object_or_404(Field, id=self.kwargs['field_id'])
-        report.user = self.request.user
-        report.save()
-        messages.success(self.request, 'Жалоба успешно отправлена!')
-        return super().form_valid(form)
+            report = form.save(commit=False)
+            report.field = get_object_or_404(Field, id=self.kwargs['field_id'])
+            report.user = self.request.user
+            report.save()
+            logger.info(f"A complaint has been created for the ID field: {report.field.id } from the user {report.user.username}")
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Error when creating a complaint: {str(e)}", exc_info=True)
+            raise
+
 
     def validate_report(self, cleaned_data: Dict[str, Any]) -> None:
         """
@@ -563,6 +602,7 @@ def search_fields(request: HttpRequest) -> JsonResponse:
         results.append(field)
     return JsonResponse({'results': results})
 
+
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
     Миксин для ограничения доступа только для сотрудников.
@@ -583,6 +623,7 @@ class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         :rtype: bool
         """
         return self.request.user.is_staff
+
 
 class ModerationPanelView(StaffRequiredMixin, TemplateView):
     """
@@ -613,6 +654,7 @@ class ModerationPanelView(StaffRequiredMixin, TemplateView):
             is_blocked=True
         ).order_by('-created_at')[:10]
         return context
+
 
 class ResolveCommentReportView(StaffRequiredMixin, View):
     """
@@ -702,6 +744,7 @@ class ResolveFieldReportView(StaffRequiredMixin, View):
         report.save()
         return redirect('moderation_panel')
 
+
 class AboutPageView(TemplateView):
     """
     Представление для страницы "О нас".
@@ -747,6 +790,7 @@ class AboutPageView(TemplateView):
             'working_hours': 'Пн-Пт: 9:00-18:00'
         }
         return context
+
 
 class GoalsPageView(TemplateView):
     """
@@ -810,6 +854,7 @@ class GoalsPageView(TemplateView):
         ]
         return context
 
+
 @require_POST
 @login_required
 def toggle_like(request: HttpRequest, pk: int) -> JsonResponse:
@@ -823,17 +868,22 @@ def toggle_like(request: HttpRequest, pk: int) -> JsonResponse:
     :returns: JSON-ответ с текущим состоянием лайка и количеством лайков.
     :rtype: :class:`django.http.JsonResponse`
     """
-    field: Field = Field.objects.get(id=pk)
-    if request.user in field.likes.all():
-        field.likes.remove(request.user)
-        is_liked: bool = False
-    else:
-        field.likes.add(request.user)
-        is_liked: bool = True
-    return JsonResponse({
-        'is_liked': is_liked,
-        'likes_count': field.likes.count()
-    })
+    try:
+        field = Field.objects.get(id=pk)
+        if request.user in field.likes.all():
+            field.likes.remove(request.user)
+            logger.debug(f"User {request.user.username} removed the like from the field {field.id}")
+        else:
+            field.likes.add(request.user)
+            logger.debug(f"User {request.user.username} liked the field {field.id}")
+        return JsonResponse({
+            'is_liked': request.user in field.likes.all(),
+            'likes_count': field.likes.count()
+        })
+    except Exception as e:
+        logger.error(f"Error when processing a like: {str(e)}", exc_info=True)
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @require_POST
 @login_required
@@ -859,6 +909,7 @@ def toggle_favorite(request: HttpRequest, pk: int) -> JsonResponse:
         'is_favorited': is_favorited
     })
 
+
 @require_POST
 @login_required
 def add_comment(request: HttpRequest, pk: int) -> JsonResponse:
@@ -877,6 +928,7 @@ def add_comment(request: HttpRequest, pk: int) -> JsonResponse:
         data: Dict[str, Any] = json.loads(request.body)
         text: str = data.get('text', '').strip()
         if not text:
+            logger.warning(f"An empty comment from a user {request.user.username}")
             return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
         if len(text) > 1000:
             return JsonResponse({'error': 'Comment is too long (max 1000 chars)'}, status=400)
@@ -886,18 +938,16 @@ def add_comment(request: HttpRequest, pk: int) -> JsonResponse:
             author=request.user,
             text=text
         )
+        logger.info(f"Added comment ID {comment.id } to the field {field.id } from {request.user.username}")
         return JsonResponse({
             'success': True,
             'comment_id': comment.id,
             'author': comment.author.username,
             'text': comment.text,
-            'created_at': (comment.created_at.strftime("%Y-%m-%d %H:%M")
-                           if comment.created_at else None)
+            'created_at': comment.created_at.strftime("%Y-%m-%d %H:%M")
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
-        logger.error(f"Error in add_comment: {str(e)}", exc_info=True)
+        logger.error(f"Error when adding a comment: {str(e)}", exc_info=True)
         return JsonResponse({'error': 'Internal server error'}, status=500)
 
 def field_detail(request: HttpRequest, pk: int) -> HttpResponse:
@@ -919,6 +969,7 @@ def field_detail(request: HttpRequest, pk: int) -> HttpResponse:
         'is_liked': is_liked,
         'is_favorited': is_favorited
     })
+
 
 @staff_member_required
 def moderation_panel(request: HttpRequest) -> HttpResponse:
@@ -990,14 +1041,16 @@ def block_content(request: HttpRequest, content_type: str, content_id: int) -> H
             return redirect('admin-panel')
 
         if method():
+            logger.info(f"Content {content_type} ID {content_id} {log_action} moderated by {request.user.username}")
             messages.success(request, success_msg)
-            logger.info("%s %s %s", log_action.capitalize(), config['name'], content_id)
         else:
+            logger.warning(f"Failed to perform {log_action} for {content_type} ID {content_id}")
             messages.error(request, "Не удалось выполнить действие для %s", config['name'])
     except Exception as e:
-        logger.error("Ошибка в block_content: %s", str(e), exc_info=True)
+        logger.error(f"Error when blocking content: {str(e)}", exc_info=True)
         messages.error(request, f"Произошла ошибка: {str(e)}")
     return redirect(reverse_lazy('admin-panel'))
+
 
 class BlockContentView(View):
     """
@@ -1045,13 +1098,12 @@ class BlockContentView(View):
             if hasattr(item, config['block_method']):
                 getattr(item, config['block_method'])()
                 messages.success(request, f"{config['name'].capitalize()} успешно заблокирована")
-                logger.info("Заблокирован %s %s", content_type, content_id)
             else:
                 messages.error(request, "Не удалось заблокировать")
         except Exception as e:
             messages.error(request, "Ошибка: %s", str(e))
-            logger.error("Ошибка блокировки: %s", str(e))
         return redirect(reverse('moderation_panel'))
+
 
 class UnblockContentView(View):
     """
@@ -1093,13 +1145,12 @@ class UnblockContentView(View):
             if hasattr(item, config['unblock_method']):
                 getattr(item, config['unblock_method'])()
                 messages.success(request, f"{config['name'].capitalize()} успешно разблокирована")
-                logger.info("Разблокирован %s %s", content_type, content_id)
             else:
                 messages.error(request, "Не удалось разблокировать")
         except Exception as e:
             messages.error(request, "Ошибка: %s", str(e))
-            logger.error("Ошибка разблокировки: %s", str(e))
         return redirect(reverse('moderation_panel'))
+
 
 class ProfileFieldsAPIView(View):
     """
@@ -1134,6 +1185,7 @@ class ProfileFieldsAPIView(View):
             })
         return JsonResponse({'fields': fields_data})
 
+
 @require_POST
 @login_required
 def toggle_comment_like(request: HttpRequest, pk: int) -> JsonResponse:
@@ -1163,6 +1215,7 @@ def toggle_comment_like(request: HttpRequest, pk: int) -> JsonResponse:
     except Comment.DoesNotExist:
         return JsonResponse({'error': 'Комментарий не найден'}, status=404)
 
+
 @require_POST
 @login_required
 def report_comment(request: HttpRequest, pk: int) -> JsonResponse:
@@ -1186,6 +1239,7 @@ def report_comment(request: HttpRequest, pk: int) -> JsonResponse:
         })
     except Comment.DoesNotExist:
         return JsonResponse({'error': 'Комментарий не найден'}, status=404)
+
 
 @require_POST
 @login_required
@@ -1231,6 +1285,7 @@ def add_wall(request: HttpRequest) -> JsonResponse:
         return JsonResponse({'error': 'Field not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
 
 @require_POST
 @login_required
@@ -1288,6 +1343,7 @@ def custom_logout(request: HttpRequest) -> HttpResponse:
     logout(request)
     return redirect('login')
 
+
 class FieldCreateView(LoginRequiredMixin, CreateView):
     """
     Представление для создания нового поля.
@@ -1315,19 +1371,24 @@ class FieldCreateView(LoginRequiredMixin, CreateView):
         :returns: Результат обработки формы.
         :rtype: :class:`django.http.HttpResponse`
         """
-        field: Field = form.save(commit=False)
-        field.user = self.request.user
-        file_data: Optional[Dict[str, Any]] = form.cleaned_data.get('file')
-        if file_data:
-            field_file: FieldFile = FieldFile.objects.create(
-                name=file_data['name'],
-                content_type=file_data['content_type'],
-                data=file_data['data'],
-                size=file_data['size']
-            )
-            field.file = field_file
-        field.save()
-        return super().form_valid(form)
+        try:
+            field = form.save(commit=False)
+            field.user = self.request.user
+            file_data = form.cleaned_data.get('file')
+            if file_data:
+                field_file = FieldFile.objects.create(
+                    name=file_data['name'],
+                    content_type=file_data['content_type'],
+                    data=file_data['data'],
+                    size=file_data['size']
+                )
+                field.file = field_file
+            field.save()
+            logger.info(f"A new ID field has been created {field.id } by the user {self.request.user.username}")
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Ошибка при создании поля: {str(e)}", exc_info=True)
+            raise
 
 def download_file(request: HttpRequest, pk: int) -> HttpResponse:
     """
