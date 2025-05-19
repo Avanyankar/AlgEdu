@@ -2,6 +2,7 @@
 #include <exception>
 #include <iostream>
 #include <climits>
+#include <limits>
 
 template <typename T, typename B>
 class BaseVariable {
@@ -44,7 +45,7 @@ public:
     }
 
     bool validate() const {
-        return value > min && value < max;
+        return value >= min && value <= max;
     }
 
     bool validate_addition(const Integer& another) const {
@@ -80,52 +81,75 @@ public:
         return (another.value != 0);
     }
 
-    Integer operator+(const Integer& another) {
+    Integer& operator+=(const Integer& another) {
         if (!validate_addition(another)) {
-            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при сложении");
+            throw std::overflow_error("Переполнение при сложении " + name);
         }
         value += another.value;
         return *this;
     }
 
-    Integer operator-(const Integer& another) {
+    Integer& operator-=(const Integer& another) {
         if (!validate_subtraction(another)) {
-            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при вычитании");
+            throw std::overflow_error("Переполнение при вычитании " + name);
         }
         value -= another.value;
         return *this;
     }
 
-    Integer operator*(const Integer& another) {
+    Integer& operator*=(const Integer& another) {
         if (!validate_multiplication(another)) {
-            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при умножении");
+            throw std::overflow_error("Переполнение при умножении " + name);
         }
         value *= another.value;
         return *this;
     }
 
-    Integer operator/(const Integer& another) {
+    Integer& operator/=(const Integer& another) {
         if (another.value == 0) {
-            throw std::runtime_error("Ошибка: деление на ноль в переменной " + name);
+            throw std::runtime_error("Деление на ноль в переменной " + name);
         }
         if (!validate_division(another)) {
-            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась при делении");
+            throw std::overflow_error("Переполнение при делении " + name);
         }
         value /= another.value;
         return *this;
     }
 
-    Integer operator%(const Integer& another) {
+    Integer& operator%=(const Integer& another) {
         if (another.value == 0) {
-            throw std::runtime_error(
-                "Ошибка: деление на ноль при взятии остатка в переменной " + name);
+            throw std::runtime_error("Деление на ноль при взятии остатка в переменной " + name);
         }
         if (!validate_modulo_division(another)) {
-            throw std::overflow_error(
-                "Ошибка: переменная " + name + " переполнилась при взятии остатка");
+            throw std::overflow_error("Переполнение при взятии остатка " + name);
         }
         value %= another.value;
         return *this;
+    }
+
+    Integer operator+(const Integer& another) const {
+        Integer result = *this;
+        return result += another;
+    }
+
+    Integer operator-(const Integer& another) const {
+        Integer result = *this;
+        return result -= another;
+    }
+
+    Integer operator*(const Integer& another) const {
+        Integer result = *this;
+        return result *= another;
+    }
+
+    Integer operator/(const Integer& another) const {
+        Integer result = *this;
+        return result /= another;
+    }
+
+    Integer operator%(const Integer& another) const {
+        Integer result = *this;
+        return result %= another;
     }
 };
 
@@ -150,14 +174,18 @@ public:
         return (length >= min) && (length <= max);
     }
 
-    String operator+(const String& another) const {
+    String& operator+=(const String& another) {
         std::string new_value = value + another.value;
-        size_t new_length = new_value.length();
-
-        if (new_length > max) {
-            throw std::overflow_error("Ошибка: переменная " + name + " переполнилась");
+        if (new_value.length() > max) {
+            throw std::overflow_error("Превышена максимальная длина строки " + name);
         }
-        return String(name + "+" + another.name, new_value, min, max);
+        value = new_value;
+        return *this;
+    }
+
+    String operator+(const String& another) const {
+        String result = *this;
+        return result += another;
     }
 
     String operator-(const String& another) = delete;
