@@ -4,19 +4,17 @@
 #include "lexer.h"
 #include "token.h"
 #include "tokenType.h"
-#include "lib.h"
 
 class Parser {
 private:
     Lexer* lexer;
-    std::unordered_set<std::string> symbols;
     Token curToken;
     Token peekToken;
-    std::vector<Lib> libs;
-public:
     Parser(std::string source);
+    static Parser* instance;
+public:
+    static Parser* getInstance(std::string source);
     bool checkToken(TokenType kind);
-    bool checkPeek(TokenType kind);
     void match(TokenType kind);
     void nextToken();
     bool isComparisonOperator();

@@ -1,42 +1,27 @@
 #include "parser.h"
 #include <iostream>
-#include <cstdlib>
-#include "stdLib.h"
-#include "statement.h"
 
-Parser::Parser(std::string source)
+Parser* Parser::getInstance(std::string _source)
 {
-    lexer = Lexer::getInstance(source);
+    if (instance == nullptr)
+    {
+        instance = new Parser(_source);
+    }
+    return instance;
+}
+
+Parser::Parser(std::string _source)
+{
+    lexer = Lexer::getInstance(_source);
     curToken;
     peekToken;
     nextToken();
     nextToken();
-    // Временная реализация библиотеки
-    std::vector<Statement> statements;
-    Statement let = Statement({
-        { {TokenType::LET}, false },
-        { {TokenType::IDENTIFIER}, true },
-        { {TokenType::NEWLINE}, false }
-    });
-    statements.push_back(let);
-    Statement print = Statement({
-        { {TokenType::PRINT}, false },
-        { {TokenType::IDENTIFIER, TokenType::STRING}, true },
-        { {TokenType::NEWLINE}, false }
-        });
-    statements.push_back(print);
-    Lib stdLib;
-    libs.push_back(stdLib);
- }
+}
 
 bool Parser::checkToken(TokenType type)
 {
     return type == curToken.getType();
-}
-
-bool Parser::checkPeek(TokenType type)
-{
-    return type == peekToken.getType();
 }
 
 void Parser::match(TokenType type)
@@ -86,37 +71,7 @@ void Parser::statement()
 {
     std::vector<Token> new_statement;
     new_statement.push_back(curToken);
-    for (const auto& lib : libs)
-    {
-        for (const auto& statement : lib.statements)
-        {
-            bool flag = false;
-            for (const auto& expected_types : statement.expected)
-            {
-                flag = false;
-                for (const auto& expected_type : expected_types.first)
-                {
-                    flag = checkToken(expected_type);
-                    if (flag)
-                    {
-                        break;
-                    }
-                }
-                if (!flag)
-                {
-                    break;
-                }
-                nextToken();
-                new_statement.push_back(curToken);
-            }
-            if (!flag)
-            {
-                continue;
-            }
-            statement.instructions(new_statement);
-            break;
-        }
-    }
+    
     nl();
 }
 
@@ -125,13 +80,13 @@ void Parser::comparison()
     expression();
     if (isComparisonOperator())
     {
-        // emitter.emit('...');
+        // TODO
         nextToken();
         expression();
     }
     while (isComparisonOperator())
     {
-        // emitter.emit('...');
+        // TODO
         nextToken();
         expression();
     }
@@ -142,7 +97,7 @@ void Parser::expression()
     term();
     while (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
     {
-        // emitter.emit('...');
+        // TODO
         nextToken();
         term();
     }
@@ -153,7 +108,7 @@ void Parser::term()
     unary();
     while (checkToken(TokenType::ASTERISK) || checkToken(TokenType::SLASH))
     {
-        // emitter.emit('...');
+        // TODO
         nextToken();
         unary();
     }
@@ -163,7 +118,7 @@ void Parser::unary()
 {
     if (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
     {
-        // emitter.emit('...');
+        // TODO
         nextToken();
     }
     primary();
@@ -173,16 +128,12 @@ void Parser::primary()
 {
     if (checkToken(TokenType::NUMBER))
     {
-        // emitter.emit(curToken.getSource());
+        // TODO
         nextToken();
     }
     else if (checkToken(TokenType::IDENTIFIER))
     {
-        if (symbols.find(curToken.getSource()) == symbols.end())
-        {
-            abort("Referencing variable before assignment: " + curToken.getSource());
-        }
-        // emitter.emit('...');
+        // TODO
         nextToken();
     }
     else

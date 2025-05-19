@@ -1,4 +1,6 @@
 #pragma once
+#include "tokentype.h"
+#include <string>
 
 class Token
 {

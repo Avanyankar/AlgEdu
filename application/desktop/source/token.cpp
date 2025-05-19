@@ -1,6 +1,4 @@
 #include "token.h"
-#include "tokentype.h"
-#include <string>
 #include <iostream>
 
 Token::Token()
@@ -9,7 +7,8 @@ Token::Token()
     type = TokenType::NONE;
 }
 
-Token::Token(std::string _source, TokenType _type) : source(_source), type(_type)
+Token::Token(std::string _source, TokenType _type) :
+    source(_source), type(_type)
 {
 }
 

@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="source\lexer.cpp" />
-    <ClCompile Include="source\lib.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\parser.cpp" />
     <ClCompile Include="source\token.cpp" />
@@ -14,11 +13,12 @@
     <ClCompile Include="vendor\imgui-docking\imgui_draw.cpp" />
     <ClCompile Include="vendor\imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="vendor\imgui-docking\imgui_widgets.cpp" />
-    <ClCompile Include="source\variable.cpp" />
+    <ClCompile Include="source\string.cpp" />
     <ClCompile Include="source\variable_test.cpp" />
+    <ClCompile Include="source\baseVariable.cpp" />
+    <ClCompile Include="source\integer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\lib.h" />
     <ClInclude Include="source\parser.h" />
     <ClInclude Include="source\lexer.h" />
     <ClInclude Include="source\statement.h" />
@@ -32,7 +32,10 @@
     <ClInclude Include="vendor\imgui-docking\imstb_rectpack.h" />
     <ClInclude Include="vendor\imgui-docking\imstb_textedit.h" />
     <ClInclude Include="vendor\imgui-docking\imstb_truetype.h" />
-    <ClInclude Include="source\variable.h" />
+    <ClInclude Include="source\string.h" />
+    <ClInclude Include="source\standardStatements.h" />
+    <ClInclude Include="source\baseVariable.h" />
+    <ClInclude Include="source\integer.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
