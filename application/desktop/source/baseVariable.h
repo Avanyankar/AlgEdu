@@ -17,8 +17,8 @@
   */
 template <typename T, typename B>
 class BaseVariable {
-public:
-    std::string name; ///< Name of the variable (must be valid identifier)
+ public:
+    std::string name;  ///< Name of the variable (must be valid identifier)
     B min;           ///< Minimum allowed value
     B max;           ///< Maximum allowed value
     T value;         ///< Current value of the variable

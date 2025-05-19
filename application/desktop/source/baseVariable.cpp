@@ -4,22 +4,24 @@ template<typename T, typename B>
 inline BaseVariable<T, B>::BaseVariable(const std::string& name, T value, B min, B max) :
     name(name), min(min), max(max), value(value)
 {
-    if (min >= max) {
-        throw std::invalid_argument("Минимум должен быть меньше максимума");
+    if (min >= max)
+    {
+        throw std::invalid_argument("пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
     }
-
-    if (name.empty()) {
-        throw std::invalid_argument("Имя не может быть пустым");
+    if (name.empty())
+    {
+        throw std::invalid_argument("пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ");
     }
-
-    if (isdigit(name[0]) || name[0] == '_') {
-        throw std::invalid_argument("Имя не может начинаться с цифры или '_'");
+    if (isdigit(name[0]) || name[0] == '_')
+    {
+        throw std::invalid_argument("пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ '_'");
     }
-
-    for (char c : name) {
-        if (!isalnum(c) && c != '_') {
+    for (char ch : name)
+    {
+        if (!isalnum(ch) && ch != '_')
+        {
             throw std::invalid_argument(
-                "Имя содержит недопустимые символы. Разрешены только буквы, цифры и _");
+                "пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅ _");
         }
     }
 }

@@ -46,6 +46,5 @@ enum class TokenType
     GTEQ,
     NOT,
     AND,
-    OR,
-    COMMA
+    OR
 };

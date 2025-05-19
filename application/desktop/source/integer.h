@@ -7,7 +7,7 @@
  */
 class Integer :
     public BaseVariable<int, int> {
-public:
+ public:
     /**
      * @brief Constructs a new Integer variable.
      * @param name Variable name

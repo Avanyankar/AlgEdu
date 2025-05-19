@@ -1,5 +1,5 @@
-#include "token.h"
 #include <iostream>
+#include "token.h"
 
 Token::Token()
 {

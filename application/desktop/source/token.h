@@ -1,13 +1,13 @@
 #pragma once
-#include "tokentype.h"
 #include <string>
+#include "tokentype.h"
 
 class Token
 {
-private:
+ private:
     std::string source;
     TokenType type;
-public:
+ public:
     Token();
     Token(std::string source, TokenType type);
     void setType(TokenType type);

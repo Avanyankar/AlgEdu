@@ -1,12 +1,12 @@
 #pragma once
-#include "token.h"
-#include "tokenType.h"
 #include <string>
 #include <unordered_map>
+#include "token.h"
+#include "tokenType.h"
 
 class Lexer
 {
-private:
+ private:
     std::string source;
     char curChar;
     int curPos;
@@ -19,7 +19,7 @@ private:
     void abort(const std::string& message);
     Lexer(std::string source);
     static Lexer* instance;
-public:
+ public:
     Token getToken();
     static Lexer* getInstance(std::string source);
 };

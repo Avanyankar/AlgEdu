@@ -3,6 +3,4 @@
 
 class Assignment :
     public BaseStatement
-{
-};
-
+{ };

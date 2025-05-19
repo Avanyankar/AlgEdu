@@ -6,13 +6,13 @@
 #include "tokenType.h"
 
 class Parser {
-private:
+ private:
     Lexer* lexer;
     Token curToken;
     Token peekToken;
     Parser(std::string source);
     static Parser* instance;
-public:
+ public:
     static Parser* getInstance(std::string source);
     bool checkToken(TokenType kind);
     void match(TokenType kind);

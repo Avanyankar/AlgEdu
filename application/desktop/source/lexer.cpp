@@ -1,6 +1,6 @@
-#include "lexer.h"
 #include <regex>
 #include <iostream>
+#include "lexer.h"
 
 const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     // Special characters
@@ -58,7 +58,7 @@ void Lexer::nextChar()
         curChar = '\0';
         curPos = EOF;
     }
-    else 
+    else
     {
         curChar = source[curPos];
     }
@@ -110,7 +110,8 @@ void Lexer::defineToken(Token& token)
         if (pos != tokenMap.end())
         {
             TokenType type = pos->second;
-            if (type == TokenType::COLOR || type == TokenType::IDENTIFIER || type == TokenType::NUMBER || type == TokenType::STRING)
+            if (type == TokenType::COLOR || type == TokenType::IDENTIFIER ||
+                type == TokenType::NUMBER || type == TokenType::STRING)
             {
                 abort("Expected token, received regex.");
             }
@@ -118,7 +119,8 @@ void Lexer::defineToken(Token& token)
             break;
         }
         nextChar();
-        if (curChar == ' ' || curChar == '#' || curChar == '\r' || curChar == '\t' || curChar == '\0' || curChar == '\n')
+        if (curChar == ' ' || curChar == '#' || curChar == '\r' ||
+            curChar == '\t' || curChar == '\0' || curChar == '\n')
         {
             std::string colorPattern, numberPattern, identifierPattern, stringPattern;
             for (const auto& pair : tokenMap)

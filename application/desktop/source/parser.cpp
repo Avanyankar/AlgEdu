@@ -71,7 +71,7 @@ void Parser::statement()
 {
     std::vector<Token> new_statement;
     new_statement.push_back(curToken);
-    
+    // TODO(Avanyan Karen): statement realisation
     nl();
 }
 
@@ -80,13 +80,13 @@ void Parser::comparison()
     expression();
     if (isComparisonOperator())
     {
-        // TODO
+        // TODO(Avanyan Karen): comparison realisation
         nextToken();
         expression();
     }
     while (isComparisonOperator())
     {
-        // TODO
+        // TODO(Avanyan Karen): comparison realisation
         nextToken();
         expression();
     }
@@ -97,7 +97,7 @@ void Parser::expression()
     term();
     while (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
     {
-        // TODO
+        // TODO(Avanyan Karen): expression realisation
         nextToken();
         term();
     }
@@ -108,7 +108,7 @@ void Parser::term()
     unary();
     while (checkToken(TokenType::ASTERISK) || checkToken(TokenType::SLASH))
     {
-        // TODO
+        // TODO(Avanyan Karen): term realisation
         nextToken();
         unary();
     }
@@ -118,7 +118,7 @@ void Parser::unary()
 {
     if (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
     {
-        // TODO
+        // TODO(Avanyan Karen): unary realisation
         nextToken();
     }
     primary();
@@ -128,12 +128,12 @@ void Parser::primary()
 {
     if (checkToken(TokenType::NUMBER))
     {
-        // TODO
+        // TODO(Avanyan Karen): primary realisation
         nextToken();
     }
     else if (checkToken(TokenType::IDENTIFIER))
     {
-        // TODO
+        // TODO(Avanyan Karen): primary realisation
         nextToken();
     }
     else

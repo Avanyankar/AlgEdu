@@ -5,7 +5,6 @@
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\parser.cpp" />
     <ClCompile Include="source\token.cpp" />
-    <ClCompile Include="source\statement.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="vendor\imgui-docking\imgui.cpp" />
@@ -17,11 +16,14 @@
     <ClCompile Include="source\variable_test.cpp" />
     <ClCompile Include="source\baseVariable.cpp" />
     <ClCompile Include="source\integer.cpp" />
+    <ClCompile Include="source\declaration.cpp" />
+    <ClCompile Include="source\assignment.cpp" />
+    <ClCompile Include="source\baseStatement.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\parser.h" />
     <ClInclude Include="source\lexer.h" />
-    <ClInclude Include="source\statement.h" />
+    <ClInclude Include="source\baseStatement.h" />
     <ClInclude Include="source\token.h" />
     <ClInclude Include="source\tokenType.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_dx12.h" />
@@ -36,6 +38,8 @@
     <ClInclude Include="source\standardStatements.h" />
     <ClInclude Include="source\baseVariable.h" />
     <ClInclude Include="source\integer.h" />
+    <ClInclude Include="source\declaration.h" />
+    <ClInclude Include="source\assignment.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="vendor\imgui-docking\LICENSE.txt" />

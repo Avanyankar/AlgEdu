@@ -7,7 +7,7 @@
  */
 class String :
     public BaseVariable<std::string, size_t> {
-public:
+ public:
     /**
      * @brief Constructs a new String variable.
      * @param name Variable name

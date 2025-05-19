@@ -1,3 +1,3 @@
 #include "assignment.h"
 
-// TODO
+// TODO(Avanyan Karen): statement realisation

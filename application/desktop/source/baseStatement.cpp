@@ -1,3 +1,3 @@
 #include "baseStatement.h"
 
-// TODO
+// TODO(Avanyan Karen): base statement realisation
