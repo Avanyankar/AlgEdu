@@ -19,10 +19,10 @@ template <typename T, typename B>
 class BaseVariable {
  public:
     std::string name;  ///< Name of the variable (must be valid identifier)
-    B min;           ///< Minimum allowed value
-    B max;           ///< Maximum allowed value
-    T value;         ///< Current value of the variable
-
+    B min;             ///< Minimum allowed value
+    B max;             ///< Maximum allowed value
+    T value;           ///< Current value of the variable
+    bool initianalized = false;
     /**
      * @brief Constructs a new BaseVariable.
      * @param name Variable name (must be valid identifier)
@@ -35,5 +35,5 @@ class BaseVariable {
      *   - name starts with digit or '_'
      *   - name contains invalid characters
      */
-    BaseVariable(const std::string& name, T value, B min, B max);
+    BaseVariable(const std::string& name, B min, B max);
 };

@@ -2,9 +2,10 @@
 #include <exception>
 #include <iostream>
 
-String::String(const std::string& name, const std::string& value,
+String::String(const std::string& name,
     size_t min = 0, size_t max = std::numeric_limits<size_t>::max()) :
-    BaseVariable<std::string, size_t>(name, value, min, max) {
+    BaseVariable<std::string, size_t>(name, min, max) 
+{
     if (min > max) {
         throw std::invalid_argument("Минимальная длина превышает максимальную");
     }

@@ -18,7 +18,7 @@ class String :
      *   - min > max
      *   - length is out of bounds
      */
-    String(const std::string& name, const std::string& value,
+    String(const std::string& name,
         size_t min = 0, size_t max = std::numeric_limits<size_t>::max());
 
     /**

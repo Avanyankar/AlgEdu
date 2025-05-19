@@ -16,8 +16,7 @@ class Integer :
      * @param max Maximum value (default: INT_MAX)
      * @throws std::invalid_argument If value is out of bounds
      */
-    Integer(const std::string& name, int value, int min = INT_MIN,
-        int max = INT_MAX);
+    Integer(const std::string& name, int min = INT_MIN, int max = INT_MAX);
 
     /**
      * @brief Validates current value is within bounds.

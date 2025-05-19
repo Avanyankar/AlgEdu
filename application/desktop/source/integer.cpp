@@ -1,7 +1,7 @@
 #include "integer.h"
 
-Integer::Integer(const std::string& name, int value, int min = INT_MIN, int max = INT_MAX) :
-    BaseVariable<int, int>(name, value, min, max)
+Integer::Integer(const std::string& name, int min = INT_MIN, int max = INT_MAX) :
+    BaseVariable<int, int>(name, min, max)
 {
     if (!validate())
     {

@@ -1,7 +1,7 @@
 #include "baseVariable.h"
 
 template<typename T, typename B>
-inline BaseVariable<T, B>::BaseVariable(const std::string& name, T value, B min, B max) :
+inline BaseVariable<T, B>::BaseVariable(const std::string& name, B min, B max) :
     name(name), min(min), max(max), value(value)
 {
     if (min >= max)
