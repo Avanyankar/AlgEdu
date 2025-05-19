@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Панель модерации</h1>
+
+    <!-- Жалобы на карты -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">Жалобы на карты ({{ field_reports|length }})</h2>
+        </div>
+        <div class="card-body">
+            {% if field_reports %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Карта</th>
+                            <th>Причина</th>
+                            <th>Автор жалобы</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in field_reports %}
+                        <tr>
+                            <td>{{ report.id }}</td>
+                            <td>{{ report.field.title }}</td>
+                            <td>{{ report.get_reason_display }}</td>
+                            <td>{{ report.user.username }}</td>
+                            <td>{{ report.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'resolve_field_report' report.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Рассмотреть
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">Нет активных жалоб на карты</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Жалобы на комментарии -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">Жалобы на комментарии ({{ comment_reports|length }})</h2>
+        </div>
+        <div class="card-body">
+            {% if comment_reports %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Комментарий</th>
+                            <th>Причина</th>
+                            <th>Автор жалобы</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in comment_reports %}
+                        <tr>
+                            <td>{{ report.id }}</td>
+                            <td>{{ report.comment.text|truncatechars:50 }}</td>
+                            <td>{{ report.get_reason_display }}</td>
+                            <td>{{ report.user.username }}</td>
+                            <td>{{ report.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'resolve_comment_report' report.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Рассмотреть
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">Нет активных жалоб на комментарии</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Заблокированный контент -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h2 class="h5 mb-0">Заблокированные карты ({{ blocked_fields|length }})</h2>
+                </div>
+                <div class="card-body">
+                    {% if blocked_fields %}
+                    <ul class="list-group">
+                        {% for field in blocked_fields %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ field.title }}
+                            <form method="post" action="{% url 'unblock_content' 'field' field.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    Разблокировать
+                                </button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info">Нет заблокированных карт</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h2 class="h5 mb-0">Заблокированные комментарии ({{ blocked_comments|length }})</h2>
+                </div>
+                <div class="card-body">
+                    {% if blocked_comments %}
+                    <ul class="list-group">
+                        {% for comment in blocked_comments %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ comment.text|truncatechars:50 }}
+                            <form method="post" action="{% url 'unblock_content' 'comment' comment.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    Разблокировать
+                                </button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info">Нет заблокированных комментариев</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

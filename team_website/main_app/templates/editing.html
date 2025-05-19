@@ -1,52 +1,56 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Редактирование профиля</title>
-    {% load static %}
-    {% include 'main/menu.html' %}
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
-    <div class="container">
-        <h1 class="title">Редактирование профиля</h1>
-        <form onsubmit="return handleSubmit()" class="form-container">
-            {% csrf_token %}
+{% extends 'base.html' %}
 
-            <label for="email">Email:</label>
-            <input type="text" id="email" placeholder="Введите значение">
+{% block content %}
+<main class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-md mx-auto px-4">
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-6">Редактирование профиля</h1>
 
-            <label for="firstname">Имя:</label>
-            <input type="text" id="firstname" placeholder="Введите значение">
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
 
-            <label for="lastname">Фамилия:</label>
-            <input type="text" id="lastname" placeholder="Введите значение">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" id="email" value="{{ form.email.value }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent">
+                </div>
 
-            <label for="bio">Информация о себе:</label><br>
-            <input type="text" id="bio" placeholder="Введите значение">
+                <div>
+                    <label for="firstname" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                    <input type="text" name="first_name" id="firstname" value="{{ form.first_name.value }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent">
+                </div>
 
-            <label for="birthdate">Дата рождения:</label>
-            <input type="date" id="birthdate">
+                <div>
+                    <label for="lastname" class="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
+                    <input type="text" name="last_name" id="lastname" value="{{ form.last_name.value }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent">
+                </div>
 
-            <button type="submit" class="btn">Сохранить</button>
-        </form>
+                <div>
+                    <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">О себе</label>
+                    <textarea name="bio" id="bio" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent">{{ form.bio.value }}</textarea>
+                </div>
 
-        <script>
-            function saveData() {
-                localStorage.setItem('email', document.getElementById('email').value);
-                localStorage.setItem('firstname', document.getElementById('firstname').value);
-                localStorage.setItem('lastname', document.getElementById('lastname').value);
-                localStorage.setItem('bio', document.getElementById('bio').value);
-                localStorage.setItem('birthdate', document.getElementById('birthdate').value);
-            }
+                <div>
+                    <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-1">Дата рождения</label>
+                    <input type="date" name="birth_date" id="birth_date" value="{{ form.birth_date.value }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent">
+                </div>
 
-            function handleSubmit() {
-                saveData();
-                window.location.href = '/profile';
-                return false;
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Локация</label>
+                    <input type="text" name="location" id="location" value="{{ form.location.value }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#566246] focus:border-transparent">
+                </div>
 
-            }
-        </script>
+                <button type="submit"
+                        class="w-full bg-[#566246] text-white py-2 px-4 rounded-md hover:bg-[#47553a] transition-colors duration-200">
+                    Сохранить изменения
+                </button>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+</main>
+{% endblock %}

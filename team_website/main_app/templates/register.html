@@ -1,21 +1,72 @@
-{% extends 'main/base_generic.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-  <main>
-      <div>
-          <h2>Регистрация</h2>
+  <main class="min-h-screen flex items-center justify-center bg-gray-50">
+      <div class="max-w-md w-full mx-auto p-8 bg-white rounded-xl shadow-sm border border-gray-200">
+          <!-- Заголовок с иерархией -->
+          <h1 class="text-3xl font-bold mb-2 text-center text-gray-900">Регистрация</h1>
+          <p class="text-sm text-gray-500 text-center mb-8">Создайте новый аккаунт</p>
+
           {% if not user.is_authenticated %}
-              <form method="post">
+              <form method="post" action="{% url 'registration' %}" class="space-y-5">
                   {% csrf_token %}
-                  {{ form.as_p }}
-                  <button type="submit">Зарегистрироваться</button>
+
+                  <!-- Стилизация стандартного вывода формы Django -->
+                  <div class="space-y-4">
+                      {% for field in form %}
+                      <div>
+                          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                              {{ field.label }}
+                              {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                          </label>
+                          {{ field }}
+                          {% if field.help_text %}
+                              <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                          {% endif %}
+                          {% if field.errors %}
+                              <p class="mt-1 text-xs text-red-500">{{ field.errors|first }}</p>
+                          {% endif %}
+                      </div>
+                      {% endfor %}
+                  </div>
+
+                  <button type="submit" class="w-full bg-black text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 transition duration-200">
+                      Зарегистрироваться
+                  </button>
               </form>
           {% else %}
-              <p>Вы уже авторизованы! Перейдите на <a href="{% url 'main:index' %}">главную страницу</a>.</p>
+              <div class="text-center">
+                  <p class="text-gray-700 mb-2">Вы уже авторизованы!</p>
+                  <a href="{% url 'index' %}" class="text-black font-medium hover:underline">Перейти на главную →</a>
+              </div>
           {% endif %}
+
           {% if not user.is_authenticated %}
-              <p>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
+              <div class="mt-6 pt-4 border-t border-gray-100 text-center">
+                  <p class="text-sm text-gray-600">Уже есть аккаунт? <a href="{% url 'login' %}" class="text-black font-medium hover:underline">Войти</a></p>
+              </div>
           {% endif %}
       </div>
   </main>
+
+  <!-- Стилизация полей ввода (без изменения логики) -->
+  <style>
+      /* Стили для стандартных полей Django */
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+          width: 100%;
+          padding: 0.625rem 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+      }
+
+      input:focus {
+          outline: none;
+          border-color: #000;
+          box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+      }
+  </style>
 {% endblock %}
