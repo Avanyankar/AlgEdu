@@ -26,7 +26,6 @@ const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     {"NOT", TokenType::NOT},
     {"AND", TokenType::AND},
     {"OR", TokenType::OR},
-    {",", TokenType::COMMA},
     // Executor commands
     {"GO", TokenType::GO},
     {"GET", TokenType::GET},

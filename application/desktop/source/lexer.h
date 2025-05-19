@@ -17,7 +17,7 @@ class Lexer
     void defineToken(Token& token);
     char peek();
     void abort(const std::string& message);
-    Lexer(std::string source);
+    explicit Lexer(std::string source);
     static Lexer* instance;
  public:
     Token getToken();

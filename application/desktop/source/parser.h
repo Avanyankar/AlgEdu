@@ -10,7 +10,7 @@ class Parser {
     Lexer* lexer;
     Token curToken;
     Token peekToken;
-    Parser(std::string source);
+    explicit Parser(std::string source);
     static Parser* instance;
  public:
     static Parser* getInstance(std::string source);
