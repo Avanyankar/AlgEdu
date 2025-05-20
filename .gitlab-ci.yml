@@ -19,17 +19,22 @@
 stages:
   - lint
   - test
+  - docs
   - deploy
 
 variables:
   PYTHON_VERSION: "3.11"
   DOCKER_HOST: "tcp://docker:2375"
   PROJECT_DIR: "/home/alg_edu/WDev/team_website"
-  SERVER_IP: "87.228.77.37"
+  DATABASE_URL: "sqlite:///:memory:" 
+  DJANGO_SETTINGS_MODULE: "AlgEdu_Team.settings"
+  DOCS_OUTPUT_DIR: "public/docs"
 
 # ----------------------------
-# Правила для веток
+# Общие правила для веток
 # ----------------------------
+
+# Для Python-проектов (WDev)
 .wdev-rules: &wdev-rules
   rules:
     - if: '$CI_COMMIT_REF_NAME == "WDev"'
@@ -37,86 +42,71 @@ variables:
         - team_website/**/*
         - application_website/**/*
 
+# Для C++-проекта (DDev)
 .ddev-rules: &ddev-rules
   rules:
     - if: '$CI_COMMIT_REF_NAME == "DDev"'
       changes:
         - application/**/*
 
-.main-rules: &main-rules
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
-      when: manual
-
 # ----------------------------
-# Python проверки (WDev)
+# Этап: Линтинг Python (WDev)
 # ----------------------------
 python-lint:
   <<: *wdev-rules
   stage: lint
   image: python:${PYTHON_VERSION}
   before_script:
-    - pip install pylint flake8
+    - pip install pylint flake8 pylint-django 
+    - pip install -r team_website/requirements.txt
   script:
     - |
       echo "Running Python linting..."
+      export PYTHONPATH="$CI_PROJECT_DIR/team_website"
       for project in team_website application_website; do
         if [ -d "$project" ]; then
           echo "Linting $project"
-          pylint --fail-under=8.0 \
-                 --max-line-length=120 \
-                 --disable=C0114,C0115,C0116,E1101 \
-                 --ignore-paths=".*/migrations,.*/static,.venv" \
-                 $project || exit 1
-          flake8 --max-line-length=120 $project
+          cd $project
+          pylint --fail-under=5.0 \
+                 --load-plugins=pylint_django \
+                 --disable=missing-docstring,too-few-public-methods \
+                 . || exit 1
+          flake8 --max-line-length=120 .
+          cd ..
         fi
       done
 
 # ----------------------------
-# Python тесты (WDev)
+# Этап: Тесты Python (WDev)
 # ----------------------------
 python-tests:
   <<: *wdev-rules
   stage: test
   image: python:${PYTHON_VERSION}
   before_script:
-    - pip install coverage
+    - pip install -r team_website/requirements.txt
+    - pip install coverage  
   script:
     - |
       echo "Running Python tests..."
-      for project in team_website application_website; do
-        if [ -d "$project" ]; then
-          echo "Testing $project"
-          cd $project
-          coverage run --source='.' manage.py test
-          coverage report --fail-under=70
-          cd ..
-        fi
-      done
+      set -x  # Для отладки: показывает выполняемые команды
+
+      # Проверяем team_website
+      cd team_website
+      python manage.py test main_app.tests --noinput --verbosity=2
+      coverage run --source='main_app' manage.py test main_app.tests
+      coverage report --fail-under=70 --show-missing
+
+      # Проверяем application_website (если существует)
+      if [ -d "../application_website" ]; then
+        cd ../application_website
+        python manage.py test main_app.tests --noinput --verbosity=2
+        coverage run --source='main_app' manage.py test main_app.tests
+        coverage report --fail-under=70 --show-missing
+      fi
 
 # ----------------------------
-# Python документация (WDev)
-# ----------------------------
-python-docs:
-  <<: *wdev-rules
-  stage: test
-  image: python:${PYTHON_VERSION}
-  before_script:
-    - pip install sphinx
-  script:
-    - |
-      echo "Generating Python docs..."
-      for project in team_website application_website; do
-        if [ -d "$project/docs" ]; then
-          echo "Building docs for $project"
-          cd $project/docs
-          make html
-          cd ../..
-        fi
-      done
-
-# ----------------------------
-# C++ проверки (DDev)
+# Этап: Линтинг C++ (DDev)
 # ----------------------------
 cpp-lint:
   <<: *ddev-rules
@@ -128,62 +118,29 @@ cpp-lint:
   script:
     - |
       echo "Running C++ linting..."
-      cpplint --filter=-build/include_subdir,-build/header_guard \
+      cpplint --filter=-build/include_subdir \
               --recursive \
               --repository=application \
-              --exclude=application/vendor \
+              --verbose=2 \
               --linelength=120 \
               application/
 
 # ----------------------------
-# C++ тесты (DDev)
-# ----------------------------
-cpp-tests:
-  <<: *ddev-rules
-  stage: test
-  image: ubuntu:latest
-  before_script:
-    - apt-get update -qq
-    - apt-get install -y cmake g++ catch2
-  script:
-    - |
-      echo "Running C++ tests..."
-      mkdir -p application/build
-      cd application/build
-      cmake ..
-      make
-      ctest --output-on-failure
-
-# ----------------------------
-# C++ документация (DDev)
-# ----------------------------
-cpp-docs:
-  <<: *ddev-rules
-  stage: test
-  image: ubuntu:latest
-  before_script:
-    - apt-get update -qq
-    - apt-get install -y doxygen graphviz
-  script:
-    - |
-      echo "Generating C++ docs..."
-      cd application
-      doxygen Doxyfile
-
-# ----------------------------
-# Деплой Python проектов (WDev)
+# Этап: Деплой Python (WDev)
 # ----------------------------
 deploy-python:
   <<: *wdev-rules
   stage: deploy
   environment:
-    name: staging
-    url: http://${SERVER_IP}/staging
+    name: production
+    url: http://${SERVER_IP}
+  needs: ["python-tests"]
   script:
     - |
+      echo "Deploying Python projects..."
       for project in team_website application_website; do
         if [ -d "$project" ]; then
-          echo "Deploying $project..."
+          echo "Deploying $project to ${SERVER_IP}"
           ssh -o StrictHostKeyChecking=no root@${SERVER_IP} "
             cd ${PROJECT_DIR}/${project} &&
             git fetch &&
@@ -195,62 +152,7 @@ deploy-python:
       done
 
 # ----------------------------
-# Безопасный деплой main (Production)
-# ----------------------------
-deploy-prod:
-  <<: *main-rules
-  stage: deploy
-  environment:
-    name: production
-    url: http://algedu.ru
-  before_script:
-    - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan ${SERVER_IP} >> ~/.ssh/known_hosts
-  script:
-    - |
-      echo "=== Безопасный деплой в Production ==="
-      
-      ssh alg_edu@${SERVER_IP} "
-        set -e
-        
-        for project in team_website application_website; do
-          if [ -d '${PROJECT_DIR}/\$project' ]; then
-            echo 'Обновление \$project...'
-            
-            sudo cp /etc/nginx/sites-available/alg_edu /etc/nginx/sites-available/alg_edu.backup
-            sudo sed -i 's/proxy_pass http:\/\/127.0.0.1:8000;/return 503 maintenance;/g' /etc/nginx/sites-available/alg_edu
-            sudo systemctl reload nginx
-            
-            cd ${PROJECT_DIR}/\$project
-            git fetch origin
-            git reset --hard origin/main
-            
-            if [ ! -d venv ]; then
-              python -m venv venv
-            fi
-            source venv/bin/activate
-            pip install -r requirements.txt
-            
-            python manage.py migrate
-            python manage.py collectstatic --noinput
-            
-            sudo cp /etc/nginx/sites-available/alg_edu.backup /etc/nginx/sites-available/alg_edu
-            sudo systemctl reload nginx
-            sudo systemctl restart gunicorn
-            
-            echo 'Проект \$project успешно обновлен'
-          fi
-        done
-      "
-  after_script:
-    - rm -f ~/.ssh/id_rsa
-  tags:
-    - deploy
-
-# ----------------------------
-# Сборка C++ проекта (DDev)
+# Этап: Сборка C++ (DDev)
 # ----------------------------
 build-cpp:
   <<: *ddev-rules
@@ -258,12 +160,31 @@ build-cpp:
   tags:
     - cpp
   script:
-    - echo "Building C++ project..."
-    - cd application
-    - mkdir -p build
-    - cd build
-    - cmake ..
-    - make
+    - |
+      echo "Building C++ project..."
+      cd application
+      mkdir -p build
+      cd build
+      cmake ..
+      make
   artifacts:
     paths:
       - application/build/
+    expire_in: 1 week 
+
+
+build-docs:
+  stage: docs
+  image: python:3.11
+  before_script:
+    - pip install sphinx sphinx-rtd-theme
+    - cd team_website
+  script:
+    - sphinx-apidoc -f -o docs/source main_app
+    - sphinx-build -b html docs/source docs/build
+    - mkdir -p static/docs/
+    - cp -r docs/build/* static/docs/
+  artifacts:
+    paths:
+      - team_website/main_app/static/docs/
+

@@ -16,13 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+import main_app.views as views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.admin.views.decorators import staff_member_required
-import main_app.views as views
+from django.views.generic import RedirectView
 
-urlpatterns = ([
-    path('admin/', admin.site.urls, name='admin'),
+urlpatterns = [
+    path('admin/', admin.site.urls),
+
     path('', views.IndexView.as_view() , name='index'),
     path('profile_update/', views.ProfileUpdateView.as_view() , name='profile_update'),
     path('registration/', views.UserRegisterView.as_view() , name='registration'),
@@ -45,6 +47,7 @@ urlpatterns = ([
     path('api/walls/add/', views.add_wall, name='add_wall'),
     path('api/walls/<int:pk>/remove/', views.remove_wall, name='remove_wall'),
     path('api/search/', views.search_fields, name='search_fields'),
+    path('spinning/', views.spinning_image_view, name='spinning_image'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('logout/', views.custom_logout, name='logout'),
     path('about/', views.AboutPageView.as_view(), name='about'),
@@ -57,18 +60,17 @@ urlpatterns = ([
     path('files/download/<int:pk>/', views.download_file, name='download_file'),
     path('moderation/', views.ModerationPanelView.as_view(), name='moderation_panel'),
     path('moderation/field/<int:report_id>/', views.ResolveFieldReportView.as_view(), name='resolve_field_report'),
-    path('moderation/comment/<int:report_id>/', views.ResolveCommentReportView.as_view(),
-         name='resolve_comment_report'),
-    path('moderation/unblock/<str:content_type>/<int:content_id>/', views.UnblockContentView.as_view(),
-         name='unblock_content'),
+    path('moderation/comment/<int:report_id>/', views.ResolveCommentReportView.as_view(), name='resolve_comment_report'),
+    path('moderation/unblock/<str:content_type>/<int:content_id>/', views.UnblockContentView.as_view(), name='unblock_content'),
     path('api/profile/fields/', views.ProfileFieldsAPIView.as_view(), name='profile_fields_api'),
-    path('moderation/block/<str:content_type>/<int:content_id>/',
-         staff_member_required(views.BlockContentView.as_view()),
+    path('docs/', RedirectView.as_view(url='/static/index.html')),
+    path('moderation/block/<str:content_type>/<int:content_id>/', 
+         staff_member_required(views.BlockContentView.as_view()), 
          name='block_content'),
-    path('moderation/unblock/<str:content_type>/<int:content_id>/',
-         staff_member_required(views.UnblockContentView.as_view()),
+    path('moderation/unblock/<str:content_type>/<int:content_id>/', 
+         staff_member_required(views.UnblockContentView.as_view()), 
          name='unblock_content'),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) +
-               static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 handler404 = views.NotFoundView.as_view()
