@@ -107,6 +107,10 @@ sphinx-build -b html source build
 ```bash
 cd ..
 ```
+4. Создать папку logs:
+```bash
+mkdir logs
+```
 4. Создать миграции:
 ```bash
 python manage.py makemigrations
