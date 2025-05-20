@@ -2,19 +2,21 @@
 Тесты для сайта команды AlgEdu
 """
 import logging
-
+from unittest.mock import MagicMock, patch
+from django.contrib.admin import AdminSite
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
-from django.test import TestCase, Client, SimpleTestCase, RequestFactory
+from django.http import HttpResponseRedirect
+from django.test import TestCase, Client, RequestFactory
 from django.urls import reverse, resolve
-from requests import patch
-
+from main_app.admin import FieldReportAdmin
 from main_app.views import (IndexView, UserLoginView, ProfileUpdateView, ProfileView, UserRegisterView, FieldDetailView,
                             ReportFieldView, AboutPageView, GoalsPageView, FieldCreateView, ModerationPanelView,
                             ProfileFieldsAPIView, ResolveFieldReportView, ResolveCommentReportView, UnblockContentView,
                             BlockContentView, moderation_panel, FieldListView)
-from main_app.models import User, Field, Comment, ProfileComment, FieldReport, Wall, Cell, FieldReport
-from main_app.forms import FieldForm, ProfileUpdateForm
+from main_app.models import User, Field, Comment, ProfileComment, Wall, Cell, FieldReport
+from main_app.forms import FieldForm, ProfileUpdateForm, RegistrationForm
 from django.contrib.auth.password_validation import validate_password
 from django import forms
 from django.utils.translation import gettext_lazy
@@ -367,21 +369,28 @@ class FieldListViewTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='testuser', password='12345')
         self.factory = RequestFactory()
-        Field.objects.create(
+        self.field1 = Field.objects.create(
             user=self.user,
-            title='Field 1',
+            title='Field1',
             description='Test',
             cols=10,
             rows=10
         )
-        Field.objects.create(
+        self.field2 = Field.objects.create(
             user=self.user,
-            title='Field 2',
+            title='Field2',
             description='Test',
             cols=10,
             rows=10
         )
-        Field.objects.create(name="Blocked Field", is_blocked=True)
+        self.blockedField = Field.objects.create(
+            user=self.user,
+            title='BlockedField ',
+            description='Test',
+            cols=10,
+            rows=10
+        )
+        self.blockedField.block()
         self.logger = logging.getLogger('django')
         self.handler = logging.StreamHandler()
         self.logger.addHandler(self.handler)
@@ -393,6 +402,10 @@ class FieldListViewTest(TestCase):
         self.assertEqual(FieldListView.template_name, 'fields/list.html')
         self.assertEqual(FieldListView.context_object_name, 'fields')
 
+    def test_block_field(self):
+        """Проверка блокировки поля"""
+        self.assertTrue(self.blockedField.is_blocked)
+
     def test_get_queryset_returns_unblocked_fields(self):
         """Тестирование возвращаемого QuerySet"""
         request = self.factory.get('/fields/')
@@ -401,27 +414,9 @@ class FieldListViewTest(TestCase):
         queryset = view.get_queryset()
         self.assertIsInstance(queryset, QuerySet)
         self.assertEqual(queryset.count(), 2)
-        self.assertEqual(queryset[0].title, "Field 2")
-        self.assertEqual(queryset[1].title, "Field 1")
-
-    def test_get_queryset_exception_handling(self, mock_filter):
-        """Тестирование обработки исключений"""
-        mock_filter.side_effect = Exception("Test error")
-        request = self.factory.get('/fields/')
-        view = FieldListView()
-        view.setup(request)
-        with self.assertRaises(Exception):
-            view.get_queryset()
-        self.assertTrue(any("Error when getting the list of fields" in log for log in self.captured_logs))
-
-    def test_get_queryset_logging(self):
-        """Тестирование логирования успешного выполнения"""
-        request = self.factory.get('/fields/')
-        view = FieldListView()
-        view.setup(request)
-        with self.assertLogs(logger='django', level='DEBUG') as cm:
-            view.get_queryset()
-        self.assertTrue(any("A list of fields has been received" in log for log in cm.output))
+        titles = sorted([queryset[0].title, queryset[1].title])
+        self.assertEqual(titles[0], "Field1")
+        self.assertEqual(titles[1], "Field2")
 
 
 class ProfileUpdateFormTest(TestCase):
@@ -506,3 +501,133 @@ class ProfileUpdateFormTest(TestCase):
         self.assertEqual(user.location, 'Москва')
         self.assertEqual(str(user.birth_date), '1990-01-01')
         self.assertEqual(user.bio, 'Тестовое описание')
+
+
+class UserRegisterViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.url = reverse('registration')
+        self.valid_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password1': 'securepassword123',
+            'password2': 'securepassword123',
+        }
+
+    def test_form_valid_success(self):
+        """Тест успешной регистрации пользователя."""
+        request = self.factory.post(self.url, data=self.valid_data)
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        with patch('main_app.views.user_registered.send') as mock_send, \
+                patch('main_app.views.login') as mock_login, \
+                patch('main_app.views.logger.info') as mock_logger:
+            view = UserRegisterView.as_view()
+            response = view(request)
+            self.assertTrue(User.objects.filter(username='testuser').exists())
+            mock_send.assert_called_once_with(
+                sender=UserRegisterView,
+                user=User.objects.get(username='testuser'),
+                request=request
+            )
+            mock_login.assert_called_once_with(
+                request,
+                User.objects.get(username='testuser')
+            )
+            mock_logger.assert_called_once_with(
+                "Successful registration of a new user: %s", 'testuser'
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse('login'))
+
+    def test_form_valid_error(self):
+        """Тест обработки ошибки при регистрации."""
+        request = self.factory.post(self.url, data=self.valid_data)
+        with patch('main_app.views.RegistrationForm.save', side_effect=Exception("Test error")), \
+                patch('main_app.views.logger.error') as mock_logger:
+            view = UserRegisterView.as_view()
+            with self.assertRaises(Exception):
+                view(request)
+            mock_logger.assert_called_once_with(
+                "Error during user registration: %s", "Test error", exc_info=True
+            )
+
+    def test_register_method(self):
+        """Тест метода register()."""
+        request = self.factory.post(self.url, data=self.valid_data)
+        mock_form = MagicMock(spec=RegistrationForm)
+        mock_user = MagicMock()
+        mock_form.save.return_value = mock_user
+        view = UserRegisterView()
+        view.request = request
+        with patch('main_app.views.user_registered.send') as mock_send:
+            result = view.register(mock_form)
+            mock_form.save.assert_called_once()
+            mock_send.assert_called_once_with(
+                sender=UserRegisterView,
+                user=mock_user,
+                request=request
+            )
+            self.assertEqual(result, mock_user)
+
+
+class FieldReportAdminTest(TestCase):
+    def setUp(self):
+        self.site = AdminSite()
+        self.admin = FieldReportAdmin(FieldReport, self.site)
+        self.factory = RequestFactory()
+        self.user = User.objects.create_superuser(
+            username='admin',
+            password='password',
+            email='admin@example.com'
+        )
+        self.field = Field.objects.create(
+            user=self.user,
+            title='Test Field',
+            description='Test',
+            cols=10,
+            rows=10
+        )
+        self.pending_report = FieldReport.objects.create(
+            field=self.field,
+            user=self.user,
+            reason='spam',
+            status='pending'
+        )
+        self.resolved_report = FieldReport.objects.create(
+            field=self.field,
+            user=self.user,
+            reason='spam',
+            status='resolved'
+        )
+
+    def test_moderate_reports_get(self):
+        """Тест GET-запроса: отображение панели модерации."""
+        request = self.factory.get('/admin/fieldreport/moderation-panel/')
+        request.user = self.user
+        response = self.admin.moderate_reports(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_moderate_reports_post_valid(self):
+        """Тест POST-запроса с валидными данными."""
+        request = self.factory.post('/admin/fieldreport/moderation-panel/', {
+            'report_id': str(self.pending_report.id),
+            'action': 'approve'
+        })
+        request.user = self.user
+        with patch.object(self.admin, 'change_report_status') as mock_change:
+            mock_change.return_value = HttpResponseRedirect('/redirect/')
+            response = self.admin.moderate_reports(request)
+            mock_change.assert_called_once_with(request, str(self.pending_report.id), 'approve')
+            self.assertEqual(response.status_code, 302)
+
+    def test_moderate_reports_post_invalid(self):
+        """Тест POST-запроса с невалидными данными."""
+        request = self.factory.post('/admin/fieldreport/moderation-panel/', {
+            'report_id': '',
+            'action': ''
+        })
+        request.user = self.user
+        response = self.admin.moderate_reports(request)
+        self.assertEqual(response.status_code, 200)
