@@ -35,7 +35,7 @@ python -m venv .venv
 ```
 4. Открыть терминал и активировать виртуальное окружение:
 ```bash
-venv\Scripts\activate
+.venv\Scripts\activate
 ```
 5. Обновить pip:
 ```bash

@@ -11,8 +11,10 @@ from typing import Optional, Any
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy
 from main_app.models import User, Comment, Field, FieldReport
+
 
 class RegistrationForm(UserCreationForm):
     """
@@ -119,6 +121,7 @@ class RegistrationForm(UserCreationForm):
             user.save()
         return user
 
+
 class ProfileUpdateForm(forms.ModelForm):
     """
     Форма для обновления профиля пользователя.
@@ -181,6 +184,7 @@ class ProfileUpdateForm(forms.ModelForm):
             raise ValidationError(gettext_lazy('Некорректная дата рождения'))
         return birth_date
 
+
 class CommentForm(forms.ModelForm):
     """
     Форма для создания комментария.
@@ -207,6 +211,7 @@ class CommentForm(forms.ModelForm):
                 'placeholder': 'Write your comment...'
             }),
         }
+
 
 class DBFileField(forms.FileField):
     """
@@ -236,6 +241,7 @@ class DBFileField(forms.FileField):
             'data': data.read()
         }
 
+
 class FieldForm(forms.ModelForm):
     """
     Форма для создания поля.
@@ -244,6 +250,18 @@ class FieldForm(forms.ModelForm):
     :type file: :class:`main_app.forms.DBFileField`
     """
     file = DBFileField(required=False, label="Прикрепленный файл")
+
+    cols = forms.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(20)],
+        widget=forms.NumberInput(attrs={'min': 1, 'max': 20}),
+        label='Количество колонок'
+    )
+
+    rows = forms.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(20)],
+        widget=forms.NumberInput(attrs={'min': 1, 'max': 20}),
+        label='Количество строк'
+    )
 
     class Meta:
         """
@@ -262,13 +280,12 @@ class FieldForm(forms.ModelForm):
         fields = ['title', 'description', 'cols', 'rows']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
-            'cols': forms.NumberInput(attrs={'min': 1, 'max': 20}),
-            'rows': forms.NumberInput(attrs={'min': 1, 'max': 20}),
         }
         labels = {
             'cols': 'Количество колонок',
             'rows': 'Количество строк',
         }
+
 
 class FieldReportForm(forms.ModelForm):
     """

@@ -14,7 +14,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import path
 from django.http import HttpResponse
-from .models import FieldReport, Field
+from main_app.models import FieldReport, Field
 
 @admin.register(Field)
 class FieldAdmin(admin.ModelAdmin):

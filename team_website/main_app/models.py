@@ -524,3 +524,28 @@ class ReportComment(models.Model):
     :type is_resolved: bool
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+
+class FieldReport(models.Model):
+    REASON_CHOICES = [
+        ('spam', 'Спам'),
+        ('abuse', 'Оскорбительное содержание'),
+        ('illegal', 'Незаконный контент'),
+        ('other', 'Другое'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'На рассмотрении'),
+        ('approved', 'Жалоба одобрена'),
+        ('rejected', 'Жалоба отклонена'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_resolved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Жалоба на {self.field.title} ({self.get_reason_display()})"
