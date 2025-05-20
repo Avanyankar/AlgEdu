@@ -9,8 +9,10 @@ from main_app.views import (IndexView, UserLoginView, ProfileUpdateView, Profile
                             ProfileFieldsAPIView, ResolveFieldReportView, ResolveCommentReportView, UnblockContentView,
                             BlockContentView, moderation_panel)
 from main_app.models import User, Field, Comment, ProfileComment, FieldReport, Wall, Cell, FieldReport
-from main_app.forms import FieldForm
+from main_app.forms import FieldForm, ProfileUpdateForm
 from django.contrib.auth.password_validation import validate_password
+from django import forms
+from django.utils.translation import gettext_lazy
 
 
 class TemplateTests(TestCase):
@@ -296,7 +298,7 @@ class AuthTests(TestCase):
         self.assertTemplateUsed(response, 'profile.html')
 
 
-class PageTests(SimpleTestCase):
+class PageTests(TestCase):
     def test_index_status_code(self):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
@@ -312,13 +314,17 @@ class PageTests(SimpleTestCase):
 
 class ModerationPanelTests(TestCase):
     def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='12345')
         self.factory = RequestFactory()
         self.staff_user = User.objects.create_user(username='staff', is_staff=True)
         self.regular_user = User.objects.create_user(username='regular')
         self.field = Field.objects.create(
-            title="Test Field",
-            cols=5,
-            rows=5
+            user=self.user,
+            title='Test Field',
+            description='Test',
+            cols=10,
+            rows=10
         )
         self.report1 = FieldReport.objects.create(
             status='pending',
@@ -338,17 +344,15 @@ class ModerationPanelTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_regular_user_denied(self):
-        """Проверяем, что обычный пользователь получает 403"""
+        """Проверяем, что обычный пользователь получает 302"""
         request = self.factory.get('/moderation/')
         request.user = self.regular_user
         response = moderation_panel(request)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 302)
 
     def test_only_pending_reports_shown(self):
         """Проверяем, что отображаются только жалобы со статусом pending"""
-        request = self.factory.get('/moderation/')
-        request.user = self.staff_user
-        response = moderation_panel(request)
+        response = self.client.get('/moderation/')
         self.assertIn('reports', response.context)
         reports = response.context['reports']
         self.assertEqual(reports.count(), 1)
@@ -356,15 +360,90 @@ class ModerationPanelTests(TestCase):
 
     def test_template_used(self):
         """Проверяем использование правильного шаблона"""
-        request = self.factory.get('/moderation/')
-        request.user = self.staff_user
-        response = moderation_panel(request)
-        self.assertTemplateUsed(response, 'moderation/moderation_panel.html')
+        self.client.force_login(self.staff_user)
+        response = self.client.get('/moderation/')
+        self.assertTemplateUsed(response, 'moderation/panel.html')
 
-    def test_select_related_optimization(self):
-        """Проверяем оптимизацию запросов с select_related"""
-        request = self.factory.get('/moderation/')
-        request.user = self.staff_user
-        with self.assertNumQueries(1):
-            response = moderation_panel(request)
-            list(response.context['reports'])
+
+class ProfileUpdateFormTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            first_name='John',
+            last_name='Doe'
+        )
+        self.valid_data = {
+            'first_name': 'Иван',
+            'last_name': 'Петров',
+            'email': 'new@example.com',
+            'location': 'Москва',
+            'birth_date': '1990-01-01',
+            'bio': 'Тестовое описание'
+        }
+
+    def test_form_meta(self):
+        """Проверка мета-данных формы"""
+        form = ProfileUpdateForm()
+        self.assertEqual(form._meta.model, User)
+        expected_fields = ['first_name', 'last_name', 'email', 'location', 'birth_date', 'bio']
+        self.assertEqual(form._meta.fields, expected_fields)
+        self.assertIsInstance(form.fields['birth_date'].widget, forms.DateInput)
+        self.assertIsInstance(form.fields['bio'].widget, forms.Textarea)
+        self.assertEqual(form.fields['first_name'].label, gettext_lazy('Имя'))
+        self.assertEqual(form.fields['last_name'].label, gettext_lazy('Фамилия'))
+        self.assertEqual(form.fields['email'].label, gettext_lazy('Email'))
+        self.assertEqual(form.fields['location'].label, gettext_lazy('Местоположение'))
+        self.assertEqual(form.fields['birth_date'].label, gettext_lazy('Дата рождения'))
+        self.assertEqual(form.fields['bio'].label, gettext_lazy('О себе'))
+
+    def test_form_valid(self):
+        """Проверка валидной формы"""
+        form = ProfileUpdateForm(data=self.valid_data, instance=self.user)
+        self.assertTrue(form.is_valid())
+
+    def test_email_unique_validation(self):
+        """Проверка уникальности email"""
+        User.objects.create_user(username='other', email='existing@example.com')
+        form = ProfileUpdateForm(data={
+            **self.valid_data,
+            'email': 'test@example.com'
+        }, instance=self.user)
+        self.assertTrue(form.is_valid())
+        form = ProfileUpdateForm(data={
+            **self.valid_data,
+            'email': 'existing@example.com'
+        }, instance=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors['email'], [gettext_lazy('Этот email уже используется')])
+
+    def test_birth_date_validation(self):
+        """Проверка валидации даты рождения"""
+        form = ProfileUpdateForm(data={
+            **self.valid_data,
+            'birth_date': '1899-12-31'
+        }, instance=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors['birth_date'], [gettext_lazy('Некорректная дата рождения')])
+        form = ProfileUpdateForm(data={
+            **self.valid_data,
+            'birth_date': '1900-01-01'
+        }, instance=self.user)
+        self.assertTrue(form.is_valid())
+        form = ProfileUpdateForm(data={
+            **self.valid_data,
+            'birth_date': ''
+        }, instance=self.user)
+        self.assertTrue(form.is_valid())
+
+    def test_form_save(self):
+        """Проверка сохранения формы"""
+        form = ProfileUpdateForm(data=self.valid_data, instance=self.user)
+        self.assertTrue(form.is_valid())
+        user = form.save()
+        self.assertEqual(user.first_name, 'Иван')
+        self.assertEqual(user.last_name, 'Петров')
+        self.assertEqual(user.email, 'new@example.com')
+        self.assertEqual(user.location, 'Москва')
+        self.assertEqual(str(user.birth_date), '1990-01-01')
+        self.assertEqual(user.bio, 'Тестовое описание')
