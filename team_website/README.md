@@ -107,23 +107,23 @@ sphinx-build -b html source build
 ```bash
 cd ..
 ```
-4. Создать папку logs:
+4. Создать папку logs, если отсутствует:
 ```bash
 mkdir logs
 ```
-4. Создать миграции:
+5. Создать миграции:
 ```bash
 python manage.py makemigrations
 ```
-5. Применить миграции:
+6. Применить миграции:
 ```bash
 python manage.py migrate
 ```
-6. Запустить сайт:
+7. Запустить сайт:
 ```bash
 python manage.py runserver
 ```
-7. Перейти на страницу документации. (http://127.0.0.1:8000/docs)
+8. Перейти на страницу документации. (http://127.0.0.1:8000/docs)
 
 ## Запуск pylint:
 ```bash
