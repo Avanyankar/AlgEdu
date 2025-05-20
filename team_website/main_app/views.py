@@ -1407,3 +1407,11 @@ def download_file(request: HttpRequest, pk: int) -> HttpResponse:
     response: HttpResponse = HttpResponse(field_file.data, content_type=field_file.content_type)
     response['Content-Disposition'] = f'attachment; filename="{field_file.name}"'
     return response
+
+class DocsView(TemplateView):
+    template_name = 'docs/build/index.html'
+
+    def get(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            raise Http404("Документация доступна только в режиме DEBUG")
+        return super().get(request, *args, **kwargs)
