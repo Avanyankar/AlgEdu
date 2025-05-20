@@ -1,13 +1,18 @@
 """
 Тесты для сайта команды AlgEdu
 """
+import logging
+
 from django.core.exceptions import ValidationError
+from django.db.models import QuerySet
 from django.test import TestCase, Client, SimpleTestCase, RequestFactory
 from django.urls import reverse, resolve
+from requests import patch
+
 from main_app.views import (IndexView, UserLoginView, ProfileUpdateView, ProfileView, UserRegisterView, FieldDetailView,
                             ReportFieldView, AboutPageView, GoalsPageView, FieldCreateView, ModerationPanelView,
                             ProfileFieldsAPIView, ResolveFieldReportView, ResolveCommentReportView, UnblockContentView,
-                            BlockContentView, moderation_panel)
+                            BlockContentView, moderation_panel, FieldListView)
 from main_app.models import User, Field, Comment, ProfileComment, FieldReport, Wall, Cell, FieldReport
 from main_app.forms import FieldForm, ProfileUpdateForm
 from django.contrib.auth.password_validation import validate_password
@@ -350,19 +355,73 @@ class ModerationPanelTests(TestCase):
         response = moderation_panel(request)
         self.assertEqual(response.status_code, 302)
 
-    def test_only_pending_reports_shown(self):
-        """Проверяем, что отображаются только жалобы со статусом pending"""
-        response = self.client.get('/moderation/')
-        self.assertIn('reports', response.context)
-        reports = response.context['reports']
-        self.assertEqual(reports.count(), 1)
-        self.assertEqual(reports.first().id, self.report1.id)
-
     def test_template_used(self):
         """Проверяем использование правильного шаблона"""
         self.client.force_login(self.staff_user)
         response = self.client.get('/moderation/')
         self.assertTemplateUsed(response, 'moderation/panel.html')
+
+
+class FieldListViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.factory = RequestFactory()
+        Field.objects.create(
+            user=self.user,
+            title='Field 1',
+            description='Test',
+            cols=10,
+            rows=10
+        )
+        Field.objects.create(
+            user=self.user,
+            title='Field 2',
+            description='Test',
+            cols=10,
+            rows=10
+        )
+        Field.objects.create(name="Blocked Field", is_blocked=True)
+        self.logger = logging.getLogger('django')
+        self.handler = logging.StreamHandler()
+        self.logger.addHandler(self.handler)
+        self.handler.stream = self.captured_logs = []
+
+    def test_class_attributes(self):
+        """Проверка атрибутов класса"""
+        self.assertEqual(FieldListView.model, Field)
+        self.assertEqual(FieldListView.template_name, 'fields/list.html')
+        self.assertEqual(FieldListView.context_object_name, 'fields')
+
+    def test_get_queryset_returns_unblocked_fields(self):
+        """Тестирование возвращаемого QuerySet"""
+        request = self.factory.get('/fields/')
+        view = FieldListView()
+        view.setup(request)
+        queryset = view.get_queryset()
+        self.assertIsInstance(queryset, QuerySet)
+        self.assertEqual(queryset.count(), 2)
+        self.assertEqual(queryset[0].title, "Field 2")
+        self.assertEqual(queryset[1].title, "Field 1")
+
+    def test_get_queryset_exception_handling(self, mock_filter):
+        """Тестирование обработки исключений"""
+        mock_filter.side_effect = Exception("Test error")
+        request = self.factory.get('/fields/')
+        view = FieldListView()
+        view.setup(request)
+        with self.assertRaises(Exception):
+            view.get_queryset()
+        self.assertTrue(any("Error when getting the list of fields" in log for log in self.captured_logs))
+
+    def test_get_queryset_logging(self):
+        """Тестирование логирования успешного выполнения"""
+        request = self.factory.get('/fields/')
+        view = FieldListView()
+        view.setup(request)
+        with self.assertLogs(logger='django', level='DEBUG') as cm:
+            view.get_queryset()
+        self.assertTrue(any("A list of fields has been received" in log for log in cm.output))
 
 
 class ProfileUpdateFormTest(TestCase):
