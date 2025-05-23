@@ -5,6 +5,9 @@
 #include <dxgi1_4.h>
 #include <tchar.h>
 #include <windows.h>
+#include <string>
+#include <commdlg.h> // Для GetSaveFileNameA
+#include <fstream>   // Для операций с файлами
 
 class FrameContext {
 public:
@@ -64,6 +67,7 @@ const int DEFAULT_GRID_SIZE = 10;
 const float CELL_PADDING = 2.0f;
 const float ANIMATION_SPEED = 5.0f;
 
+
 FrameContext g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 UINT g_frameIndex = 0;
 ID3D12Device* g_pd3dDevice = NULL;
@@ -79,11 +83,12 @@ HANDLE g_hSwapChainWaitableObject = NULL;
 ID3D12Resource* g_mainRenderTargetResource[NUM_FRAMES_IN_FLIGHT] = {};
 D3D12_CPU_DESCRIPTOR_HANDLE g_mainRenderTargetDescriptor[NUM_FRAMES_IN_FLIGHT] = {};
 
-Cell g_grid[DEFAULT_GRID_SIZE * 2][DEFAULT_GRID_SIZE * 2]; 
+Cell g_grid[DEFAULT_GRID_SIZE * 2][DEFAULT_GRID_SIZE * 2];
 int g_gridSize = DEFAULT_GRID_SIZE;
 GridCommand g_commands[100];  // Массив команд
 int g_commandCount = 0;
 char g_commandBuffer[4096] = "RIGHT 1\nDOWN 1\nLEFT 1\nUP 1\n";
+char g_saveError[256] = ""; // Буфер для хранения сообщений об ошибках при сохранении
 
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -96,9 +101,127 @@ void ParseGridCommands();
 void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed);
 void InitializeDefaultGrid(int size);
 char* IntToStr(int value, char* buffer);
+bool SaveGridMapToFile(const char* filename, int gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2], CellCoord startPos, CellCoord endPos);
+bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2], CellCoord& startPos, CellCoord& endPos);
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+bool SaveGridMapToFile(const char* filename, int gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2],
+    CellCoord startPos, CellCoord endPos) {
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile.is_open()) {
+        snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
+        return false;
+    }
+
+    try {
+        const char signature[] = "GRIDMAP";
+        outFile.write(signature, 7);
+
+        unsigned char version = 1;
+        outFile.write(reinterpret_cast<const char*>(&version), sizeof(version));
+
+        outFile.write(reinterpret_cast<const char*>(&gridSize), sizeof(gridSize));
+
+        outFile.write(reinterpret_cast<const char*>(&startPos.x), sizeof(startPos.x));
+        outFile.write(reinterpret_cast<const char*>(&startPos.y), sizeof(startPos.y));
+
+        outFile.write(reinterpret_cast<const char*>(&endPos.x), sizeof(endPos.x));
+        outFile.write(reinterpret_cast<const char*>(&endPos.y), sizeof(endPos.y));
+
+        for (int y = 0; y < gridSize; y++) {
+            for (int x = 0; x < gridSize; x++) {
+                unsigned char cellData = 0;
+                if (grid[y][x].isWall) cellData |= 0x01;
+                if (grid[y][x].isStart) cellData |= 0x02;
+                if (grid[y][x].isEnd) cellData |= 0x04;
+                outFile.write(reinterpret_cast<const char*>(&cellData), sizeof(cellData));
+            }
+        }
+
+        outFile.close();
+        g_saveError[0] = '\0';
+        return true;
+    }
+    catch (const std::exception& e) {
+        snprintf(g_saveError, sizeof(g_saveError), "Map error: %s", e.what());
+        outFile.close();
+        return false;
+    }
+}
+
+bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2],
+    CellCoord& startPos, CellCoord& endPos) {
+    std::ifstream inFile(filename, std::ios::binary);
+    if (!inFile.is_open()) {
+        snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
+        return false;
+    }
+
+    try {
+        char signature[8] = { 0 };
+        inFile.read(signature, 7);
+        if (strcmp(signature, "GRIDMAP") != 0) {
+            snprintf(g_saveError, sizeof(g_saveError), "Incorrect format");
+            inFile.close();
+            return false;
+        }
+
+        unsigned char version;
+        inFile.read(reinterpret_cast<char*>(&version), sizeof(version));
+        if (version != 1) {
+            snprintf(g_saveError, sizeof(g_saveError), "Unsupported file version: %d", (int)version);
+            inFile.close();
+            return false;
+        }
+
+        int fileGridSize;
+        inFile.read(reinterpret_cast<char*>(&fileGridSize), sizeof(fileGridSize));
+
+        if (fileGridSize > DEFAULT_GRID_SIZE * 2) {
+            snprintf(g_saveError, sizeof(g_saveError), "Grid size exceeds maximum (%d > %d)",
+                fileGridSize, DEFAULT_GRID_SIZE * 2);
+            inFile.close();
+            return false;
+        }
+
+        gridSize = fileGridSize;
+
+        inFile.read(reinterpret_cast<char*>(&startPos.x), sizeof(startPos.x));
+        inFile.read(reinterpret_cast<char*>(&startPos.y), sizeof(startPos.y));
+
+        inFile.read(reinterpret_cast<char*>(&endPos.x), sizeof(endPos.x));
+        inFile.read(reinterpret_cast<char*>(&endPos.y), sizeof(endPos.y));
+
+        for (int y = 0; y < DEFAULT_GRID_SIZE * 2; y++) {
+            for (int x = 0; x < DEFAULT_GRID_SIZE * 2; x++) {
+                grid[y][x].isWall = false;
+                grid[y][x].isStart = false;
+                grid[y][x].isEnd = false;
+            }
+        }
+
+        for (int y = 0; y < gridSize; y++) {
+            for (int x = 0; x < gridSize; x++) {
+                unsigned char cellData;
+                inFile.read(reinterpret_cast<char*>(&cellData), sizeof(cellData));
+
+                grid[y][x].isWall = (cellData & 0x01) != 0;
+                grid[y][x].isStart = (cellData & 0x02) != 0;
+                grid[y][x].isEnd = (cellData & 0x04) != 0;
+            }
+        }
+
+        inFile.close();
+        g_saveError[0] = '\0';
+        return true;
+    }
+    catch (const std::exception& e) {
+        snprintf(g_saveError, sizeof(g_saveError), "Read Error: %s", e.what());
+        inFile.close();
+        return false;
+    }
+}
 int main(int, char**)
 {
     WNDCLASSEXW wc = { sizeof(WNDCLASSEXW), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"ImGui Grid", NULL };
@@ -500,6 +623,60 @@ int main(int, char**)
             ImGui::End();
         }
 
+
+ImGui::Separator();
+
+if (ImGui::Button("Save Map")) {
+    char filename[MAX_PATH] = "grid_map.gmap";
+    
+    OPENFILENAMEA ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFilter = "Grid Map Files (*.gmap)\0*.gmap\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = filename;
+    ofn.nMaxFile = sizeof(filename);
+    ofn.lpstrTitle = "Save Grid Map";
+    ofn.Flags = OFN_OVERWRITEPROMPT;
+    ofn.lpstrDefExt = "gmap";
+
+    if (GetSaveFileNameA(&ofn)) {
+        bool success = SaveGridMapToFile(filename, g_gridSize, g_grid, startCell, endCell);
+        if (success) {
+            snprintf(g_saveError, sizeof(g_saveError), "Map saved successfully: %s", filename);
+        }
+    }
+}
+
+ImGui::SameLine();
+if (ImGui::Button("Load Map")) {
+    char filename[MAX_PATH] = "";
+    
+    OPENFILENAMEA ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFilter = "Grid Map Files (*.gmap)\0*.gmap\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = filename;
+    ofn.nMaxFile = sizeof(filename);
+    ofn.lpstrTitle = "Load Grid Map";
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+    ofn.lpstrDefExt = "gmap";
+
+    if (GetOpenFileNameA(&ofn)) {
+        bool success = LoadGridMapFromFile(filename, g_gridSize, g_grid, startCell, endCell);
+        if (success) {
+            snprintf(g_saveError, sizeof(g_saveError), "Map loaded successfully: %s", filename);
+            squarePos = startCell; 
+            
+
+        }
+    }
+}
+
+if (g_saveError[0] != '\0') {
+    ImGui::TextWrapped("%s", g_saveError);
+}
         {
             ImGui::SetNextWindowPos(ImVec2(620, 10), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
