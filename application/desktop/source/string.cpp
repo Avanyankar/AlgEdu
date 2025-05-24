@@ -1,6 +1,6 @@
-﻿#include "string.h"
-#include <exception>
+﻿#include <exception>
 #include <iostream>
+#include "../include/string.h"
 
 String::String(const std::string& name,
     size_t min = 0, size_t max = std::numeric_limits<size_t>::max()) :

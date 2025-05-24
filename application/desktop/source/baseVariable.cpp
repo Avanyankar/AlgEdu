@@ -1,4 +1,4 @@
-#include "baseVariable.h"
+#include "../include/baseVariable.h"
 
 template<typename T, typename B>
 inline BaseVariable<T, B>::BaseVariable(const std::string& name, B min, B max) :

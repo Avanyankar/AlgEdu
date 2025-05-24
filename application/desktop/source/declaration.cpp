@@ -1,8 +1,8 @@
 #include <vector>
 #include <stdexcept>
 #include <string>
-#include "declaration.h"
-#include "tokenType.h"
+#include "../include/declaration.h"
+#include "../include/tokenType.h"
 
 
 bool Declaration::match(const std::vector<Token>& statement) const
