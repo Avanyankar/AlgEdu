@@ -6,6 +6,7 @@
 #include "../include/cell.h"
 #include "../include/gridCommand.h"
 #include "../include/cellCord.h"
+#include <imgui_impl_win32.h>
 
 const int NUM_FRAMES_IN_FLIGHT = 3;
 const int DEFAULT_GRID_SIZE = 10;
@@ -27,11 +28,10 @@ ID3D12Resource* g_mainRenderTargetResource[NUM_FRAMES_IN_FLIGHT] = {};
 D3D12_CPU_DESCRIPTOR_HANDLE g_mainRenderTargetDescriptor[NUM_FRAMES_IN_FLIGHT] = {};
 Cell g_grid[DEFAULT_GRID_SIZE * 2][DEFAULT_GRID_SIZE * 2];
 int g_gridSize = DEFAULT_GRID_SIZE;
-GridCommand g_commands[100];  // Массив команд
+GridCommand g_commands[100];
 int g_commandCount = 0;
 char g_commandBuffer[4096] = "RIGHT 1\nDOWN 1\nLEFT 1\nUP 1\n";
-char g_saveError[256] = ""; // Буфер для хранения сообщений об ошибках при сохранении
-
+char g_saveError[256] = "";
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void CreateRenderTarget();
@@ -55,22 +55,16 @@ bool SaveGridMapToFile(const char* filename, int gridSize, Cell grid[][DEFAULT_G
         snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
         return false;
     }
-
     try {
         const char signature[] = "GRIDMAP";
         outFile.write(signature, 7);
-
         unsigned char version = 1;
         outFile.write(reinterpret_cast<const char*>(&version), sizeof(version));
-
         outFile.write(reinterpret_cast<const char*>(&gridSize), sizeof(gridSize));
-
         outFile.write(reinterpret_cast<const char*>(&startPos.x), sizeof(startPos.x));
         outFile.write(reinterpret_cast<const char*>(&startPos.y), sizeof(startPos.y));
-
         outFile.write(reinterpret_cast<const char*>(&endPos.x), sizeof(endPos.x));
         outFile.write(reinterpret_cast<const char*>(&endPos.y), sizeof(endPos.y));
-
         for (int y = 0; y < gridSize; y++) {
             for (int x = 0; x < gridSize; x++) {
                 unsigned char cellData = 0;
@@ -80,7 +74,6 @@ bool SaveGridMapToFile(const char* filename, int gridSize, Cell grid[][DEFAULT_G
                 outFile.write(reinterpret_cast<const char*>(&cellData), sizeof(cellData));
             }
         }
-
         outFile.close();
         g_saveError[0] = '\0';
         return true;
@@ -99,7 +92,6 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
         snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
         return false;
     }
-
     try {
         char signature[8] = { 0 };
         inFile.read(signature, 7);
@@ -108,7 +100,6 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
             inFile.close();
             return false;
         }
-
         unsigned char version;
         inFile.read(reinterpret_cast<char*>(&version), sizeof(version));
         if (version != 1) {
@@ -116,25 +107,19 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
             inFile.close();
             return false;
         }
-
         int fileGridSize;
         inFile.read(reinterpret_cast<char*>(&fileGridSize), sizeof(fileGridSize));
-
         if (fileGridSize > DEFAULT_GRID_SIZE * 2) {
             snprintf(g_saveError, sizeof(g_saveError), "Grid size exceeds maximum (%d > %d)",
                 fileGridSize, DEFAULT_GRID_SIZE * 2);
             inFile.close();
             return false;
         }
-
         gridSize = fileGridSize;
-
         inFile.read(reinterpret_cast<char*>(&startPos.x), sizeof(startPos.x));
         inFile.read(reinterpret_cast<char*>(&startPos.y), sizeof(startPos.y));
-
         inFile.read(reinterpret_cast<char*>(&endPos.x), sizeof(endPos.x));
         inFile.read(reinterpret_cast<char*>(&endPos.y), sizeof(endPos.y));
-
         for (int y = 0; y < DEFAULT_GRID_SIZE * 2; y++) {
             for (int x = 0; x < DEFAULT_GRID_SIZE * 2; x++) {
                 grid[y][x].isWall = false;
@@ -142,18 +127,15 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
                 grid[y][x].isEnd = false;
             }
         }
-
         for (int y = 0; y < gridSize; y++) {
             for (int x = 0; x < gridSize; x++) {
                 unsigned char cellData;
                 inFile.read(reinterpret_cast<char*>(&cellData), sizeof(cellData));
-
                 grid[y][x].isWall = (cellData & 0x01) != 0;
                 grid[y][x].isStart = (cellData & 0x02) != 0;
                 grid[y][x].isEnd = (cellData & 0x04) != 0;
             }
         }
-
         inFile.close();
         g_saveError[0] = '\0';
         return true;
@@ -164,66 +146,51 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
         return false;
     }
 }
+
 int main(int, char**)
 {
     WNDCLASSEXW wc = { sizeof(WNDCLASSEXW), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"ImGui Grid", NULL };
     ::RegisterClassExW(&wc);
-
     HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"ImGui Grid Demo", WS_OVERLAPPEDWINDOW, 100, 100, 1024, 768, NULL, NULL, wc.hInstance, NULL);
-
     if (!CreateDeviceD3D(hwnd))
     {
         CleanupDeviceD3D();
         ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
         return 1;
     }
-
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
     ImGui::StyleColorsDark();
-
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX12_Init(g_pd3dDevice, NUM_FRAMES_IN_FLIGHT,
         DXGI_FORMAT_R8G8B8A8_UNORM, g_pd3dSrvDescHeap,
         g_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         g_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart());
-
     InitializeDefaultGrid(DEFAULT_GRID_SIZE);
-
     float cellSize = 40.0f;
-    // позиция
     CellCoord squarePos(0, 0);
     CellCoord targetPos = squarePos;
     float animX = 0.0f;
     float animY = 0.0f;
     bool isAnimating = false;
     float animProgress = 0.0f;
-
     float squareColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
-
     ParseGridCommands();
     bool runningCommands = false;
     int currentCommand = 0;
     float totalTime = 0.0f;
     float lastFrameTime = 0.0f;
-
-    // параметры карты
-    bool editMode = false;  // режим редактирования карты
-    bool setWalls = true;   // установка стен (иначе - удаление)
+    bool editMode = false;
+    bool setWalls = true;
     CellCoord startCell(0, 0);
     CellCoord endCell(g_gridSize - 1, g_gridSize - 1);
-
-    // основной цикл
     bool done = false;
     while (!done)
     {
-        // обработка сообщений Windows
         MSG msg;
         while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
         {
@@ -234,23 +201,15 @@ int main(int, char**)
         }
         if (done)
             break;
-
-        // расчет времени
         float currentTime = ImGui::GetTime();
         float deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
         totalTime += deltaTime;
-
-        // обработка анимации
         if (isAnimating) {
             animProgress += ANIMATION_SPEED * deltaTime;
-
             if (animProgress >= 1.0f) {
-                // обновление позиции
                 squarePos = targetPos;
                 isAnimating = false;
-
-                // проверка на баг
                 if (runningCommands && currentCommand < g_commandCount) {
                     currentCommand++;
                     if (currentCommand >= g_commandCount) {
@@ -267,27 +226,20 @@ int main(int, char**)
         }
         else if (runningCommands && currentCommand < g_commandCount) {
             bool commandCompleted = false;
-
-            // обновление позиции
             ExecuteGridCommand(g_commands[currentCommand], squarePos, commandCompleted);
-
             targetPos = squarePos;
             isAnimating = true;
             animProgress = 0.0f;
         }
-        // если не анимируем, но выполняем команды, выполняем следующую команду
         else if (runningCommands) {
             bool commandCompleted = false;
             ExecuteGridCommand(g_commands[currentCommand], squarePos, commandCompleted);
-
             targetPos = squarePos;
             isAnimating = true;
             animProgress = 0.0f;
         }
-
         FrameContext* frameCtx = WaitForNextFrameResources();
         UINT backBufferIdx = g_pSwapChain->GetCurrentBackBufferIndex();
-
         {
             frameCtx->CommandAllocator->Reset();
             D3D12_RESOURCE_BARRIER barrier = {};
@@ -302,33 +254,21 @@ int main(int, char**)
             g_pd3dCommandList->OMSetRenderTargets(1, &g_mainRenderTargetDescriptor[backBufferIdx], FALSE, NULL);
             g_pd3dCommandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
         }
-
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-
-        // главное окно 
         {
             ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(600, 600), ImGuiCond_FirstUseEver);
             ImGui::Begin("Grid Map");
-
-            // рассчёт карты
             ImVec2 contentSize = ImGui::GetContentRegionAvail();
             float gridTotalSize = g_gridSize * (cellSize + CELL_PADDING);
             ImVec2 gridStartPos = ImGui::GetCursorScreenPos();
-
-            // карта
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
-            // отрисовка карты
             for (int y = 0; y < g_gridSize; y++) {
                 for (int x = 0; x < g_gridSize; x++) {
-                    // координаты ячейки
                     float cellX = gridStartPos.x + x * (cellSize + CELL_PADDING);
                     float cellY = gridStartPos.y + y * (cellSize + CELL_PADDING);
-
-                    // цвет ячейки
                     ImU32 cellColor;
                     if (g_grid[y][x].isWall) {
                         cellColor = IM_COL32(100, 100, 100, 255);  // стена - серый
@@ -342,17 +282,13 @@ int main(int, char**)
                     else {
                         cellColor = IM_COL32(200, 200, 200, 255);  // светло серый - поля
                     }
-
-                    // отрисовка ячеек
                     draw_list->AddRectFilled(
                         ImVec2(cellX, cellY),
                         ImVec2(cellX + cellSize, cellY + cellSize),
                         cellColor
                     );
-
                     if (editMode) {
                         ImGui::SetCursorScreenPos(ImVec2(cellX, cellY));
-
                         char btnId[32];
                         char* p = btnId;
                         *p++ = 'c';
@@ -364,13 +300,9 @@ int main(int, char**)
                         *p++ = '_';
                         p = IntToStr(y, p);
                         *p = '\0';
-
                         ImGui::InvisibleButton(btnId, ImVec2(cellSize, cellSize));
-
-                        // клик по ячейке
                         if (ImGui::IsItemClicked()) {
                             if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-                                // shift+клик стартпоз
                                 CellCoord newStart(x, y);
                                 if (!(g_grid[y][x].isWall || g_grid[y][x].isEnd)) {
                                     g_grid[startCell.y][startCell.x].isStart = false;
@@ -393,7 +325,6 @@ int main(int, char**)
                                 }
                             }
                         }
-
                         if (ImGui::IsItemHovered()) {
                             ImGui::BeginTooltip();
                             char posBuffer[32];
@@ -420,9 +351,7 @@ int main(int, char**)
                     }
                 }
             }
-
             ImGui::SetCursorScreenPos(ImVec2(gridStartPos.x, gridStartPos.y + gridTotalSize + 10));
-
             float drawX, drawY;
             if (isAnimating) {
                 drawX = gridStartPos.x + animX * (cellSize + CELL_PADDING);
@@ -432,37 +361,28 @@ int main(int, char**)
                 drawX = gridStartPos.x + squarePos.x * (cellSize + CELL_PADDING);
                 drawY = gridStartPos.y + squarePos.y * (cellSize + CELL_PADDING);
             }
-
             float squareDrawSize = cellSize * 0.8f;
             float squareOffset = (cellSize - squareDrawSize) / 2.0f;
-
             ImU32 square_color = ImGui::ColorConvertFloat4ToU32(ImVec4(
                 squareColor[0], squareColor[1], squareColor[2], squareColor[3]));
-
             draw_list->AddRectFilled(
                 ImVec2(drawX + squareOffset, drawY + squareOffset),
                 ImVec2(drawX + squareOffset + squareDrawSize, drawY + squareOffset + squareDrawSize),
                 square_color
             );
-
-            // управление размером сетки и ячеек
             ImGui::SetCursorScreenPos(ImVec2(gridStartPos.x, gridStartPos.y + gridTotalSize + 20));
-
             if (ImGui::SliderInt("Grid Size", &g_gridSize, 5, 20)) {
                 InitializeDefaultGrid(g_gridSize);
                 startCell = CellCoord(0, 0);
                 endCell = CellCoord(g_gridSize - 1, g_gridSize - 1);
                 squarePos = startCell;
             }
-
             ImGui::SliderFloat("Cell Size", &cellSize, 20.0f, 60.0f);
-
             ImGui::Checkbox("Edit Mode", &editMode);
             if (editMode) {
                 ImGui::SameLine();
                 ImGui::Checkbox("Set Walls", &setWalls);
             }
-
             char posText[64];
             char* p = posText;
             *p++ = 'S';
@@ -489,9 +409,7 @@ int main(int, char**)
             p = IntToStr(squarePos.y, p);
             *p++ = ')';
             *p = '\0';
-
             ImGui::Text("%s", posText);
-
             if (runningCommands) {
                 char cmdText[64];
                 char* p = cmdText;
@@ -515,9 +433,7 @@ int main(int, char**)
                 *p++ = '/';
                 p = IntToStr(g_commandCount, p);
                 *p = '\0';
-
                 ImGui::Text("%s", cmdText);
-
                 if (ImGui::Button("Stop Commands")) {
                     runningCommands = false;
                 }
@@ -525,35 +441,30 @@ int main(int, char**)
             else {
                 if (ImGui::Button("Run Commands")) {
                     ParseGridCommands();
-
                     if (g_commandCount > 0) {
                         runningCommands = true;
                         currentCommand = 0;
                         squarePos = startCell;
                     }
                 }
-
                 ImGui::SameLine();
                 if (ImGui::Button("Move Left") && squarePos.x > 0 && !g_grid[squarePos.y][squarePos.x - 1].isWall) {
                     targetPos = CellCoord(squarePos.x - 1, squarePos.y);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
-
                 ImGui::SameLine();
                 if (ImGui::Button("Move Right") && squarePos.x < g_gridSize - 1 && !g_grid[squarePos.y][squarePos.x + 1].isWall) {
                     targetPos = CellCoord(squarePos.x + 1, squarePos.y);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
-
                 ImGui::SameLine();
                 if (ImGui::Button("Move Up") && squarePos.y > 0 && !g_grid[squarePos.y - 1][squarePos.x].isWall) {
                     targetPos = CellCoord(squarePos.x, squarePos.y - 1);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
-
                 ImGui::SameLine();
                 if (ImGui::Button("Move Down") && squarePos.y < g_gridSize - 1 && !g_grid[squarePos.y + 1][squarePos.x].isWall) {
                     targetPos = CellCoord(squarePos.x, squarePos.y + 1);
@@ -561,16 +472,12 @@ int main(int, char**)
                     animProgress = 0.0f;
                 }
             }
-
             ImGui::End();
         }
 
-
 ImGui::Separator();
-
 if (ImGui::Button("Save Map")) {
     char filename[MAX_PATH] = "grid_map.gmap";
-    
     OPENFILENAMEA ofn;
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -589,11 +496,9 @@ if (ImGui::Button("Save Map")) {
         }
     }
 }
-
 ImGui::SameLine();
 if (ImGui::Button("Load Map")) {
-    char filename[MAX_PATH] = "";
-    
+    char filename[MAX_PATH] = "";   
     OPENFILENAMEA ofn;
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -604,18 +509,14 @@ if (ImGui::Button("Load Map")) {
     ofn.lpstrTitle = "Load Grid Map";
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
     ofn.lpstrDefExt = "gmap";
-
     if (GetOpenFileNameA(&ofn)) {
         bool success = LoadGridMapFromFile(filename, g_gridSize, g_grid, startCell, endCell);
         if (success) {
             snprintf(g_saveError, sizeof(g_saveError), "Map loaded successfully: %s", filename);
             squarePos = startCell; 
-            
-
         }
     }
 }
-
 if (g_saveError[0] != '\0') {
     ImGui::TextWrapped("%s", g_saveError);
 }
@@ -631,20 +532,14 @@ if (g_saveError[0] != '\0') {
                 ImGui::BulletText("UP [steps] - move up by [steps] cells");
                 ImGui::BulletText("DOWN [steps] - move down by [steps] cells");
             }
-
             ImGui::Separator();
-
-            // редактор
             ImGui::Text("Command Editor:");
             ImGui::InputTextMultiline("##commands", g_commandBuffer, IM_ARRAYSIZE(g_commandBuffer),
                 ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 10),
                 ImGuiInputTextFlags_AllowTabInput);
-
             ImGui::Separator();
-
             if (ImGui::Button("Parse Commands")) {
                 ParseGridCommands();
-
                 ImGui::Text("Parsed %d commands:", g_commandCount);
                 for (int i = 0; i < g_commandCount && i < 10; i++) {
                     const GridCommand& cmd = g_commands[i];
@@ -653,7 +548,6 @@ if (g_saveError[0] != '\0') {
                     p = IntToStr(i + 1, p);
                     *p++ = ':';
                     *p++ = ' ';
-
                     switch (cmd.type) {
                     case CMD_MOVE_LEFT:
                         *p++ = 'L';
@@ -690,7 +584,6 @@ if (g_saveError[0] != '\0') {
                     *p = '\0';
                     ImGui::Text("%s", cmdText);
                 }
-
                 if (g_commandCount > 10) {
                     char moreText[32];
                     char* p = moreText;
@@ -712,17 +605,12 @@ if (g_saveError[0] != '\0') {
                     ImGui::Text("%s", moreText);
                 }
             }
-
             ImGui::End();
         }
-
         ImGui::Render();
-
         const float clear_color_with_alpha[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
         g_pd3dCommandList->ClearRenderTargetView(g_mainRenderTargetDescriptor[backBufferIdx], clear_color_with_alpha, 0, NULL);
-
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), g_pd3dCommandList);
-
         {
             D3D12_RESOURCE_BARRIER barrier = {};
             barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -734,27 +622,20 @@ if (g_saveError[0] != '\0') {
             g_pd3dCommandList->ResourceBarrier(1, &barrier);
             g_pd3dCommandList->Close();
         }
-
-        // команды
         g_pd3dCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&g_pd3dCommandList);
-
         g_pSwapChain->Present(1, 0);
-
         UINT64 fenceValue = g_fenceLastSignaledValue + 1;
         g_pd3dCommandQueue->Signal(g_fence, fenceValue);
         g_fenceLastSignaledValue = fenceValue;
         frameCtx->FenceValue = fenceValue;
     }
-
     WaitForLastSubmittedFrame();
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
-
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
     ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
-
     return 0;
 }
 
@@ -763,36 +644,28 @@ char* IntToStr(int value, char* buffer) {
         *buffer++ = '0';
         return buffer;
     }
-
     char temp[16];
     int tempIdx = 0;
     bool negative = false;
-
     if (value < 0) {
         negative = true;
         value = -value;
     }
-
     while (value > 0) {
         temp[tempIdx++] = '0' + (value % 10);
         value /= 10;
     }
-
     if (negative) {
         *buffer++ = '-';
     }
-
     while (tempIdx > 0) {
         *buffer++ = temp[--tempIdx];
     }
-
     return buffer;
 }
 
-// инициализация карты
 void InitializeDefaultGrid(int size) {
     if (size < 5) size = 5;
-
     for (int y = 0; y < size; y++) {
         for (int x = 0; x < size; x++) {
             g_grid[y][x].isWall = false;
@@ -800,7 +673,6 @@ void InitializeDefaultGrid(int size) {
             g_grid[y][x].isEnd = false;
         }
     }
-
     g_grid[0][0].isStart = true;
     g_grid[size - 1][size - 1].isEnd = true;
     g_gridSize = size;
@@ -816,11 +688,9 @@ bool StrEquals(const char* str1, const char* str2) {
 }
 
 void GetNextWord(const char** ptr, char* word) {
-
     while (**ptr && (**ptr == ' ' || **ptr == '\t')) {
         (*ptr)++;
     }
-
     char* dest = word;
     while (**ptr && **ptr != ' ' && **ptr != '\t' && **ptr != '\n' && **ptr != '\r') {
         *dest++ = **ptr;
@@ -832,48 +702,36 @@ void GetNextWord(const char** ptr, char* word) {
 int StrToInt(const char* str) {
     int result = 0;
     bool negative = false;
-
     if (*str == '-') {
         negative = true;
         str++;
     }
-
     while (*str >= '0' && *str <= '9') {
         result = result * 10 + (*str - '0');
         str++;
     }
-
     return negative ? -result : result;
 }
 
-// парсинг 
 void ParseGridCommands() {
     g_commandCount = 0;
     const char* ptr = g_commandBuffer;
-
     char line[256];
     char word[32];
-
     while (*ptr && g_commandCount < 100) {
-
         char* linePtr = line;
         while (*ptr && *ptr != '\n' && *ptr != '\r') {
             *linePtr++ = *ptr++;
         }
         *linePtr = '\0';
-
         while (*ptr == '\n' || *ptr == '\r') {
             ptr++;
         }
-
         if (line[0] == '\0' || line[0] == '#') {
             continue;
         }
-
-
         const char* lineReader = line;
         GetNextWord(&lineReader, word);
-
         if (StrEquals(word, "RIGHT")) {
             GetNextWord(&lineReader, word);
             int steps = word[0] ? StrToInt(word) : 1;
@@ -903,9 +761,7 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
         if (x < 0 || x >= g_gridSize) return true;
         return g_grid[y][x].isWall;
         };
-
     completed = false;
-
     switch (cmd.type) {
     case CMD_MOVE_LEFT:
     {
@@ -922,7 +778,6 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
         completed = true;
     }
     break;
-
     case CMD_MOVE_RIGHT:
     {
         int targetX = position.x;
@@ -938,7 +793,6 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
         completed = true;
     }
     break;
-
     case CMD_MOVE_UP:
     {
         int targetY = position.y;
@@ -954,7 +808,6 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
         completed = true;
     }
     break;
-
     case CMD_MOVE_DOWN:
     {
         int targetY = position.y;
@@ -970,13 +823,11 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
         completed = true;
     }
     break;
-
     case CMD_NONE:
     default:
         completed = true;
         break;
     }
-
     if (position.x < 0) position.x = 0;
     if (position.x >= g_gridSize) position.x = g_gridSize - 1;
     if (position.y < 0) position.y = 0;
@@ -987,7 +838,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
-
     switch (msg)
     {
     case WM_SIZE:
@@ -1015,8 +865,6 @@ bool CreateDeviceD3D(HWND hWnd)
     D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
     if (D3D12CreateDevice(NULL, featureLevel, IID_PPV_ARGS(&g_pd3dDevice)) != S_OK)
         return false;
-
-    // очередь 
     {
         D3D12_COMMAND_QUEUE_DESC desc = {};
         desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -1025,8 +873,6 @@ bool CreateDeviceD3D(HWND hWnd)
         if (g_pd3dDevice->CreateCommandQueue(&desc, IID_PPV_ARGS(&g_pd3dCommandQueue)) != S_OK)
             return false;
     }
-
-    // обмен
     {
         DXGI_SWAP_CHAIN_DESC1 sd;
         ZeroMemory(&sd, sizeof(sd));
@@ -1042,7 +888,6 @@ bool CreateDeviceD3D(HWND hWnd)
         sd.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         sd.Scaling = DXGI_SCALING_STRETCH;
         sd.Stereo = FALSE;
-
         IDXGIFactory4* dxgiFactory = NULL;
         IDXGISwapChain1* swapChain1 = NULL;
         if (CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory)) != S_OK)
@@ -1056,7 +901,6 @@ bool CreateDeviceD3D(HWND hWnd)
         dxgiFactory->Release();
         swapChain1->Release();
     }
-
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -1065,7 +909,6 @@ bool CreateDeviceD3D(HWND hWnd)
         desc.NodeMask = 1;
         if (g_pd3dDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&g_pd3dRtvDescHeap)) != S_OK)
             return false;
-
         SIZE_T rtvDescriptorSize = g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = g_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
         for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
@@ -1073,7 +916,6 @@ bool CreateDeviceD3D(HWND hWnd)
             rtvHandle.ptr += rtvDescriptorSize;
         }
     }
-
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -1082,7 +924,6 @@ bool CreateDeviceD3D(HWND hWnd)
         if (g_pd3dDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&g_pd3dSrvDescHeap)) != S_OK)
             return false;
     }
-
     {
         for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
             if (g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_frameContext[i].CommandAllocator)) != S_OK)
@@ -1107,7 +948,6 @@ bool CreateDeviceD3D(HWND hWnd)
 void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
-
     if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = NULL; }
     if (g_hSwapChainWaitableObject) { CloseHandle(g_hSwapChainWaitableObject); g_hSwapChainWaitableObject = NULL; }
     for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
@@ -1145,11 +985,9 @@ void WaitForLastSubmittedFrame()
     UINT64 fenceValue = frameCtx->FenceValue;
     if (fenceValue == 0)
         return;
-
     frameCtx->FenceValue = 0;
     if (g_fence->GetCompletedValue() >= fenceValue)
         return;
-
     g_fence->SetEventOnCompletion(fenceValue, g_fenceEvent);
     WaitForSingleObject(g_fenceEvent, INFINITE);
 }
@@ -1158,10 +996,8 @@ FrameContext* WaitForNextFrameResources()
 {
     UINT nextFrameIndex = g_frameIndex + 1;
     g_frameIndex = nextFrameIndex;
-
     HANDLE waitableObjects[] = { g_hSwapChainWaitableObject, NULL };
     DWORD numWaitableObjects = 1;
-
     FrameContext* frameCtx = &g_frameContext[nextFrameIndex % NUM_FRAMES_IN_FLIGHT];
     UINT64 fenceValue = frameCtx->FenceValue;
     if (fenceValue != 0)
@@ -1171,7 +1007,6 @@ FrameContext* WaitForNextFrameResources()
         waitableObjects[1] = g_fenceEvent;
         numWaitableObjects = 2;
     }
-
     WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
     return frameCtx;
 }
