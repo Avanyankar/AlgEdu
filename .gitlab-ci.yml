@@ -20,6 +20,7 @@ stages:
   - lint
   - test
   - docs
+  - build
   - deploy
 
 variables:
@@ -29,6 +30,9 @@ variables:
   DATABASE_URL: "sqlite:///:memory:" 
   DJANGO_SETTINGS_MODULE: "AlgEdu_Team.settings"
   DOCS_OUTPUT_DIR: "public/docs"
+  SERVER_IP: "87.228.77.37" 
+  CPP_DEPLOY_DIR: "/var/cpp_apps/algedu_parser"
+  CPP_EXE_NAME: "alg_edu_parser"
 
 # ----------------------------
 # Общие правила для веток
@@ -49,6 +53,13 @@ variables:
       changes:
         - application/**/*
 
+# ----------------------------
+# Правило для main-ветки
+# ----------------------------
+.main-rules: &main-rules
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+  
 # ----------------------------
 # Этап: Линтинг Python (WDev)
 # ----------------------------
@@ -187,4 +198,59 @@ build-docs:
   artifacts:
     paths:
       - team_website/main_app/static/docs/
+
+# ----------------------------
+# Сборка C++ (только main)
+# ----------------------------
+build-cpp-release:
+  stage: build
+  <<: *main-rules
+  tags:
+    - cpp
+  script:
+    - |
+      echo "🔧 Building C++ application..."
+      cd application
+      mkdir -p build_release && cd build_release
+      cmake -DCMAKE_BUILD_TYPE=Release ..
+      make -j$(nproc)
+      
+      if [ ! -f "$CPP_EXE_NAME" ]; then
+        echo "❌ Executable not found!"
+        exit 1
+      fi
+  artifacts:
+    paths:
+      - application/build_release/$CPP_EXE_NAME
+    expire_in: 1 week
+
+# ----------------------------
+# Деплой C++ (только main)
+# ----------------------------
+deploy-cpp-app:
+  stage: deploy
+  <<: *main-rules
+  needs: ["build-cpp-release"]
+  tags:
+    - deploy
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
+  script:
+    - |
+      echo "🚀 Deploying C++ app to $CPP_DEPLOY_DIR..."
+      
+      scp application/build_release/$CPP_EXE_NAME root@$SERVER_IP:$CPP_DEPLOY_DIR/
+      
+      ssh root@$SERVER_IP "
+        mkdir -p $CPP_DEPLOY_DIR && 
+        chmod +x $CPP_DEPLOY_DIR/$CPP_EXE_NAME &&
+        echo '✅ Deployment complete!'
+      "
+  after_script:
+    - rm -f ~/.ssh/id_rsa
 
