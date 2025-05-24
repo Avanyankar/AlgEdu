@@ -8,11 +8,9 @@
 bool Declaration::match(const std::vector<Token>& statement) const
 {
 	std::vector<TokenType> types;
-	std::vector<std::string> names;
 	for (const auto token : statement)
 	{
 		types.push_back(token.getType());
-		names.push_back(token.getSource());
 	}
 	if (types[0] != TokenType::LET)
 	{
@@ -20,12 +18,30 @@ bool Declaration::match(const std::vector<Token>& statement) const
 	}
 	if (types[1] != TokenType::IDENTIFIER)
 	{
-		throw std::invalid_argument("After LET should be IDENTIFIER");
+		throw std::invalid_argument("After LET considered to  be IDENTIFIER");
 	}
-	integers[names[1]] = Integer();
-	int i = 2;
-	if (types[i] == TokenType::IDENTIFIER)
+	size_t i = 2;
+	while (types[i] == TokenType::IDENTIFIER)
 	{
 		i++;
+	}
+	if (types[i] != TokenType::NEWLINE)
+	{
+		throw std::invalid_argument("After IDENTIFIER considered to  be NEWLINE");
+	}
+	return true;
+}
+
+void Declaration::instructions(std::vector<Token>& statement) const
+{
+	for (size_t i = 1; i < statement.size() - 1; i++)
+	{
+		std::string source = statement[i].getSource();
+		auto pos = integers.find(source);
+		if (pos != integers.end())
+		{
+			throw std::invalid_argument("Integer has been already declared");
+		}
+		integers[source] = Integer(source);
 	}
 }

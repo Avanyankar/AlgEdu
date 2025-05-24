@@ -1,5 +1,6 @@
-#include "parser.h"
 #include <iostream>
+#include "parser.h"
+#include "standardStatements.h"
 
 Parser* Parser::getInstance(std::string _source)
 {
@@ -12,6 +13,10 @@ Parser* Parser::getInstance(std::string _source)
 
 Parser::Parser(std::string _source)
 {
+    for (auto statement : standardStatements)
+    {
+        enabledStatements.push_back(statement);
+    }
     lexer = Lexer::getInstance(_source);
     curToken;
     peekToken;
@@ -59,7 +64,7 @@ void Parser::program()
         nextToken();
     }
     /*
-    Get libs here in future
+    Get enabledStatements here in future
     */
     while (!checkToken(TokenType::ENDOFFILE))
     {
@@ -69,77 +74,23 @@ void Parser::program()
 
 void Parser::statement()
 {
+    // Упрощённая реализация для начала
     std::vector<Token> new_statement;
-    new_statement.push_back(curToken);
-    // TODO(Avanyan Karen): statement realisation
-    nl();
-}
-
-void Parser::comparison()
-{
-    expression();
-    if (isComparisonOperator())
+    while (peekToken.getType() != TokenType::NEWLINE)
     {
-        // TODO(Avanyan Karen): comparison realisation
-        nextToken();
-        expression();
-    }
-    while (isComparisonOperator())
-    {
-        // TODO(Avanyan Karen): comparison realisation
-        nextToken();
-        expression();
-    }
-}
-
-void Parser::expression()
-{
-    term();
-    while (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
-    {
-        // TODO(Avanyan Karen): expression realisation
-        nextToken();
-        term();
-    }
-}
-
-void Parser::term()
-{
-    unary();
-    while (checkToken(TokenType::ASTERISK) || checkToken(TokenType::SLASH))
-    {
-        // TODO(Avanyan Karen): term realisation
-        nextToken();
-        unary();
-    }
-}
-
-void Parser::unary()
-{
-    if (checkToken(TokenType::PLUS) || checkToken(TokenType::MINUS))
-    {
-        // TODO(Avanyan Karen): unary realisation
+        new_statement.push_back(curToken);
         nextToken();
     }
-    primary();
-}
-
-void Parser::primary()
-{
-    if (checkToken(TokenType::NUMBER))
+    for (const auto statement : enabledStatements)
     {
-        // TODO(Avanyan Karen): primary realisation
-        nextToken();
+        if (statement.match(new_statement))
+        {
+            statement.instructions(new_statement);
+            nl();
+            return;
+        }
     }
-    else if (checkToken(TokenType::IDENTIFIER))
-    {
-        // TODO(Avanyan Karen): primary realisation
-        nextToken();
-    }
-    else
-    {
-        abort("Unexpected token at " + curToken.getSource());
-    }
+    throw; // statement not in vector
 }
 
 void Parser::nl()

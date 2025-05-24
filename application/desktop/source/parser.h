@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "token.h"
 #include "tokenType.h"
+#include "baseStatement.h"
 
 class Parser {
  private:
@@ -12,6 +13,7 @@ class Parser {
     Token peekToken;
     explicit Parser(std::string source);
     static Parser* instance;
+    std::vector<BaseStatement> enabledStatements;
  public:
     static Parser* getInstance(std::string source);
     bool checkToken(TokenType kind);
@@ -21,10 +23,5 @@ class Parser {
     void abort(const std::string& message);
     void program();
     void statement();
-    void comparison();
-    void expression();
-    void term();
-    void unary();
-    void primary();
     void nl();
 };

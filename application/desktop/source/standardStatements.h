@@ -6,10 +6,8 @@
 
 const std::vector<BaseStatement> standardStatements
 {
-    /* TODO BEFORE 20.05
-    Declaration,
-    Assignment,
-    */
+    Declaration(),
+    Assignment(),
     /*
     If,
     For,
