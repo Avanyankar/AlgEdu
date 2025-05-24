@@ -1,73 +1,16 @@
-#include <d3d12.h>
-#include <dxgi1_4.h>
-#include <tchar.h>
-#include <windows.h>
-#include <string>
-#include <commdlg.h> // Для GetSaveFileNameA
-#include <fstream>   // Для операций с файлами
-#include "imgui.h"
-#include "imgui_impl_win32.h"
-#include "imgui_impl_dx12.h"
-
-class FrameContext {
-public:
-    ID3D12CommandAllocator* CommandAllocator;
-    UINT64 FenceValue;
-
-    FrameContext() : CommandAllocator(nullptr), FenceValue(0) {}
-};
-
-class Cell {
-public:
-    bool isWall;
-    bool isStart;
-    bool isEnd;
-
-    Cell() : isWall(false), isStart(false), isEnd(false) {}
-};
-
-class CellCoord {
-public:
-    int x, y;
-
-    CellCoord() : x(0), y(0) {}
-    CellCoord(int _x, int _y) : x(_x), y(_y) {}
-
-    bool operator==(const CellCoord& other) const {
-        return x == other.x && y == other.y;
-    }
-
-    bool operator<(const CellCoord& other) const {
-        return (x < other.x) || (x == other.x && y < other.y);
-    }
-};
-
-enum CommandType {
-    CMD_NONE,
-    CMD_MOVE_LEFT,
-    CMD_MOVE_RIGHT,
-    CMD_MOVE_UP,
-    CMD_MOVE_DOWN,
-};
-
-class GridCommand {
-public:
-    CommandType type;
-    int x;
-    int y;
-    int steps;
-
-    GridCommand() : type(CMD_NONE), x(0), y(0), steps(1) {}
-    GridCommand(CommandType t, int s = 1) : type(t), x(0), y(0), steps(s) {}
-    GridCommand(CommandType t, int _x, int _y) : type(t), x(_x), y(_y), steps(1) {}
-};
+#include <imgui_impl_dx12.cpp>
+#include <exception>
+#include <stdio.h>
+#include <fstream>
+#include "../include/frameContext.h"
+#include "../include/cell.h"
+#include "../include/gridCommand.h"
+#include "../include/cellCord.h"
 
 const int NUM_FRAMES_IN_FLIGHT = 3;
 const int DEFAULT_GRID_SIZE = 10;
 const float CELL_PADDING = 2.0f;
 const float ANIMATION_SPEED = 5.0f;
-
-
 FrameContext g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 UINT g_frameIndex = 0;
 ID3D12Device* g_pd3dDevice = NULL;
@@ -82,7 +25,6 @@ IDXGISwapChain3* g_pSwapChain = NULL;
 HANDLE g_hSwapChainWaitableObject = NULL;
 ID3D12Resource* g_mainRenderTargetResource[NUM_FRAMES_IN_FLIGHT] = {};
 D3D12_CPU_DESCRIPTOR_HANDLE g_mainRenderTargetDescriptor[NUM_FRAMES_IN_FLIGHT] = {};
-
 Cell g_grid[DEFAULT_GRID_SIZE * 2][DEFAULT_GRID_SIZE * 2];
 int g_gridSize = DEFAULT_GRID_SIZE;
 GridCommand g_commands[100];  // Массив команд
