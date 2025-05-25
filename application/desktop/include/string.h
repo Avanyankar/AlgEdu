@@ -1,10 +1,12 @@
-﻿#pragma once
+﻿/* Disabled
+#pragma once
 #include "baseVariable.h"
 
 /**
  * @class String
  * @brief String variable with length bounds checking.
- */
+ *
+ /
 class String :
     public BaseVariable<std::string, size_t> {
  public:
@@ -17,35 +19,42 @@ class String :
      * @throws std::invalid_argument If:
      *   - min > max
      *   - length is out of bounds
-     */
-    String(const std::string& name,
-        size_t min = 0, size_t max = std::numeric_limits<size_t>::max());
+     *
+     /
+     size_t min = 0;
+     size_t max = std::numeric_limits<size_t>::max();
+     String(const std::string& name);
+     String(const std::string& name, std::string value);
 
-    /**
-     * @brief Validates current length is within bounds.
-     * @return true if min <= length <= max
-     */
-    bool validate() const;
+     /**
+      * @brief Validates current length is within bounds.
+      * @return true if min <= length <= max
+      *
+      /
+     bool validate() const;
 
-    /**
-     * @brief Compound concatenation operator with length checking.
-     * @param other The other string
-     * @return Reference to modified object
-     * @throws std::overflow_error If resulting length exceeds max
-     */
-    String& operator+=(const String& other);
+     /**
+      * @brief Compound concatenation operator with length checking.
+      * @param other The other string
+      * @return Reference to modified object
+      * @throws std::overflow_error If resulting length exceeds max
+      *
+      /
+     String& operator+=(const String& other);
 
-    /**
-     * @brief Concatenation operator with length checking.
-     * @param other The other string
-     * @return New String with combined value
-     * @throws std::overflow_error If resulting length exceeds max
-     */
-    String operator+(const String& other) const;
+     /**
+      * @brief Concatenation operator with length checking.
+      * @param other The other string
+      * @return New String with combined value
+      * @throws std::overflow_error If resulting length exceeds max
+      *
+      /
+     String operator+(const String& other) const;
 
-    // Delete invalid string operations
-    String operator-(const String& other) = delete;
-    String operator*(const String& other) = delete;
-    String operator/(const String& other) = delete;
-    String operator%(const String& other) = delete;
+     // Delete invalid string operations
+     String operator-(const String& another) = delete;
+     String operator*(const String& another) = delete;
+     String operator/(const String& another) = delete;
+     String operator%(const String& another) = delete;
 };
+*/

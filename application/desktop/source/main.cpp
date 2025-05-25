@@ -7,6 +7,8 @@
 #include "../include/cell.h"
 #include "../include/gridCommand.h"
 #include "../include/cellCord.h"
+#include "../include/parser.h"
+#include "../include/lexer.h"
 
 const int NUM_FRAMES_IN_FLIGHT = 3;
 const int DEFAULT_GRID_SIZE = 10;
@@ -210,7 +212,7 @@ int main(int, char**)
                     if (editMode)
                     {
                         ImGui::SetCursorScreenPos(ImVec2(cellX, cellY));
-                        char btnId[32];
+                        char btnId[32]{};
                         char* p = btnId;
                         *p++ = 'c';
                         *p++ = 'e';
@@ -253,7 +255,7 @@ int main(int, char**)
                         if (ImGui::IsItemHovered())
                         {
                             ImGui::BeginTooltip();
-                            char posBuffer[32];
+                            char posBuffer[32]{};
                             char* p = posBuffer;
                             *p++ = 'C';
                             *p++ = 'e';
@@ -312,7 +314,7 @@ int main(int, char**)
                 ImGui::SameLine();
                 ImGui::Checkbox("Set Walls", &setWalls);
             }
-            char posText[64];
+            char posText[64]{};
             char* p = posText;
             *p++ = 'S';
             *p++ = 'q';
@@ -341,7 +343,7 @@ int main(int, char**)
             ImGui::Text("%s", posText);
             if (runningCommands)
             {
-                char cmdText[64];
+                char cmdText[64]{};
                 char* p = cmdText;
                 *p++ = 'R';
                 *p++ = 'u';
@@ -369,7 +371,8 @@ int main(int, char**)
                     runningCommands = false;
                 }
             }
-            else {
+            else
+            {
                 if (ImGui::Button("Run Commands"))
                 {
                     ParseGridCommands();
@@ -488,7 +491,7 @@ if (g_saveError[0] != '\0')
                 for (int i = 0; i < g_commandCount && i < 10; i++)
                 {
                     const GridCommand& cmd = g_commands[i];
-                    char cmdText[64];
+                    char cmdText[64]{};
                     char* p = cmdText;
                     p = IntToStr(i + 1, p);
                     *p++ = ':';
@@ -532,7 +535,7 @@ if (g_saveError[0] != '\0')
                 }
                 if (g_commandCount > 10)
                 {
-                    char moreText[32];
+                    char moreText[32]{};
                     char* p = moreText;
                     *p++ = '.';
                     *p++ = '.';
@@ -593,7 +596,7 @@ char* IntToStr(int value, char* buffer)
         *buffer++ = '0';
         return buffer;
     }
-    char temp[16];
+    char temp[16]{};
     int tempIdx = 0;
     bool negative = false;
     if (value < 0)
@@ -634,7 +637,7 @@ void InitializeDefaultGrid(int size)
     g_gridSize = size;
 }
 
-bool StrEquals(const char* str1, const char* str2)
+static bool StrEquals(const char* str1, const char* str2)
 {
     while (*str1 && *str2)
     {
@@ -645,7 +648,7 @@ bool StrEquals(const char* str1, const char* str2)
     return *str1 == *str2;
 }
 
-void GetNextWord(const char** ptr, char* word)
+static void GetNextWord(const char** ptr, char* word)
 {
     while (**ptr && (**ptr == ' ' || **ptr == '\t'))
     {
@@ -660,7 +663,7 @@ void GetNextWord(const char** ptr, char* word)
     *dest = '\0';
 }
 
-int StrToInt(const char* str)
+static int StrToInt(const char* str)
 {
     int result = 0;
     bool negative = false;
@@ -681,7 +684,7 @@ void ParseGridCommands()
 {
     g_commandCount = 0;
     const char* ptr = g_commandBuffer;
-    char line[256];
+    char line[256]{};
     char word[32];
     while (*ptr && g_commandCount < 100)
     {
@@ -1106,7 +1109,7 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
             inFile.close();
             return false;
         }
-        unsigned char version;
+        unsigned char version = 0;
         inFile.read(reinterpret_cast<char*>(&version), sizeof(version));
         if (version != 1)
         {
@@ -1114,7 +1117,7 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
             inFile.close();
             return false;
         }
-        int fileGridSize;
+        int fileGridSize = 0;
         inFile.read(reinterpret_cast<char*>(&fileGridSize), sizeof(fileGridSize));
         if (fileGridSize > DEFAULT_GRID_SIZE * 2)
         {
@@ -1141,7 +1144,7 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
         {
             for (int x = 0; x < gridSize; x++)
             {
-                unsigned char cellData;
+                unsigned char cellData = 0;
                 inFile.read(reinterpret_cast<char*>(&cellData), sizeof(cellData));
                 grid[y][x].isWall = (cellData & 0x01) != 0;
                 grid[y][x].isStart = (cellData & 0x02) != 0;

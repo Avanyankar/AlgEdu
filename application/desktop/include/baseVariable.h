@@ -35,5 +35,7 @@ class BaseVariable {
      *   - name starts with digit or '_'
      *   - name contains invalid characters
      */
-    BaseVariable(const std::string& name, B min, B max);
+    BaseVariable();
+    BaseVariable(std::string& _name);
+    BaseVariable(std::string& _name, T _value);
 };

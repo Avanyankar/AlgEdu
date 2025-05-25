@@ -13,10 +13,11 @@ Parser* Parser::getInstance(std::string _source)
 
 Parser::Parser(std::string _source)
 {
-    for (auto statement : standardStatements)
+    enabledStatements =
     {
-        enabledStatements.push_back(statement);
-    }
+        new Declaration,
+        new Assignment,
+    }; // Временная реализация
     lexer = Lexer::getInstance(_source);
     curToken;
     peekToken;
@@ -81,11 +82,11 @@ void Parser::statement()
         new_statement.push_back(curToken);
         nextToken();
     }
-    for (const auto statement : enabledStatements)
+    for (auto& statement : enabledStatements)
     {
-        if (statement.match(new_statement))
+        if (statement->match(new_statement))
         {
-            statement.instructions(new_statement);
+            statement->instructions(new_statement);
             nl();
             return;
         }

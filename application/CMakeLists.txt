@@ -17,8 +17,10 @@ endif()
 
 set(SOURCES
     desktop/source/assignment.cpp
-    desktop/source/baseStatement.cpp
     desktop/source/baseVariable.cpp
+    desktop/source/baseStatement.cpp
+    desktop/source/cell.cpp
+    desktop/source/cellCord.cpp
     desktop/source/declaration.cpp
     desktop/source/integer.cpp
     desktop/source/lexer.cpp
@@ -29,18 +31,22 @@ set(SOURCES
 )
 
 set(HEADERS
-    desktop/source/assignment.h
-    desktop/source/baseStatement.h
-    desktop/source/baseVariable.h
-    desktop/source/declaration.h
-    desktop/source/integer.h
-    desktop/source/lexer.h
-    desktop/source/main.h
-    desktop/source/parser.h
-    desktop/source/string.h
-    desktop/source/token.h
-    desktop/source/tokenType.h
-    desktop/source/standardStatements.h
+    desktop/include/assignment.h
+    desktop/include/baseStatement.h
+    desktop/include/baseVariable.h
+    desktop/include/cell.h
+    desktop/include/cellCord.h
+    desktop/include/commandType.h
+    desktop/include/declaration.h
+    desktop/include/frameContext.h
+    desktop/include/gridCommand.h
+    desktop/include/integer.h
+    desktop/include/lexer.h
+    desktop/include/parser.h
+    desktop/include/standardStatements.h
+    desktop/include/string.h
+    desktop/include/token.h
+    desktop/include/tokenType.h
 )
 
 add_executable(AlgEdu ${SOURCES})
@@ -71,26 +77,3 @@ target_link_libraries(AlgEdu PRIVATE
     Boost::filesystem 
     Boost::system
 )
-
-enable_testing()
-
-file(GLOB TEST_SOURCES "test/*.cpp")
-
-if(TEST_SOURCES)
-    add_executable(AlgEduTests ${TEST_SOURCES} ${SOURCES})
-    
-    target_include_directories(AlgEduTests PRIVATE
-        desktop/source
-        ${CMAKE_CURRENT_SOURCE_DIR}/test
-    )
-    
-    add_subdirectory(desktop/vendor/googletest)
-    target_link_libraries(AlgEduTests PRIVATE
-        imgui
-        Boost::filesystem
-        Boost::system
-        gtest_main
-    )
-    
-    add_test(NAME AlgEduTests COMMAND AlgEduTests)
-endif()

@@ -1,6 +1,6 @@
 #include "../include/FrameContext.h"
 
 FrameContext::FrameContext() :
-	CommandAllocator(nullptr), FenceValue(0) {
+	CommandAllocator(nullptr), FenceValue(0)
 {
 }

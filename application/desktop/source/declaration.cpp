@@ -8,7 +8,7 @@
 bool Declaration::match(const std::vector<Token>& statement) const
 {
 	std::vector<TokenType> types;
-	for (const auto token : statement)
+	for (const auto& token : statement)
 	{
 		types.push_back(token.getType());
 	}
@@ -42,6 +42,8 @@ void Declaration::instructions(std::vector<Token>& statement) const
 		{
 			throw std::invalid_argument("Integer has been already declared");
 		}
-		integers[source] = Integer(source);
+		int number = stoi(source);
+		Integer new_int(source, number);
+		integers[source] = new_int;
 	}
 }

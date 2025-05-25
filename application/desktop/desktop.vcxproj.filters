@@ -19,6 +19,10 @@
     <ClCompile Include="source\declaration.cpp" />
     <ClCompile Include="source\assignment.cpp" />
     <ClCompile Include="source\baseStatement.cpp" />
+    <ClCompile Include="source\frameContext.cpp" />
+    <ClCompile Include="source\cell.cpp" />
+    <ClCompile Include="source\cellCord.cpp" />
+    <ClCompile Include="source\gridCommand.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\parser.h" />
@@ -40,6 +44,22 @@
     <ClInclude Include="source\integer.h" />
     <ClInclude Include="source\declaration.h" />
     <ClInclude Include="source\assignment.h" />
+    <ClInclude Include="include\assignment.h" />
+    <ClInclude Include="include\baseStatement.h" />
+    <ClInclude Include="include\baseVariable.h" />
+    <ClInclude Include="include\declaration.h" />
+    <ClInclude Include="include\integer.h" />
+    <ClInclude Include="include\lexer.h" />
+    <ClInclude Include="include\parser.h" />
+    <ClInclude Include="include\standardStatements.h" />
+    <ClInclude Include="include\string.h" />
+    <ClInclude Include="include\token.h" />
+    <ClInclude Include="include\tokenType.h" />
+    <ClInclude Include="include\frameContext.h" />
+    <ClInclude Include="include\cell.h" />
+    <ClInclude Include="include\cellCord.h" />
+    <ClInclude Include="include\commandType.h" />
+    <ClInclude Include="include\gridCommand.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="vendor\imgui-docking\LICENSE.txt" />

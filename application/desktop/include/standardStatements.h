@@ -4,10 +4,10 @@
 #include "declaration.h"
 #include "assignment.h"
 
-const std::vector<BaseStatement> standardStatements
+BaseStatement* standardStatements[2] = 
 {
-    Declaration(),
-    Assignment(),
+    new Declaration,
+    new Assignment,
     /*
     If,
     For,

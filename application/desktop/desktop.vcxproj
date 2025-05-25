@@ -19,17 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\gridCommand.cpp" />
+    <ClCompile Include="source\cellCord.cpp" />
+    <ClCompile Include="source\cell.cpp" />
     <ClCompile Include="source\assignment.cpp" />
     <ClCompile Include="source\declaration.cpp" />
     <ClCompile Include="source\baseVariable.cpp" />
+    <ClCompile Include="source\frameContext.cpp" />
     <ClCompile Include="source\integer.cpp" />
     <ClCompile Include="source\lexer.cpp" />
     <ClCompile Include="source\main.cpp" />
-    <ClCompile Include="source\parser.cpp" />
     <ClCompile Include="source\baseStatement.cpp" />
+    <ClCompile Include="source\parser.cpp" />
     <ClCompile Include="source\token.cpp" />
     <ClCompile Include="source\string.cpp" />
-    <ClCompile Include="source\variable_test.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="vendor\imgui-docking\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="vendor\imgui-docking\imgui.cpp" />
@@ -39,6 +42,22 @@
     <ClCompile Include="vendor\imgui-docking\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\gridCommand.h" />
+    <ClInclude Include="include\assignment.h" />
+    <ClInclude Include="include\baseStatement.h" />
+    <ClInclude Include="include\baseVariable.h" />
+    <ClInclude Include="include\cell.h" />
+    <ClInclude Include="include\cellCord.h" />
+    <ClInclude Include="include\commandType.h" />
+    <ClInclude Include="include\declaration.h" />
+    <ClInclude Include="include\frameContext.h" />
+    <ClInclude Include="include\integer.h" />
+    <ClInclude Include="include\lexer.h" />
+    <ClInclude Include="include\parser.h" />
+    <ClInclude Include="include\standardStatements.h" />
+    <ClInclude Include="include\string.h" />
+    <ClInclude Include="include\token.h" />
+    <ClInclude Include="include\tokenType.h" />
     <ClInclude Include="source\assignment.h" />
     <ClInclude Include="source\declaration.h" />
     <ClInclude Include="source\baseVariable.h" />

@@ -1,8 +1,13 @@
 #include "../include/baseVariable.h"
 
 template<typename T, typename B>
-inline BaseVariable<T, B>::BaseVariable(const std::string& name, B min, B max) :
-    name(name), min(min), max(max), value(value)
+BaseVariable<T, B>::BaseVariable()
+{
+}
+
+template<typename T, typename B>
+inline BaseVariable<T, B>::BaseVariable(std::string& _name) :
+    name(_name)
 {
     if (min >= max)
     {
@@ -24,4 +29,10 @@ inline BaseVariable<T, B>::BaseVariable(const std::string& name, B min, B max) :
                 "��� �������� ������������ �������. ��������� ������ �����, ����� � _");
         }
     }
+}
+
+template<typename T, typename B>
+BaseVariable<T, B>::BaseVariable(std::string& _name, T _value) :
+    name(_name), value(_value)
+{
 }

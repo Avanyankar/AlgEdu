@@ -13,7 +13,7 @@ class Parser {
     Token peekToken;
     explicit Parser(std::string source);
     static Parser* instance;
-    std::vector<BaseStatement> enabledStatements;
+    std::vector<BaseStatement*> enabledStatements;
  public:
     static Parser* getInstance(std::string source);
     bool checkToken(TokenType kind);
