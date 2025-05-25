@@ -13,7 +13,6 @@
     <ClCompile Include="vendor\imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="vendor\imgui-docking\imgui_widgets.cpp" />
     <ClCompile Include="source\string.cpp" />
-    <ClCompile Include="source\variable_test.cpp" />
     <ClCompile Include="source\baseVariable.cpp" />
     <ClCompile Include="source\integer.cpp" />
     <ClCompile Include="source\declaration.cpp" />
