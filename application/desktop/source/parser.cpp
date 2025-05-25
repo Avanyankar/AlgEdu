@@ -1,6 +1,6 @@
 #include <iostream>
-#include "../include/parser.h"
-#include "../include/standardStatements.h"
+#include "parser.h"
+#include "standardStatements.h"
 
 Parser* Parser::getInstance(std::string _source)
 {
@@ -25,12 +25,12 @@ Parser::Parser(std::string _source)
     nextToken();
 }
 
-bool Parser::checkToken(TokenType type)
+bool Parser::checkToken(int type)
 {
-    return type == curToken.getType();
+    return curToken.getType() == type;
 }
 
-void Parser::match(TokenType type)
+void Parser::match(int type)
 {
     if (!checkToken(type))
     {
@@ -46,13 +46,6 @@ void Parser::nextToken()
     peekToken = lexer->getToken();
 }
 
-bool Parser::isComparisonOperator()
-{
-    return checkToken(TokenType::GT) || checkToken(TokenType::GTEQ) ||
-        checkToken(TokenType::LT) || checkToken(TokenType::LTEQ) ||
-        checkToken(TokenType::EQEQ) || checkToken(TokenType::NOTEQ);
-}
-
 void Parser::abort(const std::string& message)
 {
     std::cerr << "Error! " << message << std::endl;
@@ -60,14 +53,14 @@ void Parser::abort(const std::string& message)
 
 void Parser::program()
 {
-    while (checkToken(TokenType::NEWLINE))
+    while (checkToken(static_cast<int>(TokenType::NEWLINE)))
     {
         nextToken();
     }
     /*
     Get enabledStatements here in future
     */
-    while (!checkToken(TokenType::ENDOFFILE))
+    while (!checkToken(static_cast<int>(TokenType::ENDOFFILE)))
     {
         statement();
     }
@@ -77,7 +70,7 @@ void Parser::statement()
 {
     // Упрощённая реализация для начала
     std::vector<Token> new_statement;
-    while (peekToken.getType() != TokenType::NEWLINE)
+    while (peekToken.getType() != static_cast<int>(TokenType::NEWLINE))
     {
         new_statement.push_back(curToken);
         nextToken();
@@ -96,8 +89,8 @@ void Parser::statement()
 
 void Parser::nl()
 {
-    match(TokenType::NEWLINE);
-    while (checkToken(TokenType::NEWLINE))
+    match(static_cast<int>(TokenType::NEWLINE));
+    while (checkToken(static_cast<int>(TokenType::NEWLINE)))
     {
         nextToken();
     }

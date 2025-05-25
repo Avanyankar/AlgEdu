@@ -1,6 +1,6 @@
 #include <regex>
 #include <iostream>
-#include "../include/lexer.h"
+#include "lexer.h"
 
 const std::unordered_map<std::string, TokenType> Lexer::tokenMap = {
     // Special characters

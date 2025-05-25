@@ -1,4 +1,4 @@
-#include "../include/assignment.h"
+#include "assignment.h"
 
 bool Assignment::match(const std::vector<Token>& statement) const
 {

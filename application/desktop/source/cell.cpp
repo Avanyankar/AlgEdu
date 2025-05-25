@@ -1,4 +1,4 @@
-#include "../include/cell.h"
+#include "cell.h"
 
 Cell::Cell() :
 	isWall(false), isStart(false), isEnd(false)

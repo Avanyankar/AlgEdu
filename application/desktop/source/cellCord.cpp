@@ -1,4 +1,4 @@
-#include "../include/cellCord.h"
+#include "cellCord.h"
 
 CellCoord::CellCoord() :
 	x(0), y(0)

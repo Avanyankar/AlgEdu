@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <fstream>
 #include <imgui_impl_win32.h>
-#include "../include/frameContext.h"
-#include "../include/cell.h"
-#include "../include/gridCommand.h"
-#include "../include/cellCord.h"
-#include "../include/parser.h"
-#include "../include/lexer.h"
+#include "frameContext.h"
+#include "cell.h"
+#include "gridCommand.h"
+#include "cellCord.h"
+#include "parser.h"
+#include "lexer.h"
 
 const int NUM_FRAMES_IN_FLIGHT = 3;
 const int DEFAULT_GRID_SIZE = 10;

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../include/baseStatement.h"
+#include "baseStatement.h"
 
 bool BaseStatement::match_condition(const std::vector<Token>& statement, size_t* i) const
 {

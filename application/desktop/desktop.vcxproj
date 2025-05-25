@@ -189,6 +189,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)desktop\include\</AdditionalIncludeDirectories>
+      <AdditionalModuleDependencies>
+      </AdditionalModuleDependencies>
+      <AdditionalHeaderUnitDependencies>
+      </AdditionalHeaderUnitDependencies>
+      <TranslateIncludes>false</TranslateIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

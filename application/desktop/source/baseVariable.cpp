@@ -1,4 +1,4 @@
-#include "../include/baseVariable.h"
+#include "baseVariable.h"
 
 template<typename T, typename B>
 BaseVariable<T, B>::BaseVariable()

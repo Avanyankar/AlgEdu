@@ -1,7 +1,7 @@
 ﻿/* Disabled
 #include <exception>
 #include <iostream>
-#include "../include/string.h"
+#include "string.h"
 
 String::String(const std::string& _name) :
     BaseVariable<std::string, size_t>(_name) 

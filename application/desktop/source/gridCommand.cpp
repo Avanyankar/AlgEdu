@@ -1,4 +1,4 @@
-#include "../include/gridCommand.h"
+#include "gridCommand.h"
 
 GridCommand::GridCommand() : 
 	type(CMD_NONE), x(0), y(0), steps(1)
