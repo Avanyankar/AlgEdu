@@ -12,12 +12,6 @@ Token::Token(std::string _source, int _type) :
 {
 }
 
-Token::Token(std::string _source, TokenType _type) :
-    source(_source)
-{
-    type = static_cast<int>(_type);
-}
-
 void Token::setType(int _type)
 {
     type = _type;

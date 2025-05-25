@@ -10,7 +10,6 @@ class Token
  public:
     Token();
     Token(std::string source, int type);
-    Token(std::string source, TokenType type);
     void setType(int type);
     int getType();
     int getType() const;
