@@ -1,6 +1,7 @@
 #pragma once
 
-enum CommandType {
+enum CommandType
+{
     CMD_NONE,
     CMD_MOVE_LEFT,
     CMD_MOVE_RIGHT,

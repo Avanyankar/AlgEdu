@@ -2,11 +2,11 @@
 #include <exception>
 #include <stdio.h>
 #include <fstream>
+#include <imgui_impl_win32.h>
 #include "../include/frameContext.h"
 #include "../include/cell.h"
 #include "../include/gridCommand.h"
 #include "../include/cellCord.h"
-#include <imgui_impl_win32.h>
 
 const int NUM_FRAMES_IN_FLIGHT = 3;
 const int DEFAULT_GRID_SIZE = 10;
@@ -49,103 +49,10 @@ bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAUL
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 bool SaveGridMapToFile(const char* filename, int gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2],
-    CellCoord startPos, CellCoord endPos) {
-    std::ofstream outFile(filename, std::ios::binary);
-    if (!outFile.is_open()) {
-        snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
-        return false;
-    }
-    try {
-        const char signature[] = "GRIDMAP";
-        outFile.write(signature, 7);
-        unsigned char version = 1;
-        outFile.write(reinterpret_cast<const char*>(&version), sizeof(version));
-        outFile.write(reinterpret_cast<const char*>(&gridSize), sizeof(gridSize));
-        outFile.write(reinterpret_cast<const char*>(&startPos.x), sizeof(startPos.x));
-        outFile.write(reinterpret_cast<const char*>(&startPos.y), sizeof(startPos.y));
-        outFile.write(reinterpret_cast<const char*>(&endPos.x), sizeof(endPos.x));
-        outFile.write(reinterpret_cast<const char*>(&endPos.y), sizeof(endPos.y));
-        for (int y = 0; y < gridSize; y++) {
-            for (int x = 0; x < gridSize; x++) {
-                unsigned char cellData = 0;
-                if (grid[y][x].isWall) cellData |= 0x01;
-                if (grid[y][x].isStart) cellData |= 0x02;
-                if (grid[y][x].isEnd) cellData |= 0x04;
-                outFile.write(reinterpret_cast<const char*>(&cellData), sizeof(cellData));
-            }
-        }
-        outFile.close();
-        g_saveError[0] = '\0';
-        return true;
-    }
-    catch (const std::exception& e) {
-        snprintf(g_saveError, sizeof(g_saveError), "Map error: %s", e.what());
-        outFile.close();
-        return false;
-    }
-}
+    CellCoord startPos, CellCoord endPos);
 
 bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2],
-    CellCoord& startPos, CellCoord& endPos) {
-    std::ifstream inFile(filename, std::ios::binary);
-    if (!inFile.is_open()) {
-        snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
-        return false;
-    }
-    try {
-        char signature[8] = { 0 };
-        inFile.read(signature, 7);
-        if (strcmp(signature, "GRIDMAP") != 0) {
-            snprintf(g_saveError, sizeof(g_saveError), "Incorrect format");
-            inFile.close();
-            return false;
-        }
-        unsigned char version;
-        inFile.read(reinterpret_cast<char*>(&version), sizeof(version));
-        if (version != 1) {
-            snprintf(g_saveError, sizeof(g_saveError), "Unsupported file version: %d", (int)version);
-            inFile.close();
-            return false;
-        }
-        int fileGridSize;
-        inFile.read(reinterpret_cast<char*>(&fileGridSize), sizeof(fileGridSize));
-        if (fileGridSize > DEFAULT_GRID_SIZE * 2) {
-            snprintf(g_saveError, sizeof(g_saveError), "Grid size exceeds maximum (%d > %d)",
-                fileGridSize, DEFAULT_GRID_SIZE * 2);
-            inFile.close();
-            return false;
-        }
-        gridSize = fileGridSize;
-        inFile.read(reinterpret_cast<char*>(&startPos.x), sizeof(startPos.x));
-        inFile.read(reinterpret_cast<char*>(&startPos.y), sizeof(startPos.y));
-        inFile.read(reinterpret_cast<char*>(&endPos.x), sizeof(endPos.x));
-        inFile.read(reinterpret_cast<char*>(&endPos.y), sizeof(endPos.y));
-        for (int y = 0; y < DEFAULT_GRID_SIZE * 2; y++) {
-            for (int x = 0; x < DEFAULT_GRID_SIZE * 2; x++) {
-                grid[y][x].isWall = false;
-                grid[y][x].isStart = false;
-                grid[y][x].isEnd = false;
-            }
-        }
-        for (int y = 0; y < gridSize; y++) {
-            for (int x = 0; x < gridSize; x++) {
-                unsigned char cellData;
-                inFile.read(reinterpret_cast<char*>(&cellData), sizeof(cellData));
-                grid[y][x].isWall = (cellData & 0x01) != 0;
-                grid[y][x].isStart = (cellData & 0x02) != 0;
-                grid[y][x].isEnd = (cellData & 0x04) != 0;
-            }
-        }
-        inFile.close();
-        g_saveError[0] = '\0';
-        return true;
-    }
-    catch (const std::exception& e) {
-        snprintf(g_saveError, sizeof(g_saveError), "Read Error: %s", e.what());
-        inFile.close();
-        return false;
-    }
-}
+    CellCoord& startPos, CellCoord& endPos);
 
 int main(int, char**)
 {
@@ -205,33 +112,40 @@ int main(int, char**)
         float deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
         totalTime += deltaTime;
-        if (isAnimating) {
+        if (isAnimating)
+        {
             animProgress += ANIMATION_SPEED * deltaTime;
-            if (animProgress >= 1.0f) {
+            if (animProgress >= 1.0f)
+            {
                 squarePos = targetPos;
                 isAnimating = false;
-                if (runningCommands && currentCommand < g_commandCount) {
+                if (runningCommands && currentCommand < g_commandCount)
+                {
                     currentCommand++;
-                    if (currentCommand >= g_commandCount) {
+                    if (currentCommand >= g_commandCount)
+                    {
                         runningCommands = false;
                     }
                 }
             }
-            else {
+            else
+            {
                 animX = static_cast<float>(squarePos.x) * (1.0f - animProgress) +
                     static_cast<float>(targetPos.x) * animProgress;
                 animY = static_cast<float>(squarePos.y) * (1.0f - animProgress) +
                     static_cast<float>(targetPos.y) * animProgress;
             }
         }
-        else if (runningCommands && currentCommand < g_commandCount) {
+        else if (runningCommands && currentCommand < g_commandCount)
+        {
             bool commandCompleted = false;
             ExecuteGridCommand(g_commands[currentCommand], squarePos, commandCompleted);
             targetPos = squarePos;
             isAnimating = true;
             animProgress = 0.0f;
         }
-        else if (runningCommands) {
+        else if (runningCommands)
+        {
             bool commandCompleted = false;
             ExecuteGridCommand(g_commands[currentCommand], squarePos, commandCompleted);
             targetPos = squarePos;
@@ -265,29 +179,36 @@ int main(int, char**)
             float gridTotalSize = g_gridSize * (cellSize + CELL_PADDING);
             ImVec2 gridStartPos = ImGui::GetCursorScreenPos();
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
-            for (int y = 0; y < g_gridSize; y++) {
-                for (int x = 0; x < g_gridSize; x++) {
+            for (int y = 0; y < g_gridSize; y++)
+            {
+                for (int x = 0; x < g_gridSize; x++)
+                {
                     float cellX = gridStartPos.x + x * (cellSize + CELL_PADDING);
                     float cellY = gridStartPos.y + y * (cellSize + CELL_PADDING);
                     ImU32 cellColor;
-                    if (g_grid[y][x].isWall) {
-                        cellColor = IM_COL32(100, 100, 100, 255);  // стена - серый
+                    if (g_grid[y][x].isWall)
+                    {
+                        cellColor = IM_COL32(100, 100, 100, 255);
                     }
-                    else if (g_grid[y][x].isStart) {
-                        cellColor = IM_COL32(0, 255, 0, 255);      // начало - зелёный
+                    else if (g_grid[y][x].isStart)
+                    {
+                        cellColor = IM_COL32(0, 255, 0, 255);
                     }
-                    else if (g_grid[y][x].isEnd) {
-                        cellColor = IM_COL32(0, 0, 255, 255);      // конец - синий
+                    else if (g_grid[y][x].isEnd)
+                    {
+                        cellColor = IM_COL32(0, 0, 255, 255);
                     }
-                    else {
-                        cellColor = IM_COL32(200, 200, 200, 255);  // светло серый - поля
+                    else
+                    {
+                        cellColor = IM_COL32(200, 200, 200, 255);
                     }
                     draw_list->AddRectFilled(
                         ImVec2(cellX, cellY),
                         ImVec2(cellX + cellSize, cellY + cellSize),
                         cellColor
                     );
-                    if (editMode) {
+                    if (editMode)
+                    {
                         ImGui::SetCursorScreenPos(ImVec2(cellX, cellY));
                         char btnId[32];
                         char* p = btnId;
@@ -301,31 +222,36 @@ int main(int, char**)
                         p = IntToStr(y, p);
                         *p = '\0';
                         ImGui::InvisibleButton(btnId, ImVec2(cellSize, cellSize));
-                        if (ImGui::IsItemClicked()) {
-                            if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
+                        if (ImGui::IsItemClicked())
+                        {
+                            if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
+                            {
                                 CellCoord newStart(x, y);
-                                if (!(g_grid[y][x].isWall || g_grid[y][x].isEnd)) {
+                                if (!(g_grid[y][x].isWall || g_grid[y][x].isEnd))
+                                {
                                     g_grid[startCell.y][startCell.x].isStart = false;
                                     g_grid[y][x].isStart = true;
                                     startCell = newStart;
                                     squarePos = newStart;
                                 }
                             }
-                            else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+                            else if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+                            {
                                 CellCoord newEnd(x, y);
-                                if (!(g_grid[y][x].isWall || g_grid[y][x].isStart)) {
+                                if (!(g_grid[y][x].isWall || g_grid[y][x].isStart))
+                                {
                                     g_grid[endCell.y][endCell.x].isEnd = false;
                                     g_grid[y][x].isEnd = true;
                                     endCell = newEnd;
                                 }
                             }
-                            else {
-                                if (!(g_grid[y][x].isStart || g_grid[y][x].isEnd)) {
-                                    g_grid[y][x].isWall = setWalls;
-                                }
+                            else if (!(g_grid[y][x].isStart || g_grid[y][x].isEnd))
+                            {
+                                g_grid[y][x].isWall = setWalls;
                             }
                         }
-                        if (ImGui::IsItemHovered()) {
+                        if (ImGui::IsItemHovered())
+                        {
                             ImGui::BeginTooltip();
                             char posBuffer[32];
                             char* p = posBuffer;
@@ -342,7 +268,6 @@ int main(int, char**)
                             *p++ = ')';
                             *p = '\0';
                             ImGui::Text("%s", posBuffer);
-
                             ImGui::Text("Click: %s wall", setWalls ? "Add" : "Remove");
                             ImGui::Text("Shift+Click: Set start point");
                             ImGui::Text("Ctrl+Click: Set end point");
@@ -353,11 +278,13 @@ int main(int, char**)
             }
             ImGui::SetCursorScreenPos(ImVec2(gridStartPos.x, gridStartPos.y + gridTotalSize + 10));
             float drawX, drawY;
-            if (isAnimating) {
+            if (isAnimating)
+            {
                 drawX = gridStartPos.x + animX * (cellSize + CELL_PADDING);
                 drawY = gridStartPos.y + animY * (cellSize + CELL_PADDING);
             }
-            else {
+            else
+            {
                 drawX = gridStartPos.x + squarePos.x * (cellSize + CELL_PADDING);
                 drawY = gridStartPos.y + squarePos.y * (cellSize + CELL_PADDING);
             }
@@ -371,7 +298,8 @@ int main(int, char**)
                 square_color
             );
             ImGui::SetCursorScreenPos(ImVec2(gridStartPos.x, gridStartPos.y + gridTotalSize + 20));
-            if (ImGui::SliderInt("Grid Size", &g_gridSize, 5, 20)) {
+            if (ImGui::SliderInt("Grid Size", &g_gridSize, 5, 20))
+            {
                 InitializeDefaultGrid(g_gridSize);
                 startCell = CellCoord(0, 0);
                 endCell = CellCoord(g_gridSize - 1, g_gridSize - 1);
@@ -379,7 +307,8 @@ int main(int, char**)
             }
             ImGui::SliderFloat("Cell Size", &cellSize, 20.0f, 60.0f);
             ImGui::Checkbox("Edit Mode", &editMode);
-            if (editMode) {
+            if (editMode)
+            {
                 ImGui::SameLine();
                 ImGui::Checkbox("Set Walls", &setWalls);
             }
@@ -410,7 +339,8 @@ int main(int, char**)
             *p++ = ')';
             *p = '\0';
             ImGui::Text("%s", posText);
-            if (runningCommands) {
+            if (runningCommands)
+            {
                 char cmdText[64];
                 char* p = cmdText;
                 *p++ = 'R';
@@ -434,39 +364,46 @@ int main(int, char**)
                 p = IntToStr(g_commandCount, p);
                 *p = '\0';
                 ImGui::Text("%s", cmdText);
-                if (ImGui::Button("Stop Commands")) {
+                if (ImGui::Button("Stop Commands"))
+                {
                     runningCommands = false;
                 }
             }
             else {
-                if (ImGui::Button("Run Commands")) {
+                if (ImGui::Button("Run Commands"))
+                {
                     ParseGridCommands();
-                    if (g_commandCount > 0) {
+                    if (g_commandCount > 0)
+                    {
                         runningCommands = true;
                         currentCommand = 0;
                         squarePos = startCell;
                     }
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Move Left") && squarePos.x > 0 && !g_grid[squarePos.y][squarePos.x - 1].isWall) {
+                if (ImGui::Button("Move Left") && squarePos.x > 0 && !g_grid[squarePos.y][squarePos.x - 1].isWall)
+                {
                     targetPos = CellCoord(squarePos.x - 1, squarePos.y);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Move Right") && squarePos.x < g_gridSize - 1 && !g_grid[squarePos.y][squarePos.x + 1].isWall) {
+                if (ImGui::Button("Move Right") && squarePos.x < g_gridSize - 1 && !g_grid[squarePos.y][squarePos.x + 1].isWall)
+                {
                     targetPos = CellCoord(squarePos.x + 1, squarePos.y);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Move Up") && squarePos.y > 0 && !g_grid[squarePos.y - 1][squarePos.x].isWall) {
+                if (ImGui::Button("Move Up") && squarePos.y > 0 && !g_grid[squarePos.y - 1][squarePos.x].isWall)
+                {
                     targetPos = CellCoord(squarePos.x, squarePos.y - 1);
                     isAnimating = true;
                     animProgress = 0.0f;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Move Down") && squarePos.y < g_gridSize - 1 && !g_grid[squarePos.y + 1][squarePos.x].isWall) {
+                if (ImGui::Button("Move Down") && squarePos.y < g_gridSize - 1 && !g_grid[squarePos.y + 1][squarePos.x].isWall)
+                {
                     targetPos = CellCoord(squarePos.x, squarePos.y + 1);
                     isAnimating = true;
                     animProgress = 0.0f;
@@ -476,7 +413,8 @@ int main(int, char**)
         }
 
 ImGui::Separator();
-if (ImGui::Button("Save Map")) {
+if (ImGui::Button("Save Map"))
+{
     char filename[MAX_PATH] = "grid_map.gmap";
     OPENFILENAMEA ofn;
     ZeroMemory(&ofn, sizeof(ofn));
@@ -488,16 +426,18 @@ if (ImGui::Button("Save Map")) {
     ofn.lpstrTitle = "Save Grid Map";
     ofn.Flags = OFN_OVERWRITEPROMPT;
     ofn.lpstrDefExt = "gmap";
-
-    if (GetSaveFileNameA(&ofn)) {
+    if (GetSaveFileNameA(&ofn))
+    {
         bool success = SaveGridMapToFile(filename, g_gridSize, g_grid, startCell, endCell);
-        if (success) {
+        if (success)
+        {
             snprintf(g_saveError, sizeof(g_saveError), "Map saved successfully: %s", filename);
         }
     }
 }
 ImGui::SameLine();
-if (ImGui::Button("Load Map")) {
+if (ImGui::Button("Load Map"))
+{
     char filename[MAX_PATH] = "";   
     OPENFILENAMEA ofn;
     ZeroMemory(&ofn, sizeof(ofn));
@@ -509,23 +449,26 @@ if (ImGui::Button("Load Map")) {
     ofn.lpstrTitle = "Load Grid Map";
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
     ofn.lpstrDefExt = "gmap";
-    if (GetOpenFileNameA(&ofn)) {
+    if (GetOpenFileNameA(&ofn))
+    {
         bool success = LoadGridMapFromFile(filename, g_gridSize, g_grid, startCell, endCell);
-        if (success) {
+        if (success)
+        {
             snprintf(g_saveError, sizeof(g_saveError), "Map loaded successfully: %s", filename);
             squarePos = startCell; 
         }
     }
 }
-if (g_saveError[0] != '\0') {
+if (g_saveError[0] != '\0')
+{
     ImGui::TextWrapped("%s", g_saveError);
 }
         {
             ImGui::SetNextWindowPos(ImVec2(620, 10), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
             ImGui::Begin("Command Panel");
-
-            if (ImGui::CollapsingHeader("Command Help", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Command Help", ImGuiTreeNodeFlags_DefaultOpen))
+            {
                 ImGui::Text("Available commands:");
                 ImGui::BulletText("RIGHT [steps] - move right by [steps] cells");
                 ImGui::BulletText("LEFT [steps] - move left by [steps] cells");
@@ -538,17 +481,20 @@ if (g_saveError[0] != '\0') {
                 ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 10),
                 ImGuiInputTextFlags_AllowTabInput);
             ImGui::Separator();
-            if (ImGui::Button("Parse Commands")) {
+            if (ImGui::Button("Parse Commands"))
+            {
                 ParseGridCommands();
                 ImGui::Text("Parsed %d commands:", g_commandCount);
-                for (int i = 0; i < g_commandCount && i < 10; i++) {
+                for (int i = 0; i < g_commandCount && i < 10; i++)
+                {
                     const GridCommand& cmd = g_commands[i];
                     char cmdText[64];
                     char* p = cmdText;
                     p = IntToStr(i + 1, p);
                     *p++ = ':';
                     *p++ = ' ';
-                    switch (cmd.type) {
+                    switch (cmd.type)
+                    {
                     case CMD_MOVE_LEFT:
                         *p++ = 'L';
                         *p++ = 'E';
@@ -584,7 +530,8 @@ if (g_saveError[0] != '\0') {
                     *p = '\0';
                     ImGui::Text("%s", cmdText);
                 }
-                if (g_commandCount > 10) {
+                if (g_commandCount > 10)
+                {
                     char moreText[32];
                     char* p = moreText;
                     *p++ = '.';
@@ -639,35 +586,44 @@ if (g_saveError[0] != '\0') {
     return 0;
 }
 
-char* IntToStr(int value, char* buffer) {
-    if (value == 0) {
+char* IntToStr(int value, char* buffer)
+{
+    if (value == 0)
+    {
         *buffer++ = '0';
         return buffer;
     }
     char temp[16];
     int tempIdx = 0;
     bool negative = false;
-    if (value < 0) {
+    if (value < 0)
+    {
         negative = true;
         value = -value;
     }
-    while (value > 0) {
+    while (value > 0)
+    {
         temp[tempIdx++] = '0' + (value % 10);
         value /= 10;
     }
-    if (negative) {
+    if (negative)
+    {
         *buffer++ = '-';
     }
-    while (tempIdx > 0) {
+    while (tempIdx > 0)
+    {
         *buffer++ = temp[--tempIdx];
     }
     return buffer;
 }
 
-void InitializeDefaultGrid(int size) {
+void InitializeDefaultGrid(int size)
+{
     if (size < 5) size = 5;
-    for (int y = 0; y < size; y++) {
-        for (int x = 0; x < size; x++) {
+    for (int y = 0; y < size; y++)
+    {
+        for (int x = 0; x < size; x++)
+        {
             g_grid[y][x].isWall = false;
             g_grid[y][x].isStart = false;
             g_grid[y][x].isEnd = false;
@@ -678,8 +634,10 @@ void InitializeDefaultGrid(int size) {
     g_gridSize = size;
 }
 
-bool StrEquals(const char* str1, const char* str2) {
-    while (*str1 && *str2) {
+bool StrEquals(const char* str1, const char* str2)
+{
+    while (*str1 && *str2)
+    {
         if (*str1 != *str2) return false;
         str1++;
         str2++;
@@ -687,67 +645,82 @@ bool StrEquals(const char* str1, const char* str2) {
     return *str1 == *str2;
 }
 
-void GetNextWord(const char** ptr, char* word) {
-    while (**ptr && (**ptr == ' ' || **ptr == '\t')) {
+void GetNextWord(const char** ptr, char* word)
+{
+    while (**ptr && (**ptr == ' ' || **ptr == '\t'))
+    {
         (*ptr)++;
     }
     char* dest = word;
-    while (**ptr && **ptr != ' ' && **ptr != '\t' && **ptr != '\n' && **ptr != '\r') {
+    while (**ptr && **ptr != ' ' && **ptr != '\t' && **ptr != '\n' && **ptr != '\r')
+    {
         *dest++ = **ptr;
         (*ptr)++;
     }
     *dest = '\0';
 }
 
-int StrToInt(const char* str) {
+int StrToInt(const char* str)
+{
     int result = 0;
     bool negative = false;
-    if (*str == '-') {
+    if (*str == '-')
+    {
         negative = true;
         str++;
     }
-    while (*str >= '0' && *str <= '9') {
+    while (*str >= '0' && *str <= '9')
+    {
         result = result * 10 + (*str - '0');
         str++;
     }
     return negative ? -result : result;
 }
 
-void ParseGridCommands() {
+void ParseGridCommands()
+{
     g_commandCount = 0;
     const char* ptr = g_commandBuffer;
     char line[256];
     char word[32];
-    while (*ptr && g_commandCount < 100) {
+    while (*ptr && g_commandCount < 100)
+    {
         char* linePtr = line;
-        while (*ptr && *ptr != '\n' && *ptr != '\r') {
+        while (*ptr && *ptr != '\n' && *ptr != '\r')
+        {
             *linePtr++ = *ptr++;
         }
         *linePtr = '\0';
-        while (*ptr == '\n' || *ptr == '\r') {
+        while (*ptr == '\n' || *ptr == '\r')
+        {
             ptr++;
         }
-        if (line[0] == '\0' || line[0] == '#') {
+        if (line[0] == '\0' || line[0] == '#')
+        {
             continue;
         }
         const char* lineReader = line;
         GetNextWord(&lineReader, word);
-        if (StrEquals(word, "RIGHT")) {
+        if (StrEquals(word, "RIGHT"))
+        {
             GetNextWord(&lineReader, word);
             int steps = word[0] ? StrToInt(word) : 1;
             g_commands[g_commandCount++] = GridCommand(CMD_MOVE_RIGHT, steps);
         }
-        else if (StrEquals(word, "LEFT")) {
+        else if (StrEquals(word, "LEFT"))
+        {
             GetNextWord(&lineReader, word);
             int steps = word[0] ? StrToInt(word) : 1;
             g_commands[g_commandCount++] = GridCommand(CMD_MOVE_LEFT, steps);
         }
-        else if (StrEquals(word, "UP")) {
+        else if (StrEquals(word, "UP"))
+        {
             GetNextWord(&lineReader, word);
             int steps = word[0] ? StrToInt(word) : 1;
             g_commands[g_commandCount++] = GridCommand(CMD_MOVE_UP, steps);
         }
-        else if (StrEquals(word, "DOWN")) {
+        else if (StrEquals(word, "DOWN"))
+        {
             GetNextWord(&lineReader, word);
             int steps = word[0] ? StrToInt(word) : 1;
             g_commands[g_commandCount++] = GridCommand(CMD_MOVE_DOWN, steps);
@@ -755,22 +728,28 @@ void ParseGridCommands() {
     }
 }
 
-void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) {
-    auto isCellWall = [](int y, int x) -> bool {
+void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed)
+{
+    auto isCellWall = [](int y, int x) -> bool
+        {
         if (y < 0 || y >= g_gridSize) return true;
         if (x < 0 || x >= g_gridSize) return true;
         return g_grid[y][x].isWall;
         };
     completed = false;
-    switch (cmd.type) {
+    switch (cmd.type)
+    {
     case CMD_MOVE_LEFT:
     {
         int targetX = position.x;
-        for (int step = 0; step < cmd.steps && targetX > 0; step++) {
-            if (!isCellWall(position.y, targetX - 1)) {
+        for (int step = 0; step < cmd.steps && targetX > 0; step++)
+        {
+            if (!isCellWall(position.y, targetX - 1))
+            {
                 targetX--;
             }
-            else {
+            else
+            {
                 break;
             }
         }
@@ -781,11 +760,14 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
     case CMD_MOVE_RIGHT:
     {
         int targetX = position.x;
-        for (int step = 0; step < cmd.steps && targetX < g_gridSize - 1; step++) {
-            if (!isCellWall(position.y, targetX + 1)) {
+        for (int step = 0; step < cmd.steps && targetX < g_gridSize - 1; step++)
+        {
+            if (!isCellWall(position.y, targetX + 1))
+            {
                 targetX++;
             }
-            else {
+            else
+            {
                 break;
             }
         }
@@ -796,11 +778,14 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
     case CMD_MOVE_UP:
     {
         int targetY = position.y;
-        for (int step = 0; step < cmd.steps && targetY > 0; step++) {
-            if (!isCellWall(targetY - 1, position.x)) {
+        for (int step = 0; step < cmd.steps && targetY > 0; step++)
+        {
+            if (!isCellWall(targetY - 1, position.x))
+            {
                 targetY--;
             }
-            else {
+            else
+            {
                 break;
             }
         }
@@ -811,11 +796,14 @@ void ExecuteGridCommand(GridCommand& cmd, CellCoord& position, bool& completed) 
     case CMD_MOVE_DOWN:
     {
         int targetY = position.y;
-        for (int step = 0; step < cmd.steps && targetY < g_gridSize - 1; step++) {
-            if (!isCellWall(targetY + 1, position.x)) {
+        for (int step = 0; step < cmd.steps && targetY < g_gridSize - 1; step++)
+        {
+            if (!isCellWall(targetY + 1, position.x))
+            {
                 targetY++;
             }
-            else {
+            else
+            {
                 break;
             }
         }
@@ -911,7 +899,8 @@ bool CreateDeviceD3D(HWND hWnd)
             return false;
         SIZE_T rtvDescriptorSize = g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = g_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
+        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
+        {
             g_mainRenderTargetDescriptor[i] = rtvHandle;
             rtvHandle.ptr += rtvDescriptorSize;
         }
@@ -925,21 +914,19 @@ bool CreateDeviceD3D(HWND hWnd)
             return false;
     }
     {
-        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
+        for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
+        {
             if (g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_frameContext[i].CommandAllocator)) != S_OK)
                 return false;
         }
         if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
             g_pd3dCommandList->Close() != S_OK)
             return false;
-
         if (g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)) != S_OK)
             return false;
-
         g_fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
         if (g_fenceEvent == NULL)
             return false;
-
         CreateRenderTarget();
         return true;
     }
@@ -948,17 +935,59 @@ bool CreateDeviceD3D(HWND hWnd)
 void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
-    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = NULL; }
-    if (g_hSwapChainWaitableObject) { CloseHandle(g_hSwapChainWaitableObject); g_hSwapChainWaitableObject = NULL; }
+    if (g_pSwapChain)
+    {
+        g_pSwapChain->Release();
+        g_pSwapChain = NULL;
+    }
+    if (g_hSwapChainWaitableObject)
+    {
+        CloseHandle(g_hSwapChainWaitableObject);
+        g_hSwapChainWaitableObject = NULL;
+    }
     for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
-        if (g_frameContext[i].CommandAllocator) { g_frameContext[i].CommandAllocator->Release(); g_frameContext[i].CommandAllocator = NULL; }
-    if (g_pd3dCommandQueue) { g_pd3dCommandQueue->Release(); g_pd3dCommandQueue = NULL; }
-    if (g_pd3dCommandList) { g_pd3dCommandList->Release(); g_pd3dCommandList = NULL; }
-    if (g_pd3dRtvDescHeap) { g_pd3dRtvDescHeap->Release(); g_pd3dRtvDescHeap = NULL; }
-    if (g_pd3dSrvDescHeap) { g_pd3dSrvDescHeap->Release(); g_pd3dSrvDescHeap = NULL; }
-    if (g_fence) { g_fence->Release(); g_fence = NULL; }
-    if (g_fenceEvent) { CloseHandle(g_fenceEvent); g_fenceEvent = NULL; }
-    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = NULL; }
+    {
+        if (g_frameContext[i].CommandAllocator)
+        {
+            g_frameContext[i].CommandAllocator->Release();
+            g_frameContext[i].CommandAllocator = NULL;
+        }
+    }
+    if (g_pd3dCommandQueue)
+    {
+        g_pd3dCommandQueue->Release();
+        g_pd3dCommandQueue = NULL;
+    }
+    if (g_pd3dCommandList)
+    {
+        g_pd3dCommandList->Release();
+        g_pd3dCommandList = NULL;
+    }
+    if (g_pd3dRtvDescHeap)
+    {
+        g_pd3dRtvDescHeap->Release();
+        g_pd3dRtvDescHeap = NULL;
+    }
+    if (g_pd3dSrvDescHeap)
+    {
+        g_pd3dSrvDescHeap->Release();
+        g_pd3dSrvDescHeap = NULL;
+    }
+    if (g_fence)
+    {
+        g_fence->Release();
+        g_fence = NULL;
+    }
+    if (g_fenceEvent)
+    {
+        CloseHandle(g_fenceEvent);
+        g_fenceEvent = NULL;
+    }
+    if (g_pd3dDevice)
+    {
+        g_pd3dDevice->Release();
+        g_pd3dDevice = NULL;
+    }
 }
 
 void CreateRenderTarget()
@@ -976,7 +1005,13 @@ void CleanupRenderTarget()
 {
     WaitForLastSubmittedFrame();
     for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
-        if (g_mainRenderTargetResource[i]) { g_mainRenderTargetResource[i]->Release(); g_mainRenderTargetResource[i] = NULL; }
+    {
+        if (g_mainRenderTargetResource[i])
+        {
+            g_mainRenderTargetResource[i]->Release();
+            g_mainRenderTargetResource[i] = NULL;
+        }
+    }
 }
 
 void WaitForLastSubmittedFrame()
@@ -1009,4 +1044,118 @@ FrameContext* WaitForNextFrameResources()
     }
     WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
     return frameCtx;
+}
+
+bool SaveGridMapToFile(const char* filename, int gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2],
+    CellCoord startPos, CellCoord endPos) {
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile.is_open())
+    {
+        snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
+        return false;
+    }
+    try
+    {
+        const char signature[] = "GRIDMAP";
+        outFile.write(signature, 7);
+        unsigned char version = 1;
+        outFile.write(reinterpret_cast<const char*>(&version), sizeof(version));
+        outFile.write(reinterpret_cast<const char*>(&gridSize), sizeof(gridSize));
+        outFile.write(reinterpret_cast<const char*>(&startPos.x), sizeof(startPos.x));
+        outFile.write(reinterpret_cast<const char*>(&startPos.y), sizeof(startPos.y));
+        outFile.write(reinterpret_cast<const char*>(&endPos.x), sizeof(endPos.x));
+        outFile.write(reinterpret_cast<const char*>(&endPos.y), sizeof(endPos.y));
+        for (int y = 0; y < gridSize; y++)
+        {
+            for (int x = 0; x < gridSize; x++)
+            {
+                unsigned char cellData = 0;
+                if (grid[y][x].isWall) cellData |= 0x01;
+                if (grid[y][x].isStart) cellData |= 0x02;
+                if (grid[y][x].isEnd) cellData |= 0x04;
+                outFile.write(reinterpret_cast<const char*>(&cellData), sizeof(cellData));
+            }
+        }
+        outFile.close();
+        g_saveError[0] = '\0';
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        snprintf(g_saveError, sizeof(g_saveError), "Map error: %s", e.what());
+        outFile.close();
+        return false;
+    }
+}
+
+bool LoadGridMapFromFile(const char* filename, int& gridSize, Cell grid[][DEFAULT_GRID_SIZE * 2],
+    CellCoord& startPos, CellCoord& endPos) {
+    std::ifstream inFile(filename, std::ios::binary);
+    if (!inFile.is_open())
+    {
+        snprintf(g_saveError, sizeof(g_saveError), "Cannot open file: %s", filename);
+        return false;
+    }
+    try
+    {
+        char signature[8] = { 0 };
+        inFile.read(signature, 7);
+        if (strcmp(signature, "GRIDMAP") != 0)
+        {
+            snprintf(g_saveError, sizeof(g_saveError), "Incorrect format");
+            inFile.close();
+            return false;
+        }
+        unsigned char version;
+        inFile.read(reinterpret_cast<char*>(&version), sizeof(version));
+        if (version != 1)
+        {
+            snprintf(g_saveError, sizeof(g_saveError), "Unsupported file version: %d", (int)version);
+            inFile.close();
+            return false;
+        }
+        int fileGridSize;
+        inFile.read(reinterpret_cast<char*>(&fileGridSize), sizeof(fileGridSize));
+        if (fileGridSize > DEFAULT_GRID_SIZE * 2)
+        {
+            snprintf(g_saveError, sizeof(g_saveError), "Grid size exceeds maximum (%d > %d)",
+                fileGridSize, DEFAULT_GRID_SIZE * 2);
+            inFile.close();
+            return false;
+        }
+        gridSize = fileGridSize;
+        inFile.read(reinterpret_cast<char*>(&startPos.x), sizeof(startPos.x));
+        inFile.read(reinterpret_cast<char*>(&startPos.y), sizeof(startPos.y));
+        inFile.read(reinterpret_cast<char*>(&endPos.x), sizeof(endPos.x));
+        inFile.read(reinterpret_cast<char*>(&endPos.y), sizeof(endPos.y));
+        for (int y = 0; y < DEFAULT_GRID_SIZE * 2; y++)
+        {
+            for (int x = 0; x < DEFAULT_GRID_SIZE * 2; x++)
+            {
+                grid[y][x].isWall = false;
+                grid[y][x].isStart = false;
+                grid[y][x].isEnd = false;
+            }
+        }
+        for (int y = 0; y < gridSize; y++)
+        {
+            for (int x = 0; x < gridSize; x++)
+            {
+                unsigned char cellData;
+                inFile.read(reinterpret_cast<char*>(&cellData), sizeof(cellData));
+                grid[y][x].isWall = (cellData & 0x01) != 0;
+                grid[y][x].isStart = (cellData & 0x02) != 0;
+                grid[y][x].isEnd = (cellData & 0x04) != 0;
+            }
+        }
+        inFile.close();
+        g_saveError[0] = '\0';
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        snprintf(g_saveError, sizeof(g_saveError), "Read Error: %s", e.what());
+        inFile.close();
+        return false;
+    }
 }

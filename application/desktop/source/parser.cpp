@@ -1,5 +1,5 @@
 #include <iostream>
-#include "parser.h"
+#include "../include/parser.h"
 #include "../include/standardStatements.h"
 
 Parser* Parser::getInstance(std::string _source)

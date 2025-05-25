@@ -1,6 +1,7 @@
 #pragma once
 
-class CellCoord {
+class CellCoord
+{
  public:
      int x, y;
      CellCoord();
