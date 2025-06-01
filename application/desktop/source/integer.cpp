@@ -1,7 +1,20 @@
-#include "../include/integer.h"
+#include "integer.h"
 
-Integer::Integer(const std::string& name, int min = INT_MIN, int max = INT_MAX) :
-    BaseVariable<int, int>(name, min, max)
+Integer::Integer()
+{
+}
+
+Integer::Integer(std::string& _name) :
+    BaseVariable<int, int>(_name)
+{
+    if (!validate())
+    {
+        throw std::invalid_argument("�������� ������ ���� � ������ �������� � ���������");
+    }
+}
+
+Integer::Integer(std::string& _name, int _value) :
+    BaseVariable<int, int>(_name, _value)
 {
     if (!validate())
     {

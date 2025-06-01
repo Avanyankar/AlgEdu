@@ -1,35 +1,35 @@
 #include <iostream>
-#include "../include/token.h"
+#include "token.h"
 
 Token::Token()
 {
     source = "";
-    type = TokenType::NONE;
+    type = static_cast<int>(TokenType::NONE);
 }
 
-Token::Token(std::string _source, TokenType _type) :
+Token::Token(std::string _source, int _type) :
     source(_source), type(_type)
 {
 }
 
-void Token::setType(TokenType type)
+void Token::setType(int _type)
 {
-    type = type;
+    type = _type;
 }
 
-TokenType Token::getType()
+int Token::getType()
 {
     return type;
 }
 
-TokenType Token::getType() const
+int Token::getType() const
 {
     return type;
 }
 
-void Token::setSource(std::string source)
+void Token::setSource(std::string _source)
 {
-    source = source;
+    source = _source;
 }
 
 std::string Token::getSource()

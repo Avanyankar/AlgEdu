@@ -22,4 +22,5 @@ class BaseStatement
      bool match_primary(const std::vector<Token>& statement, size_t* i) const;
      int calculate_expression(const std::vector<Token>& statement, size_t* i) const;
      virtual ~BaseStatement() = default;
+     BaseStatement() = default;
 };
