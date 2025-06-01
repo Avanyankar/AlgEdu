@@ -21,11 +21,11 @@
     <ClCompile Include="source\baseStatement.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\parser.h" />
-    <ClInclude Include="source\lexer.h" />
-    <ClInclude Include="source\baseStatement.h" />
-    <ClInclude Include="source\token.h" />
-    <ClInclude Include="source\tokenType.h" />
+    <ClInclude Include="include\parser.h" />
+    <ClInclude Include="include\lexer.h" />
+    <ClInclude Include="include\baseStatement.h" />
+    <ClInclude Include="include\token.h" />
+    <ClInclude Include="include\tokenType.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_dx12.h" />
     <ClInclude Include="vendor\imgui-docking\backends\imgui_impl_win32.h" />
     <ClInclude Include="vendor\imgui-docking\imconfig.h" />
@@ -34,12 +34,12 @@
     <ClInclude Include="vendor\imgui-docking\imstb_rectpack.h" />
     <ClInclude Include="vendor\imgui-docking\imstb_textedit.h" />
     <ClInclude Include="vendor\imgui-docking\imstb_truetype.h" />
-    <ClInclude Include="source\string.h" />
-    <ClInclude Include="source\standardStatements.h" />
-    <ClInclude Include="source\baseVariable.h" />
-    <ClInclude Include="source\integer.h" />
-    <ClInclude Include="source\declaration.h" />
-    <ClInclude Include="source\assignment.h" />
+    <ClInclude Include="include\string.h" />
+    <ClInclude Include="include\standardStatements.h" />
+    <ClInclude Include="include\baseVariable.h" />
+    <ClInclude Include="include\integer.h" />
+    <ClInclude Include="include\declaration.h" />
+    <ClInclude Include="include\assignment.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="vendor\imgui-docking\LICENSE.txt" />
